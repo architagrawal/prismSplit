@@ -3,7 +3,9 @@
 PrismSplit is a frontend-first, Expo-powered bill-splitting experience that stays open-source and mobile-first. This repo is purely UI/mechanics—backend services such as Supabase are consumed, not implemented here.
 
 ## Repository layout
+
 - `app/` — The Expo-managed application lives here. All source code, routes, assets, and configs are organized inside this directory.
+
   - `app/` — Expo Router file-based routing directory
     - `(auth)/` — Authentication screens (login, signup)
     - `(tabs)/` — Tab-based navigation (home, groups, profile)
@@ -39,6 +41,7 @@ PrismSplit is a frontend-first, Expo-powered bill-splitting experience that stay
 Feel free to add more folders such as `scripts/` or `ci/` later if tooling (build/test) is introduced.
 
 ## Tech stack guidance
+
 - **Expo (managed)** for shared code across Android/iOS/Web plus Expo Router for clean navigation.
 - **TypeScript + Tamagui** for type-safe, design-system-aligned UI that renders beautifully everywhere.
 - **Zustand** handles lightweight global state (current group, balances, user context).
@@ -52,12 +55,14 @@ The stack is appropriate for the goals you listed. As the repo is frontend-only,
 ## Project initialization
 
 ### Setting up the Expo app
+
 ```bash
 cd app
 npx create-expo-app@latest . --template blank-typescript
 ```
 
 ### Install core dependencies
+
 ```bash
 # UI & Navigation
 npm install tamagui @tamagui/config expo-router lucide-react-native
@@ -73,11 +78,13 @@ npm install --save-dev @types/react @types/react-native
 ```
 
 ### Configure environment
+
 1. Copy `.env.example` to `.env`
 2. Add your Supabase URL and anon key
 3. Update `app.json` with your app name and configuration
 
 ## Next steps
+
 1. Complete Tamagui theme configuration in `app/config/tamagui.config.ts`
 2. Set up Supabase client in `app/src/lib/supabase.ts` with your credentials
 3. Create component library in `app/src/components/ui/` using Tamagui primitives

@@ -5,6 +5,7 @@ Place Tamagui component designs and specifications here.
 ## Planned Components
 
 ### UI Primitives
+
 - Button (primary, secondary, outline, ghost)
 - Card (default, elevated, outlined)
 - Input (text, number, email)
@@ -15,12 +16,14 @@ Place Tamagui component designs and specifications here.
 - Chip/Tag
 
 ### Form Components
+
 - AddItemForm
 - SplitPercentageForm
 - CreateGroupForm
 - EditBillForm
 
 ### Feature Components
+
 - GroupCard
 - BillCard
 - SplitSummary
@@ -31,6 +34,7 @@ Place Tamagui component designs and specifications here.
 ## Design Tokens
 
 Document your Tamagui theme tokens here:
+
 - Colors
 - Typography
 - Spacing
@@ -41,6 +45,7 @@ Document your Tamagui theme tokens here:
 ## Component Specifications
 
 Each component should have:
+
 1. Visual mockup (Figma/Sketch link or screenshot)
 2. Props API
 3. Variants

@@ -15,17 +15,20 @@ Before you begin, make sure you have the following installed:
 ## Initial Setup
 
 ### 1. Clone the repository
+
 ```bash
 git clone https://github.com/your-org/prismsplit.git
 cd prismsplit
 ```
 
 ### 2. Navigate to the app directory
+
 ```bash
 cd app
 ```
 
 ### 3. Install dependencies
+
 ```bash
 npm install
 # or
@@ -33,6 +36,7 @@ yarn install
 ```
 
 ### 4. Set up environment variables
+
 ```bash
 # Copy the example env file
 cp .env.example .env
@@ -42,12 +46,14 @@ cp .env.example .env
 ```
 
 Your `.env` file should look like:
+
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 ### 5. Start the development server
+
 ```bash
 npx expo start
 ```
@@ -55,6 +61,7 @@ npx expo start
 This will start Metro bundler and show a QR code.
 
 ### 6. Run on your device
+
 - **iOS**: Scan the QR code with your Camera app
 - **Android**: Scan the QR code with the Expo Go app
 - **Web**: Press `w` in the terminal
@@ -85,6 +92,7 @@ app/
 ## Development Workflow
 
 ### Creating a new feature
+
 1. Create a new branch: `git checkout -b feature/your-feature-name`
 2. Create feature folder in `src/features/your-feature/`
 3. Add components, hooks, and logic inside the feature folder
@@ -96,6 +104,7 @@ app/
 9. Create a pull request
 
 ### Code style guidelines
+
 - Use TypeScript for all new files
 - Follow existing naming conventions (see `docs/architecture/folder-structure.md`)
 - Use Tamagui components for UI (not plain React Native components)
@@ -104,6 +113,7 @@ app/
 - Write meaningful commit messages
 
 ### Common commands
+
 ```bash
 # Start dev server
 npx expo start
@@ -143,6 +153,7 @@ Install these extensions for the best development experience:
 ### Common issues
 
 **Metro bundler won't start**
+
 ```bash
 npx expo start -c
 # or
@@ -151,15 +162,18 @@ npm install
 ```
 
 **TypeScript errors**
+
 ```bash
 npx tsc --noEmit
 ```
 
 **Can't connect to dev server on phone**
+
 - Make sure phone and computer are on the same WiFi network
 - Try tunnel mode: `npx expo start --tunnel`
 
 **Supabase connection errors**
+
 - Check your `.env` file has correct credentials
 - Verify the credentials in Supabase dashboard
 - Restart the dev server after changing `.env`
