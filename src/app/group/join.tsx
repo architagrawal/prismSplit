@@ -109,7 +109,7 @@ export default function JoinGroupScreen() {
 
       {/* QR Scanner Button */}
       <Card variant="outlined" marginBottom="$6">
-        <Pressable>
+        <Pressable onPress={() => router.push('/group/scan' as any)}>
           <XStack justifyContent="center" alignItems="center" gap="$2">
             <Camera size={20} color={colors.light.primary} />
             <Text fontSize={14} fontWeight="500" color={colors.light.primary}>

@@ -7,7 +7,8 @@
 import { useState } from 'react';
 import { Stack, Text, YStack } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
+import { Pressable } from 'react-native';
 
 import { Button, Input, Screen } from '@/components/ui';
 import { colors } from '@/theme/tokens';
@@ -72,9 +73,9 @@ export default function SignupScreen() {
     <Screen scroll keyboardAvoiding backgroundColor={colors.light.background}>
       <Stack flex={1} paddingTop="$10">
         {/* Header */}
-        <YStack alignItems="center" marginBottom="$8">
+        <YStack alignItems="center" marginBottom="$6">
           <Text
-            fontSize={32}
+            fontSize={28}
             fontWeight="700"
             color={colors.light.textPrimary}
             marginBottom="$2"
@@ -82,11 +83,39 @@ export default function SignupScreen() {
             Create Account
           </Text>
           <Text
-            fontSize={16}
+            fontSize={15}
             color={colors.light.textSecondary}
+            marginBottom="$4"
           >
             Join PrismSplit to start splitting
           </Text>
+          
+          {/* Login prompt - stylish pill */}
+          <Pressable onPress={() => router.push('/(auth)/login' as any)}>
+            <Stack
+              flexDirection="row"
+              alignItems="center"
+              gap="$2"
+              backgroundColor={`${colors.light.primary}12`}
+              paddingHorizontal="$4"
+              paddingVertical="$2"
+              borderRadius={20}
+            >
+              <Text fontSize={13} color={colors.light.primary}>
+                Already have an account?
+              </Text>
+              <Stack
+                flexDirection="row"
+                alignItems="center"
+                gap="$1"
+              >
+                <Text fontSize={13} fontWeight="600" color={colors.light.primary}>
+                  Log in
+                </Text>
+                <ArrowRight size={14} color={colors.light.primary} />
+              </Stack>
+            </Stack>
+          </Pressable>
         </YStack>
 
         {/* Form */}
@@ -168,27 +197,8 @@ export default function SignupScreen() {
             Continue with Google
           </Button>
         </YStack>
-
-        {/* Login link */}
-        <Stack 
-          flexDirection="row" 
-          justifyContent="center" 
-          marginTop="$6"
-          gap="$1"
-        >
-          <Text fontSize={14} color={colors.light.textSecondary}>
-            Already have an account?
-          </Text>
-          <Text
-            fontSize={14}
-            fontWeight="600"
-            color={colors.light.primary}
-            onPress={() => router.push('/(auth)/login' as any)}
-          >
-            Log in
-          </Text>
-        </Stack>
       </Stack>
     </Screen>
   );
 }
+

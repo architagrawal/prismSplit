@@ -44,7 +44,7 @@ export default function CreateGroupScreen() {
   };
 
   return (
-    <Screen keyboardAvoiding>
+    <Screen scroll keyboardAvoiding>
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
@@ -56,9 +56,9 @@ export default function CreateGroupScreen() {
         <Stack width={24} />
       </XStack>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Group Name */}
-        <YStack marginBottom="$6">
+
+      {/* Group Name */}
+      <YStack marginBottom="$6">
           <Input
             label="Group Name"
             placeholder="e.g., Roommates, Trip Squad"
@@ -170,10 +170,9 @@ export default function CreateGroupScreen() {
             </Text>
           </YStack>
         </Card>
-      </ScrollView>
 
       {/* Create Button */}
-      <Stack paddingTop="$4">
+      <Stack paddingTop="$4" paddingBottom="$8">
         <Button
           variant="primary"
           size="lg"

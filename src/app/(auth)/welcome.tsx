@@ -187,15 +187,6 @@ export default function WelcomeScreen() {
 
       {/* Action buttons */}
       <Stack paddingHorizontal="$6" paddingBottom="$8" gap="$3">
-        <Button 
-          variant="primary" 
-          size="lg" 
-          fullWidth 
-          onPress={handleNext}
-        >
-          {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
-        </Button>
-        
         {currentIndex === slides.length - 1 && (
           <Button 
             variant="ghost" 
@@ -206,6 +197,15 @@ export default function WelcomeScreen() {
             Already have an account? Log in
           </Button>
         )}
+        
+        <Button 
+          variant="primary" 
+          size="lg" 
+          fullWidth 
+          onPress={handleNext}
+        >
+          {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
+        </Button>
       </Stack>
     </View>
   );

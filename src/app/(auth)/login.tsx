@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { Stack, Text, YStack } from 'tamagui';
+import { Stack, Text, YStack, XStack } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 
@@ -57,30 +57,31 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen scroll keyboardAvoiding backgroundColor={colors.light.background}>
-      <Stack flex={1} paddingTop="$12" justifyContent="center">
-        {/* Logo / Header */}
-        <YStack alignItems="center" marginBottom="$10">
-          <Stack
-            width={80}
-            height={80}
-            borderRadius={20}
-            backgroundColor={colors.light.primary}
-            justifyContent="center"
-            alignItems="center"
-            marginBottom="$4"
-          >
-            <Text fontSize={36}>💎</Text>
-          </Stack>
+    <Screen keyboardAvoiding backgroundColor={colors.light.background}>
+      <Stack flex={1} justifyContent="center">
+        {/* Logo / Header - Compact */}
+        <YStack alignItems="center" marginBottom="$2">
+          <XStack alignItems="center" gap="$5" marginBottom="$8">
+            <Stack
+              width={50}
+              height={50}
+              borderRadius={14}
+              backgroundColor={colors.light.primary}
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Text fontSize={24}>💎</Text>
+            </Stack>
+            <Text
+              fontSize={28}
+              fontWeight="700"
+              color={colors.light.textPrimary}
+            >
+              PrismSplit
+            </Text>
+          </XStack>
           <Text
-            fontSize={32}
-            fontWeight="700"
-            color={colors.light.textPrimary}
-          >
-            Welcome Back
-          </Text>
-          <Text
-            fontSize={16}
+            fontSize={15}
             color={colors.light.textSecondary}
           >
             Log in to continue
@@ -88,7 +89,7 @@ export default function LoginScreen() {
         </YStack>
 
         {/* Form */}
-        <YStack gap="$4">
+        <YStack gap="$3">
           <Input
             label="Email"
             placeholder="Enter your email"
@@ -96,7 +97,7 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             error={errors.email}
             keyboardType="email-address"
-            leftIcon={<Mail size={20} color={colors.light.textMuted} />}
+            leftIcon={<Mail size={18} color={colors.light.textMuted} />}
           />
 
           <Input
@@ -106,12 +107,12 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             error={errors.password}
             secureTextEntry={!showPassword}
-            leftIcon={<Lock size={20} color={colors.light.textMuted} />}
+            leftIcon={<Lock size={18} color={colors.light.textMuted} />}
             rightIcon={
               <Stack onPress={() => setShowPassword(!showPassword)}>
                 {showPassword 
-                  ? <EyeOff size={20} color={colors.light.textMuted} /> 
-                  : <Eye size={20} color={colors.light.textMuted} />
+                  ? <EyeOff size={18} color={colors.light.textMuted} /> 
+                  : <Eye size={18} color={colors.light.textMuted} />
                 }
               </Stack>
             }
@@ -120,7 +121,7 @@ export default function LoginScreen() {
           {/* Forgot password */}
           <Stack alignItems="flex-end">
             <Text
-              fontSize={14}
+              fontSize={13}
               fontWeight="500"
               color={colors.light.primary}
               onPress={() => {/* TODO: Forgot password */}}
@@ -131,7 +132,7 @@ export default function LoginScreen() {
         </YStack>
 
         {/* Submit */}
-        <YStack marginTop="$8" gap="$4">
+        <YStack marginTop="$5" gap="$3">
           <Button
             variant="primary"
             size="lg"
@@ -145,7 +146,7 @@ export default function LoginScreen() {
           {/* Divider */}
           <Stack flexDirection="row" alignItems="center" gap="$3">
             <Stack flex={1} height={1} backgroundColor={colors.light.border} />
-            <Text fontSize={14} color={colors.light.textMuted}>or</Text>
+            <Text fontSize={13} color={colors.light.textMuted}>or</Text>
             <Stack flex={1} height={1} backgroundColor={colors.light.border} />
           </Stack>
 
@@ -164,7 +165,7 @@ export default function LoginScreen() {
         <Stack 
           flexDirection="row" 
           justifyContent="center" 
-          marginTop="$6"
+          marginTop="$4"
           gap="$1"
         >
           <Text fontSize={14} color={colors.light.textSecondary}>
@@ -183,3 +184,4 @@ export default function LoginScreen() {
     </Screen>
   );
 }
+
