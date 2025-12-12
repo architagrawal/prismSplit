@@ -172,7 +172,7 @@ export default function CreateGroupScreen() {
         </Card>
 
       {/* Create Button */}
-      <Stack paddingTop="$4" paddingBottom="$8">
+      <Stack paddingTop="$4" paddingBottom="$2">
         <Button
           variant="primary"
           size="lg"

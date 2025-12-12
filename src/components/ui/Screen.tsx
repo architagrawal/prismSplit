@@ -60,8 +60,7 @@ export function Screen({
   const keyboardContent = keyboardAvoiding ? (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      behavior="padding"
     >
       {scrollContent}
     </KeyboardAvoidingView>
