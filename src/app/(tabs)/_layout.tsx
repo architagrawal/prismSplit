@@ -292,6 +292,20 @@ export default function TabLayout() {
           href: null, // Hide from tab bar
         }}
       />
+      
+      {/* Hidden nested routes - these show with tab bar but aren't tab options */}
+      <Tabs.Screen
+        name="group/[id]"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="settle/[userId]"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
     </Tabs>
   );
 }

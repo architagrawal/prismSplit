@@ -37,7 +37,7 @@ export default function CreateGroupScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const newGroup = await createGroup(name, selectedEmoji, selectedCurrency);
       showToast({ type: 'success', message: 'Group created!' });
-      router.replace(`/group/${newGroup.id}` as any);
+      router.replace(`/(tabs)/group/${newGroup.id}` as any);
     } catch (error) {
       showToast({ type: 'error', message: 'Failed to create group' });
     }

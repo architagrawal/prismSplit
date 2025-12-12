@@ -142,7 +142,7 @@ export default function GroupsScreen() {
                   emoji={group.emoji}
                   memberCount={group.member_count}
                   balance={group.your_balance}
-                  onPress={() => router.push(`/group/${group.id}` as any)}
+                  onPress={() => router.push(`/(tabs)/group/${group.id}` as any)}
                 />
               ))
             )}
