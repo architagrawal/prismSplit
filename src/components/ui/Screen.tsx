@@ -2,10 +2,12 @@
  * PrismSplit Screen Layout Component
  * 
  * Consistent screen wrapper with safe areas and background.
+ * Uses react-native-safe-area-context for proper edge-to-edge support.
  */
 
 import { Stack, ScrollView, Text } from 'tamagui';
-import { SafeAreaView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
 
@@ -19,6 +21,10 @@ interface ScreenProps {
   keyboardAvoiding?: boolean;
   /** Background color override */
   backgroundColor?: string;
+  /** Include bottom safe area (set false for screens with tab bar) */
+  safeBottom?: boolean;
+  /** Include top safe area */
+  safeTop?: boolean;
 }
 
 export function Screen({
@@ -27,7 +33,11 @@ export function Screen({
   padded = true,
   keyboardAvoiding = false,
   backgroundColor = colors.light.background,
+  safeBottom = true,
+  safeTop = true,
 }: ScreenProps) {
+  const insets = useSafeAreaInsets();
+
   const content = (
     <Stack
       flex={1}
@@ -51,15 +61,27 @@ export function Screen({
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       {scrollContent}
     </KeyboardAvoidingView>
   ) : scrollContent;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <View 
+      style={[
+        styles.container, 
+        { 
+          backgroundColor,
+          paddingTop: safeTop ? insets.top : 0,
+          paddingBottom: safeBottom ? insets.bottom : 0,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        }
+      ]}
+    >
       {keyboardContent}
-    </SafeAreaView>
+    </View>
   );
 }
 

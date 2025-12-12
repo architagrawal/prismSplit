@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Animated, Modal } from 'react-native';
 import { Stack, Text, YStack } from 'tamagui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   Home, 
   Users, 
@@ -211,12 +212,22 @@ function CenterFAB() {
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 8);
+  
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.light.primary,
         tabBarInactiveTintColor: colors.light.textMuted,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: colors.light.surface,
+          borderTopWidth: 1,
+          borderTopColor: colors.light.border,
+          height: 56 + bottomPadding,
+          paddingTop: 8,
+          paddingBottom: bottomPadding,
+        },
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabBarLabel,
         headerShown: false,
