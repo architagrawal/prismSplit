@@ -6,8 +6,9 @@
 
 import { useState, useRef } from 'react';
 import { Stack, Text, XStack, YStack } from 'tamagui';
-import { Dimensions, Animated, FlatList, ViewToken, StyleSheet } from 'react-native';
+import { Dimensions, Animated, FlatList, ViewToken, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Receipt, 
@@ -62,6 +63,7 @@ const slides: OnboardingSlide[] = [
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -124,11 +126,21 @@ export default function WelcomeScreen() {
   );
 
   return (
-    <Stack flex={1} backgroundColor={colors.light.background}>
+    <View 
+      style={[
+        styles.container, 
+        { 
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        }
+      ]}
+    >
       {/* Skip button */}
       <Stack 
         position="absolute" 
-        top={60} 
+        top={insets.top + 16} 
         right={20} 
         zIndex={10}
       >
@@ -195,6 +207,13 @@ export default function WelcomeScreen() {
           </Button>
         )}
       </Stack>
-    </Stack>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.light.background,
+  },
+});

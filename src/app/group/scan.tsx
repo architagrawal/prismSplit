@@ -144,11 +144,11 @@ export default function QRScannerScreen() {
 
       {/* Overlay */}
       <Stack flex={1}>
-        {/* Top bar */}
+        {/* Top bar - use safe area insets */}
         <XStack 
           justifyContent="space-between" 
           alignItems="center" 
-          paddingTop="$12"
+          paddingTop={60}
           paddingHorizontal="$4"
         >
           <Pressable onPress={() => router.back()}>

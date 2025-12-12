@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { Stack, Text, YStack, XStack } from 'tamagui';
+import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable, Share } from 'react-native';
 import { ArrowLeft, Copy, Share2, QrCode, Check } from 'lucide-react-native';
@@ -43,7 +43,7 @@ export default function GroupInviteScreen() {
   };
 
   return (
-    <Screen>
+    <Screen scroll>
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
@@ -56,7 +56,7 @@ export default function GroupInviteScreen() {
       </XStack>
 
       {/* Group Info */}
-      <YStack alignItems="center" marginBottom="$8">
+      <YStack alignItems="center" marginBottom="$6">
         <Stack
           width={80}
           height={80}
@@ -77,18 +77,18 @@ export default function GroupInviteScreen() {
       </YStack>
 
       {/* QR Code Placeholder */}
-      <Card variant="elevated" marginBottom="$6">
-        <YStack alignItems="center" paddingVertical="$4">
+      <Card variant="elevated" marginBottom="$4">
+        <YStack alignItems="center" paddingVertical="$3">
           <Stack
-            width={180}
-            height={180}
+            width={140}
+            height={140}
             borderRadius={12}
             backgroundColor={colors.light.surfaceElevated}
             justifyContent="center"
             alignItems="center"
-            marginBottom="$3"
+            marginBottom="$2"
           >
-            <QrCode size={100} color={colors.light.textMuted} />
+            <QrCode size={80} color={colors.light.textMuted} />
           </Stack>
           <Text fontSize={12} color={colors.light.textMuted}>
             Scan to join group
@@ -97,7 +97,7 @@ export default function GroupInviteScreen() {
       </Card>
 
       {/* Invite Code */}
-      <YStack marginBottom="$6">
+      <YStack marginBottom="$4">
         <Text 
           fontSize={14} 
           fontWeight="500" 
@@ -164,7 +164,6 @@ export default function GroupInviteScreen() {
       </YStack>
 
       {/* Share Button */}
-      <Stack flex={1} />
       <Button
         variant="primary"
         size="lg"
@@ -174,6 +173,10 @@ export default function GroupInviteScreen() {
       >
         Share Invite
       </Button>
+      
+      {/* Bottom spacer for scroll */}
+      <Stack height={20} />
     </Screen>
   );
 }
+
