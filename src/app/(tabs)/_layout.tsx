@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Animated, Modal } from 'react-native';
+import { Pressable, StyleSheet, Animated, Modal, View } from 'react-native';
 import { Stack, Text, YStack } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
@@ -99,14 +99,16 @@ function CenterFAB() {
   return (
     <>
       {/* FAB Button */}
-      <Pressable 
-        onPress={isOpen ? () => closeMenu() : openMenu}
-        style={styles.fab}
-      >
-        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Plus size={28} color="white" />
-        </Animated.View>
-      </Pressable>
+      <View style={styles.fabContainer}>
+        <Pressable 
+          onPress={isOpen ? () => closeMenu() : openMenu}
+          style={styles.fab}
+        >
+          <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+            <Plus size={28} color="white" />
+          </Animated.View>
+        </Pressable>
+      </View>
 
       {/* Menu Overlay */}
       <Modal
@@ -334,12 +336,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -24,
+    marginTop: -28,
     shadowColor: colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  fabContainer: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
