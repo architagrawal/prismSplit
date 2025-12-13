@@ -45,35 +45,35 @@ function CenterFAB() {
   const [isOpen, setIsOpen] = useState(false);
   const [animation] = useState(new Animated.Value(0));
   
-  const toggleMenu = () => {
+  const openMenu = () => {
+    setIsOpen(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    if (isOpen) {
-      Animated.spring(animation, {
-        toValue: 0,
-        friction: 6,
-        useNativeDriver: true,
-      }).start(() => setIsOpen(false));
-    } else {
-      setIsOpen(true);
-      Animated.spring(animation, {
-        toValue: 1,
-        friction: 6,
-        useNativeDriver: true,
-      }).start();
-    }
+    Animated.timing(animation, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  const closeMenu = (callback?: () => void) => {
+    Animated.timing(animation, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsOpen(false);
+      callback?.();
+    });
   };
 
   const handleQuickBill = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleMenu();
-    router.push('/bill/quick' as any);
+    closeMenu(() => router.push('/bill/quick' as any));
   };
 
   const handleDetailedBill = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleMenu();
-    router.push('/bill/create' as any);
+    closeMenu(() => router.push('/bill/create' as any));
   };
 
   const rotation = animation.interpolate({
@@ -82,6 +82,11 @@ function CenterFAB() {
   });
 
   const menuScale = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.8, 1],
+  });
+
+  const menuOpacity = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
@@ -95,15 +100,11 @@ function CenterFAB() {
     <>
       {/* FAB Button */}
       <Pressable 
-        onPress={toggleMenu}
+        onPress={isOpen ? () => closeMenu() : openMenu}
         style={styles.fab}
       >
         <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          {isOpen ? (
-            <X size={28} color="white" />
-          ) : (
-            <Plus size={28} color="white" />
-          )}
+          <Plus size={28} color="white" />
         </Animated.View>
       </Pressable>
 
@@ -112,10 +113,11 @@ function CenterFAB() {
         visible={isOpen}
         transparent
         animationType="none"
-        onRequestClose={toggleMenu}
+        statusBarTranslucent
+        onRequestClose={() => closeMenu()}
       >
         {/* Backdrop */}
-        <Pressable style={styles.backdrop} onPress={toggleMenu}>
+        <Pressable style={styles.backdrop} onPress={() => closeMenu()}>
           <Animated.View 
             style={[
               styles.backdropInner,
@@ -130,9 +132,10 @@ function CenterFAB() {
             styles.menuContainer,
             { 
               transform: [{ scale: menuScale }],
-              opacity: animation
+              opacity: menuOpacity
             }
           ]}
+          pointerEvents={isOpen ? 'auto' : 'none'}
         >
           {/* Quick Bill Option */}
           <Pressable onPress={handleQuickBill} style={styles.menuItem}>

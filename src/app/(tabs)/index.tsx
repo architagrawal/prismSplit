@@ -7,7 +7,7 @@
 import { useEffect } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { RefreshControl } from 'react-native';
+import { RefreshControl, Pressable } from 'react-native';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -78,11 +78,13 @@ export default function HomeScreen() {
                 {firstName}
               </Text>
             </YStack>
-            <Avatar 
-              name={user?.full_name || 'User'}
-              colorIndex={user?.color_index || 0}
-              size="lg"
-            />
+            <Pressable onPress={() => router.push('/profile' as any)}>
+              <Avatar 
+                name={user?.full_name || 'User'}
+                colorIndex={user?.color_index || 0}
+                size="lg"
+              />
+            </Pressable>
           </XStack>
         </Stack>
 

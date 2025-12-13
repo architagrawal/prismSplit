@@ -1,7 +1,8 @@
 /**
- * PrismSplit Profile/Account Tab
+ * PrismSplit Profile/Account Screen
  * 
  * Uses authStore and uiStore.
+ * This screen is outside tabs so it doesn't show the tab bar.
  */
 
 import { Stack, Text, YStack, XStack } from 'tamagui';
@@ -9,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, Linking, Alert } from 'react-native';
 import { 
   User, 
-  Settings, 
+  ArrowLeft,
   Bell, 
   LogOut, 
   ChevronRight,
@@ -85,11 +86,7 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    Alert.alert(
-      'Edit Profile',
-      'Profile editing will be available in a future update.',
-      [{ text: 'OK' }]
-    );
+    router.push('/profile/edit' as any);
   };
 
   const handleNotifications = () => {
@@ -111,24 +108,28 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen scroll safeBottom={false}>
+    <Screen scroll>
       {/* Header */}
-      <Stack paddingTop="$2" paddingBottom="$6">
-        <Text fontSize={28} fontWeight="700" color={colors.light.textPrimary}>
+      <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
+        <Pressable onPress={() => router.back()}>
+          <ArrowLeft size={24} color={colors.light.textPrimary} />
+        </Pressable>
+        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
           Account
         </Text>
-      </Stack>
+        <Stack width={24} />
+      </XStack>
 
       {/* Profile Card */}
       <Card variant="surface" marginBottom="$6">
-        <XStack alignItems="center" gap="$4">
+        <XStack alignItems="center" gap="$3" marginBottom="$4">
           <Avatar
             name={user?.full_name || 'User'}
             colorIndex={user?.color_index || 0}
-            size="xl"
+            size="lg"
           />
           <YStack flex={1}>
-            <Text fontSize={20} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
               {user?.full_name || 'User'}
             </Text>
             <Text fontSize={14} color={colors.light.textSecondary}>
