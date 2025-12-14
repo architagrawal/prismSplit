@@ -94,6 +94,7 @@ export default function BillDetailScreen() {
   }, [user, initialized]);
 
   const bill = currentBill;
+  const allMembers = bill ? (demoGroupMembers[bill.group_id] || []) : [];
 
   // Calculate user's share based on current selections and custom splits
   const calculateYourShare = () => {
@@ -554,13 +555,34 @@ export default function BillDetailScreen() {
           onConfirm={handleCustomSplitConfirm}
           itemName={selectedItem.name}
           itemPrice={selectedItem.price}
-          currentParticipants={selectedItem.splits.map(s => ({
-            userId: s.user_id,
-            user: s.user,
-            colorIndex: s.color_index,
-            percentage: (s.amount / selectedItem.price) * 100,
-            amount: s.amount,
-          }))}
+          currentParticipants={(() => {
+            const localSplits = customSplits.get(selectedItem.id);
+            if (localSplits) {
+              return localSplits.map(s => ({
+                userId: s.userId,
+                user: allMembers.find(m => m.user_id === s.userId)?.user || { 
+                  id: s.userId, 
+                  full_name: 'User', 
+                  email: '', 
+                  avatar_url: null,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                },
+                colorIndex: s.colorIndex,
+                percentage: s.percentage,
+                amount: s.amount,
+                locked: false,
+              }));
+            }
+            return selectedItem.splits.map(s => ({
+              userId: s.user_id,
+              user: s.user,
+              colorIndex: s.color_index,
+              percentage: (s.amount / selectedItem.price) * 100,
+              amount: s.amount,
+              locked: false,
+            }));
+          })()}
           allMembers={demoGroupMembers[bill.group_id] || []}
           currentUserId={user?.id || 'current-user'}
         />

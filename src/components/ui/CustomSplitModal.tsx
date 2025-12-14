@@ -15,7 +15,7 @@ import {
   Minus, 
   Percent, 
   DollarSign, 
-  Users 
+  Users
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -33,6 +33,7 @@ interface SplitParticipant {
   colorIndex: number;
   percentage: number;
   amount: number;
+  locked?: boolean;
 }
 
 interface CustomSplitModalProps {
@@ -59,10 +60,12 @@ export function CustomSplitModal({
   const themeColors = useThemeColors();
   const [splitMode, setSplitMode] = useState<SplitMode>('equal');
   const [participants, setParticipants] = useState<SplitParticipant[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
 
   useEffect(() => {
     if (visible) {
-      setParticipants(currentParticipants);
+      setParticipants(currentParticipants.map(p => ({ ...p, locked: false })));
       // Auto-detect mode from current data
       if (currentParticipants.length > 0) {
         const firstPercent = currentParticipants[0].percentage;
@@ -86,6 +89,7 @@ export function CustomSplitModal({
       ...p,
       percentage: equalPercent,
       amount: equalAmount,
+      locked: false,
     }));
   };
 
@@ -97,6 +101,7 @@ export function CustomSplitModal({
       colorIndex: member.color_index,
       percentage: 0,
       amount: 0,
+      locked: false,
     };
     
     let updated = [...participants, newParticipant];
@@ -106,155 +111,97 @@ export function CustomSplitModal({
     setParticipants(updated);
   };
 
+  // Helper to rebalance remaining amount among unlocked participants
+  const distributeRemaining = (
+    currentList: SplitParticipant[], 
+    lockedUserId: string | null = null
+  ) => {
+    // Calculate total locked amount/percentage
+    const lockedParticipants = currentList.filter(p => p.locked || p.userId === lockedUserId);
+    const unlockedParticipants = currentList.filter(p => !p.locked && p.userId !== lockedUserId);
+    
+    if (unlockedParticipants.length === 0) {
+      // If everyone is locked, just return the list as is (manual mode)
+      return currentList;
+    }
+
+    if (splitMode === 'percentage') {
+      const lockedTotal = lockedParticipants.reduce((sum, p) => sum + p.percentage, 0);
+      const remaining = Math.max(0, 100 - lockedTotal);
+      const perPerson = remaining / unlockedParticipants.length;
+      
+      return currentList.map(p => {
+        if (p.locked || p.userId === lockedUserId) return p;
+        return {
+          ...p,
+          percentage: perPerson,
+          amount: (itemPrice * perPerson) / 100,
+        };
+      });
+    } else {
+      // Amount mode
+      const lockedTotal = lockedParticipants.reduce((sum, p) => sum + p.amount, 0);
+      const remaining = Math.max(0, itemPrice - lockedTotal);
+      const perPerson = remaining / unlockedParticipants.length;
+      
+      return currentList.map(p => {
+        if (p.locked || p.userId === lockedUserId) return p;
+        return {
+          ...p,
+          amount: perPerson,
+          percentage: itemPrice > 0 ? (perPerson / itemPrice) * 100 : 0,
+        };
+      });
+    }
+  };
+
   const handleRemovePerson = (userId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Find the person being removed
-    const removedPerson = participants.find(p => p.userId === userId);
     const remaining = participants.filter(p => p.userId !== userId);
     
-    if (!removedPerson || remaining.length === 0) {
+    if (remaining.length === 0) {
       setParticipants(remaining);
       return;
     }
     
     if (splitMode === 'equal') {
-      // For equal mode, just recalculate equal split
       setParticipants(recalculateEqualSplit(remaining));
     } else {
-      // For percentage/amount modes, redistribute proportionally
-      // Calculate total percentage/amount of remaining participants
-      const remainingTotal = remaining.reduce((sum, p) => sum + p.percentage, 0);
-      
-      if (remainingTotal === 0) {
-        // If remaining participants have 0%, distribute the removed share equally
-        const equalShare = 100 / remaining.length;
-        const updated = remaining.map(p => ({
-          ...p,
-          percentage: equalShare,
-          amount: (itemPrice * equalShare) / 100,
-        }));
-        setParticipants(updated);
-      } else {
-        // Distribute the removed person's share proportionally among remaining
-        const removedPercentage = removedPerson.percentage;
-        const updated = remaining.map(p => {
-          // Each person gets additional share based on their proportion of remaining total
-          const additionalPercentage = (p.percentage / remainingTotal) * removedPercentage;
-          const newPercentage = p.percentage + additionalPercentage;
-          return {
-            ...p,
-            percentage: newPercentage,
-            amount: (itemPrice * newPercentage) / 100,
-          };
-        });
-        setParticipants(updated);
-      }
+      // Distribute removed person's share among UNLOCKED participants if possible
+      // or among everyone if everyone was locked (reset locks for others?)
+      // Simplest: Just call distribute with no specific locked user, preserving existing locks
+      const updated = distributeRemaining(remaining);
+      setParticipants(updated);
     }
   };
 
-  // Auto-rebalance: when one person changes their %, redistribute remaining to others proportionally
-  const handlePercentageChange = (userId: string, value: string, autoRebalance: boolean = true) => {
+  const handlePercentageChange = (userId: string, value: string) => {
     const newPercentage = parseFloat(value) || 0;
     const clampedPercentage = Math.min(100, Math.max(0, newPercentage));
     
-    if (autoRebalance) {
-      // Get current user's old percentage
-      const currentUser = participants.find(p => p.userId === userId);
-      const oldPercentage = currentUser?.percentage || 0;
-      
-      // Calculate the remaining percentage for others
-      const othersOldTotal = participants
-        .filter(p => p.userId !== userId)
-        .reduce((sum, p) => sum + p.percentage, 0);
-      
-      const remainingForOthers = 100 - clampedPercentage;
-      
-      if (othersOldTotal > 0 && remainingForOthers >= 0) {
-        // Redistribute remaining to others in their original ratios
-        const updated = participants.map(p => {
-          if (p.userId === userId) {
-            return {
-              ...p,
-              percentage: clampedPercentage,
-              amount: (itemPrice * clampedPercentage) / 100,
-            };
-          } else {
-            // Calculate new percentage based on original ratio
-            const ratio = p.percentage / othersOldTotal;
-            const newPct = remainingForOthers * ratio;
-            return {
-              ...p,
-              percentage: newPct,
-              amount: (itemPrice * newPct) / 100,
-            };
-          }
-        });
-        setParticipants(updated);
-      } else {
-        // Fallback: just update the single user
-        setParticipants(participants.map(p => 
-          p.userId === userId 
-            ? { ...p, percentage: clampedPercentage, amount: (itemPrice * clampedPercentage) / 100 } 
-            : p
-        ));
-      }
-    } else {
-      // Manual mode: just update the single user without rebalancing
-      const amount = (itemPrice * clampedPercentage) / 100;
-      setParticipants(participants.map(p => 
-        p.userId === userId ? { ...p, percentage: clampedPercentage, amount } : p
-      ));
-    }
+    // Update the edited user and lock them
+    const updatedUserList = participants.map(p => 
+      p.userId === userId 
+        ? { ...p, percentage: clampedPercentage, amount: (itemPrice * clampedPercentage) / 100, locked: true } 
+        : p
+    );
+    
+    setParticipants(distributeRemaining(updatedUserList, userId));
   };
 
-  const handleAmountChange = (userId: string, value: string, autoRebalance: boolean = true) => {
+  const handleAmountChange = (userId: string, value: string) => {
     const newAmount = parseFloat(value) || 0;
     const clampedAmount = Math.min(itemPrice, Math.max(0, newAmount));
     const newPercentage = itemPrice > 0 ? (clampedAmount / itemPrice) * 100 : 0;
     
-    if (autoRebalance) {
-      // Get others' old total
-      const othersOldTotal = participants
-        .filter(p => p.userId !== userId)
-        .reduce((sum, p) => sum + p.amount, 0);
-      
-      const remainingForOthers = itemPrice - clampedAmount;
-      
-      if (othersOldTotal > 0 && remainingForOthers >= 0) {
-        // Redistribute remaining to others proportionally
-        const updated = participants.map(p => {
-          if (p.userId === userId) {
-            return {
-              ...p,
-              amount: clampedAmount,
-              percentage: newPercentage,
-            };
-          } else {
-            const ratio = p.amount / othersOldTotal;
-            const newAmt = remainingForOthers * ratio;
-            return {
-              ...p,
-              amount: newAmt,
-              percentage: (newAmt / itemPrice) * 100,
-            };
-          }
-        });
-        setParticipants(updated);
-      } else {
-        setParticipants(participants.map(p => 
-          p.userId === userId 
-            ? { ...p, amount: clampedAmount, percentage: newPercentage } 
-            : p
-        ));
-      }
-    } else {
-      setParticipants(participants.map(p => 
-        p.userId === userId 
-          ? { ...p, amount: clampedAmount, percentage: newPercentage } 
-          : p
-      ));
-    }
+    const updatedUserList = participants.map(p => 
+      p.userId === userId 
+        ? { ...p, amount: clampedAmount, percentage: newPercentage, locked: true } 
+        : p
+    );
+
+    setParticipants(distributeRemaining(updatedUserList, userId));
   };
 
   const handleModeChange = (mode: SplitMode) => {
@@ -305,16 +252,56 @@ export function CustomSplitModal({
           <Stack width={24} />
         </XStack>
 
-        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-          {/* Item Price */}
-          <Card variant="elevated" marginTop="$4" marginBottom="$4">
-            <YStack alignItems="center" gap="$1">
-              <Text fontSize={14} color={themeColors.textSecondary}>
-                Item Total
-              </Text>
-              <Text fontSize={28} fontWeight="700" color={themeColors.primary}>
-                ${itemPrice.toFixed(2)}
-              </Text>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          style={{ flex: 1 }}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Unified Split Status Card */}
+          <Card 
+            variant="elevated" 
+            marginTop="$4" 
+            marginBottom="$4"
+            backgroundColor={isValid ? themeColors.successBg : themeColors.surfaceElevated}
+            borderWidth={1}
+            borderColor={isValid ? themeColors.success : themeColors.border}
+          >
+            <YStack gap="$2">
+              {/* Row 1: Item Total */}
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize={14} color={themeColors.textSecondary}>Item Total</Text>
+                <Text fontSize={18} fontWeight="700" color={themeColors.primary}>
+                  ${itemPrice.toFixed(2)}
+                </Text>
+              </XStack>
+              
+              <Stack height={1} backgroundColor={themeColors.border} opacity={0.5} />
+              
+              {/* Row 2: Allocated */}
+              <XStack justifyContent="space-between" alignItems="center">
+                <XStack alignItems="center" gap="$2">
+                  <Text fontSize={14} color={themeColors.textSecondary}>Allocated</Text>
+                  {isValid && <Check size={14} color={themeColors.success} />}
+                </XStack>
+                <Text 
+                  fontSize={14} 
+                  fontWeight="600" 
+                  color={isValid ? themeColors.success : themeColors.textPrimary}
+                >
+                  ${totalAmount.toFixed(2)} ({totalPercentage.toFixed(1)}%)
+                </Text>
+              </XStack>
+
+              {/* Row 3: Remaining (only if not valid) */}
+              {!isValid && (
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text fontSize={14} color={themeColors.warning}>Remaining</Text>
+                  <Text fontSize={14} fontWeight="600" color={themeColors.warning}>
+                    ${Math.abs(itemPrice - totalAmount).toFixed(2)} ({Math.abs(100 - totalPercentage).toFixed(1)}%)
+                  </Text>
+                </XStack>
+              )}
             </YStack>
           </Card>
 
@@ -418,11 +405,16 @@ export function CustomSplitModal({
                       size="md"
                     />
                     <YStack flex={1}>
-                      <Text fontSize={16} color={themeColors.textPrimary}>
-                        {participant.userId === currentUserId ? 'You' : participant.user.full_name}
-                      </Text>
+                      <XStack alignItems="center" gap="$2">
+                        <Text fontSize={16} color={themeColors.textPrimary}>
+                          {participant.userId === currentUserId ? 'You' : participant.user.full_name}
+                        </Text>
+                      </XStack>
                       <Text fontSize={12} color={themeColors.textSecondary}>
-                        ${participant.amount.toFixed(2)}
+                        {splitMode === 'amount' 
+                          ? `${participant.percentage.toFixed(1)}%`
+                          : `$${participant.amount.toFixed(2)}`
+                        }
                       </Text>
                     </YStack>
 
@@ -436,22 +428,43 @@ export function CustomSplitModal({
                             backgroundColor: themeColors.surfaceElevated,
                             borderRadius: 8,
                             paddingHorizontal: 8,
+                            paddingVertical: 0, // Prevent Android vertical scrolling
                             fontSize: 14,
                             textAlign: 'center',
+                            textAlignVertical: 'center', // Align text vertically on Android
                             color: themeColors.textPrimary,
                           }}
+                          multiline={false}
+                          scrollEnabled={false} // Disable scrolling inside input
                           value={
-                            splitMode === 'percentage' 
-                              ? participant.percentage.toFixed(0)
-                              : participant.amount.toFixed(2)
+                            editingId === participant.userId
+                              ? editValue
+                              : splitMode === 'percentage' 
+                                ? Number(participant.percentage.toFixed(2)).toString()
+                                : participant.amount.toFixed(2)
                           }
-                          onChangeText={(value) => 
+                          onChangeText={(value) => {
+                            setEditValue(value);
+                            // Don't rebalance while typing, just update local state
+                          }}
+                          onFocus={() => {
+                            setEditingId(participant.userId);
+                            const val = splitMode === 'percentage'
+                              ? Number(participant.percentage.toFixed(2)).toString()
+                              : participant.amount.toFixed(2);
+                            setEditValue(val === '0.00' || val === '0' ? '' : val);
+                          }}
+                          onBlur={() => {
+                            // Trigger smart rebalance with final value
                             splitMode === 'percentage'
-                              ? handlePercentageChange(participant.userId, value)
-                              : handleAmountChange(participant.userId, value)
-                          }
+                                ? handlePercentageChange(participant.userId, editValue)
+                                : handleAmountChange(participant.userId, editValue);
+                            setEditingId(null);
+                            setEditValue('');
+                          }}
                           keyboardType="decimal-pad"
                           placeholder="0"
+                          placeholderTextColor={themeColors.textMuted}
                         />
                         <Text fontSize={14} color={themeColors.textMuted}>
                           {splitMode === 'percentage' ? '%' : '$'}
@@ -462,7 +475,7 @@ export function CustomSplitModal({
                     {/* Equal mode: show calculated share */}
                     {splitMode === 'equal' && (
                       <Text fontSize={14} color={themeColors.textSecondary}>
-                        {participant.percentage.toFixed(0)}%
+                        {Number(participant.percentage.toFixed(2)).toString()}%
                       </Text>
                     )}
 
@@ -514,41 +527,7 @@ export function CustomSplitModal({
             </YStack>
           )}
 
-          {/* Summary */}
-          {participants.length > 0 && (
-            <Card 
-              variant="elevated" 
-              marginBottom="$4"
-              backgroundColor={isValid ? themeColors.successBg : themeColors.warningBg}
-              borderWidth={1}
-              borderColor={isValid ? themeColors.success : themeColors.warning}
-            >
-              <XStack justifyContent="space-between" alignItems="center">
-                <YStack>
-                  <Text fontSize={14} color={themeColors.textSecondary}>
-                    Total Allocated
-                  </Text>
-                  <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                    ${totalAmount.toFixed(2)} ({totalPercentage.toFixed(0)}%)
-                  </Text>
-                </YStack>
-                <Stack
-                  width={32}
-                  height={32}
-                  borderRadius={16}
-                  backgroundColor={isValid ? themeColors.success : themeColors.warning}
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  {isValid ? (
-                    <Check size={18} color="white" />
-                  ) : (
-                    <Text fontSize={14} fontWeight="600" color="white">!</Text>
-                  )}
-                </Stack>
-              </XStack>
-            </Card>
-          )}
+
         </ScrollView>
 
         {/* Confirm Button */}
