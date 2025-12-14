@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable, RefreshControl } from 'react-native';
-import { ArrowLeft, Share2, Check, Settings2 } from 'lucide-react-native';
+import { ArrowLeft, Share2, Check, Settings2, Plus, Pencil, Trash2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { 
@@ -19,11 +19,13 @@ import {
   BalanceBadge,
   Button,
   SplitBar,
-  CustomSplitModal
+  CustomSplitModal,
+  AddItemModal
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useAuthStore, useUIStore } from '@/lib/store';
 import { demoBillItems, currentUser, demoGroupMembers } from '@/lib/api/demo';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import type { BillItemWithSplits } from '@/types/models';
 
 export default function BillDetailScreen() {
@@ -209,12 +211,16 @@ export default function BillDetailScreen() {
     } else {
       // User is SELECTING - add them to the split
       const customItemSplits = customSplits.get(itemId);
-      const existingSplits = customItemSplits || item.splits.map(s => ({
+      // Ensure we don't have duplicates by filtering out current user from existing/demo splits first
+      const rawExistingSplits = customItemSplits || item.splits.map(s => ({
         userId: s.user_id,
         colorIndex: s.color_index,
         percentage: (s.amount / item.price) * 100,
         amount: s.amount,
       }));
+      
+      const userId = user?.id || 'current-user';
+      const existingSplits = rawExistingSplits.filter(s => s.userId !== userId);
       
       // Check if splits are equal or if this is a simple case
       const isEqualSplit = areAllSplitsEqual(existingSplits);
@@ -235,7 +241,7 @@ export default function BillDetailScreen() {
         
         // Add current user
         updatedSplits.push({
-          userId: user?.id || 'current-user',
+          userId: userId,
           colorIndex: user?.color_index || 0,
           percentage: equalPercentage,
           amount: equalAmount,
@@ -305,6 +311,65 @@ export default function BillDetailScreen() {
     setTimeout(() => setRefreshing(false), 500);
   };
 
+  // Handle add item locally
+  const [customBillItems, setCustomBillItems] = useState<BillItemWithSplits[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // Initialize custom items with demo data on load
+  useEffect(() => {
+    if (demoBillItems.length > 0 && customBillItems.length === 0) {
+      setCustomBillItems([...demoBillItems]);
+    }
+  }, []);
+
+  const handleLocalAddItem = (name: string, price: number) => {
+    const newItem: BillItemWithSplits = {
+      id: `new-${Date.now()}`,
+      bill_id: id || 'bill-1',
+      name,
+      price,
+      quantity: 1,
+      sort_order: customBillItems.length,
+      splits: [],
+      total_claimed: 0,
+      unclaimed: price,
+    };
+    setCustomBillItems(prev => [...prev, newItem]);
+    showToast({ type: 'success', message: 'Item added!' });
+  };
+
+  const handleLocalDeleteItem = (itemId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setCustomBillItems(prev => prev.filter(i => i.id !== itemId));
+    // Also remove from selections if present
+    if (selectedItems.has(itemId)) {
+      toggleItemSelection(itemId);
+    }
+    showToast({ type: 'success', message: 'Item deleted' });
+  };
+
+  const renderRightActions = (itemId: string) => {
+    return (
+      <Pressable 
+        style={{ 
+          backgroundColor: themeColors.error, 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          width: 80,
+          marginVertical: 4,
+          borderRadius: 12,
+          marginLeft: 8,
+        }}
+        onPress={() => handleLocalDeleteItem(itemId)}
+      >
+        <Trash2 size={24} color="white" />
+      </Pressable>
+    );
+  };
+
+  // Use custom items for rendering
+  const displayItems = customBillItems.length > 0 ? customBillItems : demoBillItems;
+
   if (!bill) {
     return (
       <Screen>
@@ -328,11 +393,11 @@ export default function BillDetailScreen() {
               {bill.title}
             </Text>
             <Text fontSize={12} color={themeColors.textSecondary}>
-              Tap items to join split
+              Tap to join • Swipe to delete
             </Text>
           </YStack>
-          <Pressable>
-            <Share2 size={24} color={themeColors.textPrimary} />
+          <Pressable onPress={() => router.push(`/bill/edit?id=${id}`)}>
+            <Pencil size={24} color={themeColors.textPrimary} />
           </Pressable>
         </XStack>
       </Stack>
@@ -372,6 +437,17 @@ export default function BillDetailScreen() {
             </XStack>
           </Card>
         </Stack>
+        
+        {/* Add Item Button */}
+        <Stack paddingHorizontal="$4" marginBottom="$3">
+          <Button
+            variant="outlined"
+            icon={<Plus size={16} color={themeColors.primary} />}
+            onPress={() => setShowAddModal(true)}
+          >
+            Add New Item
+          </Button>
+        </Stack>
 
         {/* Instructions */}
         <Stack paddingHorizontal="$4" marginBottom="$3">
@@ -385,14 +461,14 @@ export default function BillDetailScreen() {
           >
             <Text fontSize={14}>💡</Text>
             <Text fontSize={13} color={themeColors.textSecondary} flex={1}>
-              Tap to select items. Long-press for custom split options.
+              Tap to select items. Long-press for custom split options. Swipe left to delete.
             </Text>
           </XStack>
         </Stack>
 
         {/* Items List */}
         <YStack paddingHorizontal="$4" gap="$3" paddingBottom="$4">
-          {demoBillItems.map((item) => {
+          {displayItems.map((item) => {
             const isSelected = selectedItems.has(item.id);
             
             // Check if we have custom splits for this item (from modal)
@@ -437,77 +513,82 @@ export default function BillDetailScreen() {
             }
 
             return (
-              <Pressable 
-                key={item.id} 
-                onPress={() => handleToggle(item.id)}
-                onLongPress={() => handleLongPress(item)}
-                delayLongPress={400}
+              <Swipeable
+                key={item.id}
+                renderRightActions={() => renderRightActions(item.id)}
+                overshootRight={false}
               >
-                <Card
-                  variant={isSelected ? 'elevated' : 'surface'}
-                  padding="$3"
-                  borderWidth={isSelected ? 2 : 1}
-                  borderColor={isSelected ? themeColors.primary : themeColors.border}
+                <Pressable 
+                  onPress={() => handleToggle(item.id)}
+                  onLongPress={() => handleLongPress(item)}
+                  delayLongPress={400}
                 >
-                  <XStack alignItems="center" gap="$3">
-                    <Stack
-                      width={24}
-                      height={24}
-                      borderRadius={12}
-                      backgroundColor={isSelected ? themeColors.primary : themeColors.border}
-                      justifyContent="center"
-                      alignItems="center"
-                    >
-                      {isSelected && <Check size={14} color="white" />}
-                    </Stack>
-                    
-                    <YStack flex={1} gap="$1">
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text 
-                          fontSize={16} 
-                          fontWeight="500" 
-                          color={themeColors.textPrimary}
-                        >
-                          {item.name}
-                        </Text>
-                        <Text 
-                          fontSize={16} 
-                          fontWeight="600" 
-                          color={isSelected ? themeColors.primary : themeColors.textPrimary}
-                        >
-                          ${item.price.toFixed(2)}
-                        </Text>
-                      </XStack>
-                      
-                      <XStack alignItems="center" gap="$2">
-                        {segments.length > 0 ? (
-                          <AvatarGroup
-                            users={segments.map(s => ({
-                              name: s.userId === (user?.id || 'current-user') 
-                                ? (user?.full_name || 'You')
-                                : `User`, // In real app, would look up user name
-                              colorIndex: s.colorIndex,
-                            }))}
-                            size="sm"
-                          />
-                        ) : (
-                          <Text fontSize={12} color={themeColors.warning}>
-                            ⚠️ No one yet
-                          </Text>
-                        )}
-                      </XStack>
-                      
-                      <Stack marginTop="$1">
-                        <SplitBar
-                          segments={segments}
-                          height={4}
-                          unclaimed={!hasOtherParticipants && !isSelected ? 100 : 0}
-                        />
+                  <Card
+                    variant={isSelected ? 'elevated' : 'surface'}
+                    padding="$3"
+                    borderWidth={isSelected ? 2 : 1}
+                    borderColor={isSelected ? themeColors.primary : themeColors.border}
+                  >
+                    <XStack alignItems="center" gap="$3">
+                      <Stack
+                        width={24}
+                        height={24}
+                        borderRadius={12}
+                        backgroundColor={isSelected ? themeColors.primary : themeColors.border}
+                        justifyContent="center"
+                        alignItems="center"
+                      >
+                        {isSelected && <Check size={14} color="white" />}
                       </Stack>
-                    </YStack>
-                  </XStack>
-                </Card>
-              </Pressable>
+                      
+                      <YStack flex={1} gap="$1">
+                        <XStack justifyContent="space-between" alignItems="center">
+                          <Text 
+                            fontSize={16} 
+                            fontWeight="500" 
+                            color={themeColors.textPrimary}
+                          >
+                            {item.name}
+                          </Text>
+                          <Text 
+                            fontSize={16} 
+                            fontWeight="600" 
+                            color={isSelected ? themeColors.primary : themeColors.textPrimary}
+                          >
+                            ${item.price.toFixed(2)}
+                          </Text>
+                        </XStack>
+                        
+                        <XStack alignItems="center" gap="$2">
+                          {segments.length > 0 ? (
+                            <AvatarGroup
+                              users={segments.map(s => ({
+                                name: s.userId === (user?.id || 'current-user') 
+                                  ? (user?.full_name || 'You')
+                                  : `User`, // In real app, would look up user name
+                                colorIndex: s.colorIndex,
+                              }))}
+                              size="sm"
+                            />
+                          ) : (
+                            <Text fontSize={12} color={themeColors.warning}>
+                              ⚠️ No one yet
+                            </Text>
+                          )}
+                        </XStack>
+                        
+                        <Stack marginTop="$1">
+                          <SplitBar
+                            segments={segments}
+                            height={4}
+                            unclaimed={!hasOtherParticipants && !isSelected ? 100 : 0}
+                          />
+                        </Stack>
+                      </YStack>
+                    </XStack>
+                  </Card>
+                </Pressable>
+              </Swipeable>
             );
           })}
         </YStack>
@@ -587,6 +668,13 @@ export default function BillDetailScreen() {
           currentUserId={user?.id || 'current-user'}
         />
       )}
+
+      {/* Add Item Modal */}
+      <AddItemModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleLocalAddItem}
+      />
     </Screen>
   );
 }

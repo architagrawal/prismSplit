@@ -36,9 +36,10 @@ const categories: { key: Category; icon: string; label: string }[] = [
 ];
 
 export default function BillEditScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, autoAdd } = useLocalSearchParams<{ id: string; autoAdd?: string }>();
   const router = useRouter();
   const themeColors = useThemeColors();
+  const autoAddProcessed = useRef(false);
   
   const { currentBill, fetchBillById, billItems, fetchBillItems, updateBill, isLoading } = useBillsStore();
   const { showToast } = useUIStore();
@@ -68,17 +69,40 @@ export default function BillEditScreen() {
     }
   }, [currentBill]);
 
-  // Populate items
+  // Populate items and handle autoAdd
   useEffect(() => {
     if (id && billItems[id]) {
-      setItems(billItems[id].map(item => ({
+      const loadedItems = billItems[id].map(item => ({
         id: item.id,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-      })));
+      }));
+      
+      setItems(loadedItems);
+
+      // Handle autoAdd if requested and not yet processed
+      if (autoAdd === 'true' && !autoAddProcessed.current && loadedItems.length > 0) {
+        autoAddProcessed.current = true;
+        // Small timeout to ensure state is settled before adding
+        setTimeout(() => {
+          const newItem = { id: `new-${Date.now()}`, name: '', price: 0, quantity: 1 };
+          setItems(prev => [...prev, newItem]);
+          setHasChanges(true); // Mark as changed so save button is active
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }, 100);
+      } else if (autoAdd === 'true' && !autoAddProcessed.current && loadedItems.length === 0) {
+        // If no existing items, still add one
+        autoAddProcessed.current = true;
+        setTimeout(() => {
+            const newItem = { id: `new-${Date.now()}`, name: '', price: 0, quantity: 1 };
+            setItems([newItem]);
+            setHasChanges(true); 
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }, 100);
+      }
     }
-  }, [id, billItems]);
+  }, [id, billItems, autoAdd]);
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const total = subtotal + (parseFloat(tax) || 0) + (parseFloat(tip) || 0);
@@ -110,9 +134,7 @@ export default function BillEditScreen() {
   const handleRemoveItem = (index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setHasChanges(true);
-    if (items.length > 1) {
-      setItems(prev => prev.filter((_, i) => i !== index));
-    }
+    setItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
@@ -186,7 +208,11 @@ export default function BillEditScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          style={{ flex: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Title */}
           <YStack marginBottom="$4">
             <Input
@@ -307,11 +333,13 @@ export default function BillEditScreen() {
                     </XStack>
                   </YStack>
                   
-                  {items.length > 1 && (
-                    <Pressable onPress={() => handleRemoveItem(index)}>
-                      <Trash2 size={18} color={themeColors.error} />
-                    </Pressable>
-                  )}
+                  <Pressable 
+                    onPress={() => handleRemoveItem(index)}
+                    hitSlop={10}
+                    style={{ padding: 8 }}
+                  >
+                    <Trash2 size={20} color={themeColors.error} />
+                  </Pressable>
                 </XStack>
               </Card>
             ))}
