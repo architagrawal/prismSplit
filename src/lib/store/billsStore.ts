@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 
-import type { Bill, BillItem, ItemSplit, BillStatus, Category } from '@/types/models';
+import type { Bill, BillItem, ItemSplit, Category } from '@/types/models';
 import { demoBills, demoBillItems } from '@/lib/api/demo';
 
 interface BillDraft {
@@ -128,7 +128,6 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         tax_amount: draft.tax,
         tip_amount: draft.tip,
         your_share: 0,
-        status: 'draft',
         bill_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
         payer: {

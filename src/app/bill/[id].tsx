@@ -182,7 +182,6 @@ export default function BillDetailScreen() {
                   Paid by {bill.payer.full_name}
                 </Text>
               </XStack>
-              <StatusBadge status={bill.status} />
             </XStack>
           </Card>
         </Stack>

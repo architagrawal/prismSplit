@@ -49,7 +49,8 @@ export function BalanceBadge({
 
 // === Status Badge ===
 
-type StatusType = 'draft' | 'shared' | 'finalized' | 'settled' | 'pending';
+// Matches BillStatus - all states are editable
+type StatusType = 'draft' | 'active' | 'settled' | 'pending';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -61,15 +62,10 @@ const statusConfig: Record<StatusType, { label: string; bg: string; text: string
     bg: colors.light.borderLight, 
     text: colors.light.textSecondary 
   },
-  shared: { 
-    label: 'Shared', 
-    bg: '#EDE9FE', // Light lavender
-    text: colors.light.primary 
-  },
-  finalized: { 
-    label: 'Finalized', 
-    bg: colors.light.successBg, 
-    text: colors.light.success 
+  active: { 
+    label: 'Active', 
+    bg: colors.light.infoBg, 
+    text: colors.light.info 
   },
   settled: { 
     label: 'Settled', 

@@ -54,7 +54,8 @@ export type Category =
   | 'shopping'
   | 'other';
 
-export type BillStatus = 'draft' | 'shared' | 'finalized';
+// No bill status - bills are instantly visible to group when saved
+// All bills are always editable, balances update dynamically
 
 export interface Bill {
   id: string;
@@ -66,9 +67,10 @@ export interface Bill {
   paid_by?: string;
   payer: { id: string; full_name: string }; // Partial user for display
   category: Category;
-  status: BillStatus;
   bill_date: string;
   created_at: string;
+  updated_at?: string; // Track when bill was last modified
+  last_edited_by?: string; // User ID who made last edit
   your_share?: number; // Current user's share
   participant_avatars?: string[]; // For list display
 }

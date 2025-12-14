@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   Home, 
   Users, 
-  Activity, 
+  Logs, 
   User,
   UserCircle,
   Plus,
@@ -271,7 +271,7 @@ export default function TabLayout() {
         name="activity"
         options={{
           title: 'Activity',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={Activity} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Logs} focused={focused} />,
         }}
       />
       <Tabs.Screen

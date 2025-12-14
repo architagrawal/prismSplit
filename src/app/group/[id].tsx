@@ -234,7 +234,6 @@ export default function GroupDetailScreen() {
                   date={new Date(bill.bill_date).toLocaleDateString()}
                   payerName={bill.payer.full_name}
                   participants={[]}
-                  status={bill.status}
                   onPress={() => router.push(`/bill/${bill.id}` as any)}
                 />
               ))

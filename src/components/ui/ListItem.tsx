@@ -91,7 +91,6 @@ interface BillListItemProps {
   date: string;
   payerName: string;
   participants: Array<{ name: string; colorIndex: number }>;
-  status: 'draft' | 'shared' | 'finalized';
   onPress?: () => void;
 }
 
@@ -104,7 +103,6 @@ export function BillListItem({
   date,
   payerName,
   participants,
-  status,
   onPress,
 }: BillListItemProps) {
   const handlePress = () => {
@@ -127,7 +125,6 @@ export function BillListItem({
             </Text>
             <Stack flexDirection="row" alignItems="center" gap="$2">
               <CategoryBadge category={category} icon={categoryIcon} />
-              <StatusBadge status={status} />
             </Stack>
           </Stack>
           
