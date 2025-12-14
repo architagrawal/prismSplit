@@ -21,7 +21,6 @@
                                                        │
                               ┌────────────────────────┘
                               ▼
-                      ┌─────────────────┐
                       │     bills       │
                       ├─────────────────┤
                       │ id (PK)         │
@@ -30,8 +29,8 @@
                       │ total_amount    │
                       │ paid_by (FK)    │
                       │ category        │
-                      │ status          │
                       │ created_at      │
+                      │ updated_at      │
                       └────────┬────────┘
                                │
               ┌────────────────┴────────────────┐
@@ -129,28 +128,27 @@ Users within groups (many-to-many).
 
 ### 4. `bills`
 
-Expense records within groups.
+Expense records within groups. Bills are instantly visible to the group when saved - no status states.
 
 | Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
+|--------|------|-------------|-----------|
 | `id` | `uuid` | PK, DEFAULT `gen_random_uuid()` | Bill ID |
 | `group_id` | `uuid` | FK → groups.id, ON DELETE CASCADE | Parent group |
 | `title` | `text` | NOT NULL, max 100 chars | Bill description |
 | `total_amount` | `numeric(12,2)` | NOT NULL, CHECK > 0 | Total bill amount |
 | `paid_by` | `uuid` | FK → users.id | Who paid |
 | `category` | `text` | DEFAULT 'general' | Category: groceries, dining, transport, utilities, entertainment, travel, other |
-| `status` | `text` | DEFAULT 'draft' | 'draft', 'shared', 'finalized' |
 | `bill_date` | `date` | DEFAULT `CURRENT_DATE` | Date of expense |
 | `tax_amount` | `numeric(12,2)` | DEFAULT 0 | Tax |
 | `tip_amount` | `numeric(12,2)` | DEFAULT 0 | Tip |
 | `notes` | `text` | NULLABLE | Optional notes |
 | `created_at` | `timestamptz` | DEFAULT `now()` | Creation time |
 | `updated_at` | `timestamptz` | DEFAULT `now()` | Last update |
+| `last_edited_by` | `uuid` | FK → users.id | Last user who edited |
 
 #### Indexes
 - `bills_group_idx` on `group_id`
 - `bills_paid_by_idx` on `paid_by`
-- `bills_status_idx` on `status`
 
 ---
 
@@ -233,7 +231,7 @@ Activity feed entries.
 | `created_at` | `timestamptz` | DEFAULT `now()` | Event time |
 
 #### Activity Types
-- `bill_created`, `bill_shared`, `bill_finalized`, `bill_deleted`
+- `bill_created`, `bill_updated`, `bill_deleted`
 - `item_selected`, `item_unselected`, `split_updated`
 - `settlement_created`
 - `member_joined`, `member_left`, `member_invited`
@@ -333,7 +331,7 @@ Enable real-time for Self-Select feature:
 -- Enable real-time on item_splits
 ALTER PUBLICATION supabase_realtime ADD TABLE item_splits;
 
--- Enable real-time on bills (for status changes)
+-- Enable real-time on bills (for balance updates)
 ALTER PUBLICATION supabase_realtime ADD TABLE bills;
 ```
 

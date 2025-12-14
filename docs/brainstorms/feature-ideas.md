@@ -35,7 +35,7 @@
 - [ ] **Speed Parser:** Fast item entry with auto-focus flow
 - [ ] Quantity input → expands to separate rows at split time
 - [ ] Tax and tip distribution (proportional)
-- [ ] Bill status: draft → finalized → settled
+- [ ] Bills saved instantly visible to group (no draft/status)
 - [ ] Participants self-select their items
 - [ ] Real-time sync of selections
 - [ ] Edit bill after sharing (resets selections)
@@ -107,7 +107,7 @@
 - [ ] Search bills by name, group, or item
 - [ ] Filter by date range
 - [ ] Filter by person
-- [ ] Filter by status (draft, finalized, settled)
+- [ ] Filter by category
 - [ ] Filter by category
 
 ### Offline Mode

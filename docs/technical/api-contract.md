@@ -255,7 +255,6 @@ Leave a group.
 List bills in a group.
 
 **Query Params:**
-- `status`: 'draft' | 'shared' | 'finalized' (optional)
 - `limit`: number (default: 20)
 - `cursor`: string (pagination)
 
@@ -319,7 +318,7 @@ Get bill with all items and splits.
 ---
 
 #### `PATCH /bills/:id`
-Update bill (creator only, before finalized).
+Update bill. All bills are editable anytime - balances update dynamically.
 
 **Request:**
 ```typescript
@@ -328,30 +327,6 @@ Update bill (creator only, before finalized).
   category?: Category;
   tax_amount?: number;
   tip_amount?: number;
-}
-```
-
----
-
-#### `POST /bills/:id/share`
-Share bill with group (enables self-select).
-
-**Response:** `200 OK`
-```typescript
-{
-  bill: Bill;  // status: 'shared'
-}
-```
-
----
-
-#### `POST /bills/:id/finalize`
-Lock bill (no more changes).
-
-**Response:** `200 OK`
-```typescript
-{
-  bill: Bill;  // status: 'finalized'
 }
 ```
 
@@ -579,7 +554,8 @@ type Category =
   | 'shopping'
   | 'other';
 
-type BillStatus = 'draft' | 'shared' | 'finalized';
+// No BillStatus - bills are instantly visible to group when saved
+// All bills are always editable, balances update dynamically
 
 interface Bill {
   id: string;
@@ -591,9 +567,10 @@ interface Bill {
   paid_by: string;
   payer: User;
   category: Category;
-  status: BillStatus;
   bill_date: string;
   created_at: string;
+  updated_at?: string;
+  last_edited_by?: string;
 }
 
 interface BillSummary extends Bill {
@@ -654,8 +631,7 @@ interface Settlement {
 
 type ActivityType = 
   | 'bill_created'
-  | 'bill_shared'
-  | 'bill_finalized'
+  | 'bill_updated'
   | 'item_selected'
   | 'settlement_created'
   | 'member_joined';

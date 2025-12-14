@@ -190,8 +190,8 @@ PrismSplit v1 uses a simple bottom navigation with 4 tabs + center FAB.
 | BILL-03 | P0 | Quantity expands at split time (e.g., "Milk x2" → 2 separate item rows) |
 | BILL-04 | P0 | Creator can add tax and tip amounts |
 | BILL-05 | P0 | Only creator can edit item names and prices |
-| BILL-06 | P0 | Creator shares bill to group for selection |
-| BILL-07 | P0 | Bill status: `draft` (editing/selecting) → `finalized` (settled) |
+| BILL-06 | P0 | Creator saves bill - instantly visible to group for selection |
+| BILL-07 | P0 | Bills always editable - balances update dynamically when changes made |
 
 #### Speed Parser Input Mode
 
@@ -444,7 +444,7 @@ PrismSplit v1 uses a simple bottom navigation with 4 tabs + center FAB.
 | SEARCH-01 | P2 | **Search bills** by name, group, or item |
 | SEARCH-02 | P2 | **Filter by date range** |
 | SEARCH-03 | P2 | **Filter by person** (bills involving specific member) |
-| SEARCH-04 | P2 | **Filter by status** (draft, finalized, settled) |
+| SEARCH-04 | P2 | **Filter by category** (groceries, dining, etc.) |
 | SEARCH-05 | P2 | Search results show in unified list |
 | SEARCH-06 | P2 | Filter accessible from Activity and Group screens |
 
