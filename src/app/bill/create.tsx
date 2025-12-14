@@ -17,11 +17,12 @@ import {
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Card, Input, CurrencyInput } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 
 export default function CreateBillScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { 
     draft, 
     isLoading,
@@ -114,7 +115,7 @@ export default function CreateBillScreen() {
   };
 
   return (
-    <Screen keyboardAvoiding backgroundColor={colors.light.background}>
+    <Screen keyboardAvoiding>
       <YStack flex={1}>
         {/* Header */}
         <XStack 
@@ -123,9 +124,9 @@ export default function CreateBillScreen() {
           paddingVertical="$3"
         >
           <Pressable onPress={() => router.back()}>
-            <X size={24} color={colors.light.textPrimary} />
+            <X size={24} color={themeColors.textPrimary} />
           </Pressable>
-          <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+          <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
             New Bill
           </Text>
           <Stack width={24} />
@@ -142,7 +143,7 @@ export default function CreateBillScreen() {
             />
 
             <YStack gap="$1">
-              <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary}>
+              <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary}>
                 Group
               </Text>
               <Pressable>
@@ -150,11 +151,11 @@ export default function CreateBillScreen() {
                   <XStack justifyContent="space-between" alignItems="center">
                     <XStack alignItems="center" gap="$2">
                       <Text fontSize={20}>{selectedGroup?.emoji}</Text>
-                      <Text fontSize={16} color={colors.light.textPrimary}>
+                      <Text fontSize={16} color={themeColors.textPrimary}>
                         {selectedGroup?.name}
                       </Text>
                     </XStack>
-                    <ChevronDown size={20} color={colors.light.textMuted} />
+                    <ChevronDown size={20} color={themeColors.textMuted} />
                   </XStack>
                 </Card>
               </Pressable>
@@ -167,10 +168,10 @@ export default function CreateBillScreen() {
             alignItems="center" 
             marginBottom="$3"
           >
-            <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
               Items
             </Text>
-            <Text fontSize={14} color={colors.light.textMuted}>
+            <Text fontSize={14} color={themeColors.textMuted}>
               {items.filter(i => i.name && i.price).length} items
             </Text>
           </XStack>
@@ -184,14 +185,14 @@ export default function CreateBillScreen() {
                     <TextInput
                       ref={(ref) => { nameRefs.current[index] = ref; }}
                       placeholder="Item name"
-                      placeholderTextColor={colors.light.textMuted}
+                      placeholderTextColor={themeColors.textMuted}
                       value={item.name}
                       onChangeText={(v) => updateItem(item.id, 'name', v)}
                       returnKeyType="next"
                       onSubmitEditing={() => priceRefs.current[index]?.focus()}
                       style={{
                         fontSize: 16,
-                        color: colors.light.textPrimary,
+                        color: themeColors.textPrimary,
                         paddingVertical: 8,
                       }}
                     />
@@ -199,11 +200,11 @@ export default function CreateBillScreen() {
                   
                   <Stack flex={1}>
                     <XStack alignItems="center">
-                      <Text color={colors.light.textMuted}>$</Text>
+                      <Text color={themeColors.textMuted}>$</Text>
                       <TextInput
                         ref={(ref) => { priceRefs.current[index] = ref; }}
                         placeholder="0.00"
-                        placeholderTextColor={colors.light.textMuted}
+                        placeholderTextColor={themeColors.textMuted}
                         value={item.price}
                         onChangeText={(v) => updateItem(item.id, 'price', v)}
                         keyboardType="decimal-pad"
@@ -217,7 +218,7 @@ export default function CreateBillScreen() {
                         }}
                         style={{
                           fontSize: 16,
-                          color: colors.light.textPrimary,
+                          color: themeColors.textPrimary,
                           paddingVertical: 8,
                           paddingLeft: 4,
                         }}
@@ -233,7 +234,7 @@ export default function CreateBillScreen() {
                       keyboardType="number-pad"
                       style={{
                         fontSize: 16,
-                        color: colors.light.textSecondary,
+                        color: themeColors.textSecondary,
                         textAlign: 'center',
                         paddingVertical: 8,
                       }}
@@ -246,7 +247,7 @@ export default function CreateBillScreen() {
                   >
                     <Trash2 
                       size={18} 
-                      color={items.length > 1 ? colors.light.error : colors.light.border} 
+                      color={items.length > 1 ? themeColors.error : themeColors.border} 
                     />
                   </Pressable>
                 </XStack>
@@ -256,8 +257,8 @@ export default function CreateBillScreen() {
             <Pressable onPress={addNewRow}>
               <Card variant="outlined">
                 <XStack justifyContent="center" alignItems="center" gap="$2">
-                  <Plus size={20} color={colors.light.primary} />
-                  <Text fontSize={14} fontWeight="500" color={colors.light.primary}>
+                  <Plus size={20} color={themeColors.primary} />
+                  <Text fontSize={14} fontWeight="500" color={themeColors.primary}>
                     Add Item
                   </Text>
                 </XStack>
@@ -287,27 +288,27 @@ export default function CreateBillScreen() {
           <Card variant="elevated" marginBottom="$6">
             <YStack gap="$2">
               <XStack justifyContent="space-between">
-                <Text color={colors.light.textSecondary}>Subtotal</Text>
-                <Text color={colors.light.textPrimary}>${subtotal.toFixed(2)}</Text>
+                <Text color={themeColors.textSecondary}>Subtotal</Text>
+                <Text color={themeColors.textPrimary}>${subtotal.toFixed(2)}</Text>
               </XStack>
               {taxAmount > 0 && (
                 <XStack justifyContent="space-between">
-                  <Text color={colors.light.textSecondary}>Tax</Text>
-                  <Text color={colors.light.textPrimary}>${taxAmount.toFixed(2)}</Text>
+                  <Text color={themeColors.textSecondary}>Tax</Text>
+                  <Text color={themeColors.textPrimary}>${taxAmount.toFixed(2)}</Text>
                 </XStack>
               )}
               {tipAmount > 0 && (
                 <XStack justifyContent="space-between">
-                  <Text color={colors.light.textSecondary}>Tip</Text>
-                  <Text color={colors.light.textPrimary}>${tipAmount.toFixed(2)}</Text>
+                  <Text color={themeColors.textSecondary}>Tip</Text>
+                  <Text color={themeColors.textPrimary}>${tipAmount.toFixed(2)}</Text>
                 </XStack>
               )}
-              <Stack height={1} backgroundColor={colors.light.border} marginVertical="$2" />
+              <Stack height={1} backgroundColor={themeColors.border} marginVertical="$2" />
               <XStack justifyContent="space-between">
-                <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+                <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
                   Total
                 </Text>
-                <Text fontSize={18} fontWeight="700" color={colors.light.primary}>
+                <Text fontSize={18} fontWeight="700" color={themeColors.primary}>
                   ${total.toFixed(2)}
                 </Text>
               </XStack>

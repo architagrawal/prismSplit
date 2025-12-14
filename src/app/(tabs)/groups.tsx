@@ -12,11 +12,12 @@ import { useState } from 'react';
 import { Plus, Users, Search, QrCode, UserPlus } from 'lucide-react-native';
 
 import { Screen, GroupListItem, Button, Input } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
 
 export default function GroupsScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { groups, isLoading, fetchGroups } = useGroupsStore();
   const { searchQuery, setSearchQuery, clearSearch } = useUIStore();
 
@@ -47,20 +48,20 @@ export default function GroupsScreen() {
               <XStack 
                 alignItems="center" 
                 gap="$2"
-                backgroundColor={colors.light.surfaceElevated}
+                backgroundColor={themeColors.surfaceElevated}
                 paddingHorizontal="$3"
                 paddingVertical="$2"
                 borderRadius={20}
               >
-                <UserPlus size={18} color={colors.light.primary} />
-                <Text fontSize={14} fontWeight="500" color={colors.light.primary}>
+                <UserPlus size={18} color={themeColors.primary} />
+                <Text fontSize={14} fontWeight="500" color={themeColors.primary}>
                   Join
                 </Text>
               </XStack>
             </Pressable>
             
             {/* Title - Center */}
-            <Text fontSize={24} fontWeight="700" color={colors.light.textPrimary}>
+            <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
               Groups
             </Text>
             
@@ -69,7 +70,7 @@ export default function GroupsScreen() {
               <XStack 
                 alignItems="center" 
                 gap="$2"
-                backgroundColor={colors.light.primary}
+                backgroundColor={themeColors.primary}
                 paddingHorizontal="$3"
                 paddingVertical="$2"
                 borderRadius={20}
@@ -87,7 +88,7 @@ export default function GroupsScreen() {
             placeholder="Search groups..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            leftIcon={<Search size={20} color={colors.light.textMuted} />}
+            leftIcon={<Search size={20} color={themeColors.textMuted} />}
           />
         </Stack>
 
@@ -106,13 +107,13 @@ export default function GroupsScreen() {
                   width={80}
                   height={80}
                   borderRadius={40}
-                  backgroundColor={colors.light.surfaceElevated}
+                  backgroundColor={themeColors.surfaceElevated}
                   justifyContent="center"
                   alignItems="center"
                 >
-                  <Users size={40} color={colors.light.textMuted} />
+                  <Users size={40} color={themeColors.textMuted} />
                 </Stack>
-                <Text fontSize={16} color={colors.light.textSecondary}>
+                <Text fontSize={16} color={themeColors.textSecondary}>
                   {searchQuery ? 'No groups found' : 'No groups yet'}
                 </Text>
                 {!searchQuery && (
@@ -127,7 +128,7 @@ export default function GroupsScreen() {
                     <Button
                       variant="secondary"
                       onPress={() => router.push('/group/join' as any)}
-                      icon={<UserPlus size={18} color={colors.light.primary} />}
+                      icon={<UserPlus size={18} color={themeColors.primary} />}
                     >
                       Join with code
                     </Button>
@@ -152,4 +153,3 @@ export default function GroupsScreen() {
     </Screen>
   );
 }
-

@@ -9,7 +9,7 @@ import { Stack, ScrollView, Text } from 'tamagui';
 import { StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -32,11 +32,14 @@ export function Screen({
   scroll = false,
   padded = true,
   keyboardAvoiding = false,
-  backgroundColor = colors.light.background,
+  backgroundColor,
   safeBottom = true,
   safeTop = true,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const themeColors = useThemeColors();
+  
+  const bgColor = backgroundColor ?? themeColors.background;
 
   const content = (
     <Stack
@@ -71,7 +74,7 @@ export function Screen({
       style={[
         styles.container, 
         { 
-          backgroundColor,
+          backgroundColor: bgColor,
           paddingTop: safeTop ? insets.top : 0,
           paddingBottom: safeBottom ? insets.bottom : 0,
           paddingLeft: insets.left,
@@ -100,6 +103,8 @@ export function ScreenHeader({
   leftAction,
   rightAction,
 }: ScreenHeaderProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <Stack
       flexDirection="row"
@@ -117,7 +122,7 @@ export function ScreenHeader({
           <Text
             fontSize={18}
             fontWeight="600"
-            color={colors.light.textPrimary}
+            color={themeColors.textPrimary}
             textAlign="center"
           >
             {title}
@@ -125,7 +130,7 @@ export function ScreenHeader({
           {subtitle && (
             <Text
               fontSize={14}
-              color={colors.light.textSecondary}
+              color={themeColors.textSecondary}
               textAlign="center"
             >
               {subtitle}
@@ -149,3 +154,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+

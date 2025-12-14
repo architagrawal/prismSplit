@@ -9,10 +9,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from 'tamagui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { StatusBar } from 'expo-status-bar';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import config from '@/theme/tamagui.config';
 import { ToastContainer } from '@/components/ui';
+import { useUIStore } from '@/lib/store';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -62,14 +64,21 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const systemColorScheme = useColorScheme();
+  const { theme } = useUIStore();
+  
+  // Resolve theme based on user preference or system setting
+  const resolvedTheme = theme === 'system' 
+    ? (systemColorScheme ?? 'light') 
+    : theme;
 
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <TamaguiProvider config={config} defaultTheme={colorScheme ?? 'light'}>
+        <TamaguiProvider config={config} defaultTheme={resolvedTheme}>
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <ThemeProvider value={resolvedTheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />

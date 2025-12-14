@@ -11,11 +11,12 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
 import { Pressable } from 'react-native';
 
 import { Button, Input, Screen } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore } from '@/lib/store';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { signup, loginWithGoogle, isLoading } = useAuthStore();
   
   const [fullName, setFullName] = useState('');
@@ -70,21 +71,21 @@ export default function SignupScreen() {
   };
 
   return (
-    <Screen scroll keyboardAvoiding backgroundColor={colors.light.background}>
+    <Screen scroll keyboardAvoiding>
       <Stack flex={1} paddingTop="$10">
         {/* Header */}
         <YStack alignItems="center" marginBottom="$6">
           <Text
             fontSize={28}
             fontWeight="700"
-            color={colors.light.textPrimary}
+            color={themeColors.textPrimary}
             marginBottom="$2"
           >
             Create Account
           </Text>
           <Text
             fontSize={15}
-            color={colors.light.textSecondary}
+            color={themeColors.textSecondary}
             marginBottom="$4"
           >
             Join PrismSplit to start splitting
@@ -96,12 +97,12 @@ export default function SignupScreen() {
               flexDirection="row"
               alignItems="center"
               gap="$2"
-              backgroundColor={`${colors.light.primary}12`}
+              backgroundColor={`${themeColors.primary}12`}
               paddingHorizontal="$4"
               paddingVertical="$2"
               borderRadius={20}
             >
-              <Text fontSize={13} color={colors.light.primary}>
+              <Text fontSize={13} color={themeColors.primary}>
                 Already have an account?
               </Text>
               <Stack
@@ -109,10 +110,10 @@ export default function SignupScreen() {
                 alignItems="center"
                 gap="$1"
               >
-                <Text fontSize={13} fontWeight="600" color={colors.light.primary}>
+                <Text fontSize={13} fontWeight="600" color={themeColors.primary}>
                   Log in
                 </Text>
-                <ArrowRight size={14} color={colors.light.primary} />
+                <ArrowRight size={14} color={themeColors.primary} />
               </Stack>
             </Stack>
           </Pressable>
@@ -126,7 +127,7 @@ export default function SignupScreen() {
             value={fullName}
             onChangeText={setFullName}
             error={errors.fullName}
-            leftIcon={<User size={20} color={colors.light.textMuted} />}
+            leftIcon={<User size={20} color={themeColors.textMuted} />}
           />
 
           <Input
@@ -136,7 +137,7 @@ export default function SignupScreen() {
             onChangeText={setEmail}
             error={errors.email}
             keyboardType="email-address"
-            leftIcon={<Mail size={20} color={colors.light.textMuted} />}
+            leftIcon={<Mail size={20} color={themeColors.textMuted} />}
           />
 
           <Input
@@ -146,12 +147,12 @@ export default function SignupScreen() {
             onChangeText={setPassword}
             error={errors.password}
             secureTextEntry={!showPassword}
-            leftIcon={<Lock size={20} color={colors.light.textMuted} />}
+            leftIcon={<Lock size={20} color={themeColors.textMuted} />}
             rightIcon={
               <Stack onPress={() => setShowPassword(!showPassword)}>
                 {showPassword 
-                  ? <EyeOff size={20} color={colors.light.textMuted} /> 
-                  : <Eye size={20} color={colors.light.textMuted} />
+                  ? <EyeOff size={20} color={themeColors.textMuted} /> 
+                  : <Eye size={20} color={themeColors.textMuted} />
                 }
               </Stack>
             }
@@ -164,7 +165,7 @@ export default function SignupScreen() {
             onChangeText={setConfirmPassword}
             error={errors.confirmPassword}
             secureTextEntry={!showPassword}
-            leftIcon={<Lock size={20} color={colors.light.textMuted} />}
+            leftIcon={<Lock size={20} color={themeColors.textMuted} />}
           />
         </YStack>
 
@@ -182,9 +183,9 @@ export default function SignupScreen() {
 
           {/* Divider */}
           <Stack flexDirection="row" alignItems="center" gap="$3">
-            <Stack flex={1} height={1} backgroundColor={colors.light.border} />
-            <Text fontSize={14} color={colors.light.textMuted}>or</Text>
-            <Stack flex={1} height={1} backgroundColor={colors.light.border} />
+            <Stack flex={1} height={1} backgroundColor={themeColors.border} />
+            <Text fontSize={14} color={themeColors.textMuted}>or</Text>
+            <Stack flex={1} height={1} backgroundColor={themeColors.border} />
           </Stack>
 
           {/* Google OAuth */}
@@ -201,4 +202,3 @@ export default function SignupScreen() {
     </Screen>
   );
 }
-

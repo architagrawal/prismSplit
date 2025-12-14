@@ -24,12 +24,13 @@ import {
   BalanceBadge,
   Button
 } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useGroupsStore, useActivityStore } from '@/lib/store';
 import { demoBalances } from '@/lib/api/demo';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const { groups, isLoading: groupsLoading, fetchGroups } = useGroupsStore();
   const { activities, isLoading: activitiesLoading, fetchActivities } = useActivityStore();
@@ -71,10 +72,10 @@ export default function HomeScreen() {
         <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
           <XStack justifyContent="space-between" alignItems="center">
             <YStack>
-              <Text fontSize={14} color={colors.light.textSecondary}>
+              <Text fontSize={14} color={themeColors.textSecondary}>
                 Welcome back,
               </Text>
-              <Text fontSize={24} fontWeight="700" color={colors.light.textPrimary}>
+              <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
                 {firstName}
               </Text>
             </YStack>
@@ -92,7 +93,7 @@ export default function HomeScreen() {
         <Stack paddingHorizontal="$4" marginBottom="$6">
           <BalanceCard type={netBalance >= 0 ? 'owed' : 'owing'}>
             <YStack alignItems="center" gap="$1">
-              <Text fontSize={14} color={colors.light.textSecondary}>
+              <Text fontSize={14} color={themeColors.textSecondary}>
                 Overall Balance
               </Text>
               <BalanceBadge amount={netBalance} size="lg" />
@@ -103,30 +104,30 @@ export default function HomeScreen() {
               marginTop="$4" 
               paddingTop="$4"
               borderTopWidth={1}
-              borderTopColor={colors.light.border}
+              borderTopColor={themeColors.border}
             >
               <YStack alignItems="center" gap="$1">
                 <XStack alignItems="center" gap="$1">
-                  <TrendingUp size={16} color={colors.light.success} />
-                  <Text fontSize={12} color={colors.light.textSecondary}>
+                  <TrendingUp size={16} color={themeColors.success} />
+                  <Text fontSize={12} color={themeColors.textSecondary}>
                     You're owed
                   </Text>
                 </XStack>
-                <Text fontSize={18} fontWeight="600" color={colors.light.success}>
+                <Text fontSize={18} fontWeight="600" color={themeColors.success}>
                   ${totalOwed.toFixed(2)}
                 </Text>
               </YStack>
               
-              <Stack width={1} backgroundColor={colors.light.border} />
+              <Stack width={1} backgroundColor={themeColors.border} />
               
               <YStack alignItems="center" gap="$1">
                 <XStack alignItems="center" gap="$1">
-                  <TrendingDown size={16} color={colors.light.error} />
-                  <Text fontSize={12} color={colors.light.textSecondary}>
+                  <TrendingDown size={16} color={themeColors.error} />
+                  <Text fontSize={12} color={themeColors.textSecondary}>
                     You owe
                   </Text>
                 </XStack>
-                <Text fontSize={18} fontWeight="600" color={colors.light.error}>
+                <Text fontSize={18} fontWeight="600" color={themeColors.error}>
                   ${totalOwing.toFixed(2)}
                 </Text>
               </YStack>
@@ -164,7 +165,7 @@ export default function HomeScreen() {
         {/* Recent Groups */}
         <Stack paddingHorizontal="$4" marginBottom="$6">
           <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-            <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               Your Groups
             </Text>
             <XStack 
@@ -172,8 +173,8 @@ export default function HomeScreen() {
               gap="$1"
               onPress={() => router.push('/(tabs)/groups' as any)}
             >
-              <Text fontSize={14} color={colors.light.primary}>See all</Text>
-              <ArrowRight size={16} color={colors.light.primary} />
+              <Text fontSize={14} color={themeColors.primary}>See all</Text>
+              <ArrowRight size={16} color={themeColors.primary} />
             </XStack>
           </XStack>
           
@@ -191,7 +192,7 @@ export default function HomeScreen() {
             {groups.length === 0 && !groupsLoading && (
               <Card variant="surface">
                 <YStack alignItems="center" paddingVertical="$4" gap="$2">
-                  <Text fontSize={16} color={colors.light.textSecondary}>
+                  <Text fontSize={16} color={themeColors.textSecondary}>
                     No groups yet
                   </Text>
                   <Button
@@ -210,7 +211,7 @@ export default function HomeScreen() {
         {/* Recent Activity */}
         <Stack paddingHorizontal="$4" marginBottom="$8">
           <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-            <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               Recent Activity
             </Text>
             <XStack 
@@ -218,8 +219,8 @@ export default function HomeScreen() {
               gap="$1"
               onPress={() => router.push('/(tabs)/activity' as any)}
             >
-              <Text fontSize={14} color={colors.light.primary}>See all</Text>
-              <ArrowRight size={16} color={colors.light.primary} />
+              <Text fontSize={14} color={themeColors.primary}>See all</Text>
+              <ArrowRight size={16} color={themeColors.primary} />
             </XStack>
           </XStack>
           
@@ -233,10 +234,10 @@ export default function HomeScreen() {
                     size="md"
                   />
                   <YStack flex={1}>
-                    <Text fontSize={14} fontWeight="500" color={colors.light.textPrimary}>
+                    <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
                       {activity.user.full_name}
                     </Text>
-                    <Text fontSize={12} color={colors.light.textSecondary}>
+                    <Text fontSize={12} color={themeColors.textSecondary}>
                       {activity.type === 'bill_created' && 'Created a bill'}
                       {activity.type === 'item_selected' && 'Selected items'}
                       {activity.type === 'settlement_created' && 'Settled up'}

@@ -5,10 +5,10 @@
  */
 
 import { useState } from 'react';
-import { styled, Stack, Text, Input as TamaguiInput, GetProps } from 'tamagui';
+import { Stack, Text } from 'tamagui';
 import { TextInput, StyleSheet } from 'react-native';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface InputProps {
   label?: string;
@@ -44,12 +44,13 @@ export function Input({
   rightIcon,
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const themeColors = useThemeColors();
   
   const borderColor = error 
-    ? colors.light.error 
+    ? themeColors.error 
     : isFocused 
-      ? colors.light.primary 
-      : colors.light.border;
+      ? themeColors.primary 
+      : themeColors.border;
 
   return (
     <Stack gap="$1">
@@ -57,7 +58,7 @@ export function Input({
         <Text
           fontSize={14}
           fontWeight="500"
-          color={colors.light.textSecondary}
+          color={themeColors.textSecondary}
           marginBottom="$1"
         >
           {label}
@@ -67,7 +68,7 @@ export function Input({
       <Stack
         flexDirection="row"
         alignItems="center"
-        backgroundColor={colors.light.surface}
+        backgroundColor={themeColors.surface}
         borderWidth={2}
         borderColor={borderColor}
         borderRadius={12}
@@ -84,7 +85,7 @@ export function Input({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.light.textMuted}
+          placeholderTextColor={themeColors.textMuted}
           editable={!disabled}
           keyboardType={keyboardType}
           autoFocus={autoFocus}
@@ -94,7 +95,12 @@ export function Input({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           style={[
-            styles.input,
+            {
+              flex: 1,
+              fontSize: 16,
+              color: themeColors.textPrimary,
+              paddingVertical: 12,
+            },
             multiline && { minHeight: numberOfLines * 24 },
           ]}
         />
@@ -109,7 +115,7 @@ export function Input({
       {(error || helperText) && (
         <Text
           fontSize={12}
-          color={error ? colors.light.error : colors.light.textMuted}
+          color={error ? themeColors.error : themeColors.textMuted}
           marginTop="$1"
         >
           {error || helperText}
@@ -142,12 +148,13 @@ export function CurrencyInput({
   autoFocus = false,
 }: CurrencyInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const themeColors = useThemeColors();
   
   const borderColor = error 
-    ? colors.light.error 
+    ? themeColors.error 
     : isFocused 
-      ? colors.light.primary 
-      : colors.light.border;
+      ? themeColors.primary 
+      : themeColors.border;
 
   return (
     <Stack gap="$1">
@@ -155,7 +162,7 @@ export function CurrencyInput({
         <Text
           fontSize={14}
           fontWeight="500"
-          color={colors.light.textSecondary}
+          color={themeColors.textSecondary}
           marginBottom="$1"
         >
           {label}
@@ -165,7 +172,7 @@ export function CurrencyInput({
       <Stack
         flexDirection="row"
         alignItems="center"
-        backgroundColor={colors.light.surface}
+        backgroundColor={themeColors.surface}
         borderWidth={2}
         borderColor={borderColor}
         borderRadius={12}
@@ -176,7 +183,7 @@ export function CurrencyInput({
         <Text
           fontSize={24}
           fontWeight="600"
-          color={colors.light.textSecondary}
+          color={themeColors.textSecondary}
           marginRight="$2"
         >
           {currency}
@@ -186,20 +193,25 @@ export function CurrencyInput({
           value={value}
           onChangeText={onChangeText}
           placeholder="0.00"
-          placeholderTextColor={colors.light.textMuted}
+          placeholderTextColor={themeColors.textMuted}
           editable={!disabled}
           keyboardType="decimal-pad"
           autoFocus={autoFocus}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          style={styles.currencyInput}
+          style={{
+            flex: 1,
+            fontSize: 28,
+            fontWeight: '600',
+            color: themeColors.textPrimary,
+          }}
         />
       </Stack>
       
       {error && (
         <Text
           fontSize={12}
-          color={colors.light.error}
+          color={themeColors.error}
           marginTop="$1"
         >
           {error}
@@ -208,18 +220,3 @@ export function CurrencyInput({
     </Stack>
   );
 }
-
-const styles = StyleSheet.create({
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.light.textPrimary,
-    paddingVertical: 12,
-  },
-  currencyInput: {
-    flex: 1,
-    fontSize: 28,
-    fontWeight: '600',
-    color: colors.light.textPrimary,
-  },
-});

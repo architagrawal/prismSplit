@@ -19,7 +19,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Button } from './Button';
 import { Avatar } from './Avatar';
 import { Card } from './Card';
@@ -56,6 +56,7 @@ export function CustomSplitModal({
   allMembers,
   currentUserId,
 }: CustomSplitModalProps) {
+  const themeColors = useThemeColors();
   const [splitMode, setSplitMode] = useState<SplitMode>('equal');
   const [participants, setParticipants] = useState<SplitParticipant[]>([]);
 
@@ -281,23 +282,23 @@ export function CustomSplitModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <Stack flex={1} backgroundColor={colors.light.background} paddingHorizontal="$4">
+      <Stack flex={1} backgroundColor={themeColors.background} paddingHorizontal="$4">
         {/* Header */}
         <XStack 
           justifyContent="space-between" 
           alignItems="center" 
           paddingVertical="$4"
           borderBottomWidth={1}
-          borderBottomColor={colors.light.border}
+          borderBottomColor={themeColors.border}
         >
           <Pressable onPress={onClose}>
-            <X size={24} color={colors.light.textPrimary} />
+            <X size={24} color={themeColors.textPrimary} />
           </Pressable>
           <YStack alignItems="center">
-            <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               Custom Split
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               {itemName}
             </Text>
           </YStack>
@@ -308,10 +309,10 @@ export function CustomSplitModal({
           {/* Item Price */}
           <Card variant="elevated" marginTop="$4" marginBottom="$4">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize={14} color={colors.light.textSecondary}>
+              <Text fontSize={14} color={themeColors.textSecondary}>
                 Item Total
               </Text>
-              <Text fontSize={28} fontWeight="700" color={colors.light.primary}>
+              <Text fontSize={28} fontWeight="700" color={themeColors.primary}>
                 ${itemPrice.toFixed(2)}
               </Text>
             </YStack>
@@ -319,7 +320,7 @@ export function CustomSplitModal({
 
           {/* Split Mode Selector */}
           <YStack marginBottom="$4">
-            <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+            <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
               Split Type
             </Text>
             <XStack gap="$2">
@@ -329,14 +330,14 @@ export function CustomSplitModal({
                   variant={splitMode === 'equal' ? 'elevated' : 'outlined'}
                   padding="$3"
                   borderWidth={splitMode === 'equal' ? 2 : 1}
-                  borderColor={splitMode === 'equal' ? colors.light.primary : colors.light.border}
+                  borderColor={splitMode === 'equal' ? themeColors.primary : themeColors.border}
                 >
                   <YStack alignItems="center" gap="$1">
-                    <Users size={20} color={splitMode === 'equal' ? colors.light.primary : colors.light.textMuted} />
+                    <Users size={20} color={splitMode === 'equal' ? themeColors.primary : themeColors.textMuted} />
                     <Text 
                       fontSize={12} 
                       fontWeight="500"
-                      color={splitMode === 'equal' ? colors.light.primary : colors.light.textSecondary}
+                      color={splitMode === 'equal' ? themeColors.primary : themeColors.textSecondary}
                     >
                       Equal
                     </Text>
@@ -350,14 +351,14 @@ export function CustomSplitModal({
                   variant={splitMode === 'percentage' ? 'elevated' : 'outlined'}
                   padding="$3"
                   borderWidth={splitMode === 'percentage' ? 2 : 1}
-                  borderColor={splitMode === 'percentage' ? colors.light.primary : colors.light.border}
+                  borderColor={splitMode === 'percentage' ? themeColors.primary : themeColors.border}
                 >
                   <YStack alignItems="center" gap="$1">
-                    <Percent size={20} color={splitMode === 'percentage' ? colors.light.primary : colors.light.textMuted} />
+                    <Percent size={20} color={splitMode === 'percentage' ? themeColors.primary : themeColors.textMuted} />
                     <Text 
                       fontSize={12} 
                       fontWeight="500"
-                      color={splitMode === 'percentage' ? colors.light.primary : colors.light.textSecondary}
+                      color={splitMode === 'percentage' ? themeColors.primary : themeColors.textSecondary}
                     >
                       Percent
                     </Text>
@@ -371,14 +372,14 @@ export function CustomSplitModal({
                   variant={splitMode === 'amount' ? 'elevated' : 'outlined'}
                   padding="$3"
                   borderWidth={splitMode === 'amount' ? 2 : 1}
-                  borderColor={splitMode === 'amount' ? colors.light.primary : colors.light.border}
+                  borderColor={splitMode === 'amount' ? themeColors.primary : themeColors.border}
                 >
                   <YStack alignItems="center" gap="$1">
-                    <DollarSign size={20} color={splitMode === 'amount' ? colors.light.primary : colors.light.textMuted} />
+                    <DollarSign size={20} color={splitMode === 'amount' ? themeColors.primary : themeColors.textMuted} />
                     <Text 
                       fontSize={12} 
                       fontWeight="500"
-                      color={splitMode === 'amount' ? colors.light.primary : colors.light.textSecondary}
+                      color={splitMode === 'amount' ? themeColors.primary : themeColors.textSecondary}
                     >
                       Amount
                     </Text>
@@ -390,13 +391,13 @@ export function CustomSplitModal({
 
           {/* Current Participants */}
           <YStack marginBottom="$4">
-            <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+            <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
               Splitting ({participants.length})
             </Text>
             
             {participants.length === 0 ? (
               <Card variant="surface">
-                <Text fontSize={14} color={colors.light.textMuted} textAlign="center">
+                <Text fontSize={14} color={themeColors.textMuted} textAlign="center">
                   No one is splitting this item yet
                 </Text>
               </Card>
@@ -409,7 +410,7 @@ export function CustomSplitModal({
                     gap="$3"
                     paddingVertical="$3"
                     borderTopWidth={index > 0 ? 1 : 0}
-                    borderTopColor={colors.light.border}
+                    borderTopColor={themeColors.border}
                   >
                     <Avatar
                       name={participant.user.full_name}
@@ -417,10 +418,10 @@ export function CustomSplitModal({
                       size="md"
                     />
                     <YStack flex={1}>
-                      <Text fontSize={16} color={colors.light.textPrimary}>
+                      <Text fontSize={16} color={themeColors.textPrimary}>
                         {participant.userId === currentUserId ? 'You' : participant.user.full_name}
                       </Text>
-                      <Text fontSize={12} color={colors.light.textSecondary}>
+                      <Text fontSize={12} color={themeColors.textSecondary}>
                         ${participant.amount.toFixed(2)}
                       </Text>
                     </YStack>
@@ -429,7 +430,16 @@ export function CustomSplitModal({
                     {splitMode !== 'equal' && (
                       <XStack alignItems="center" gap="$1">
                         <TextInput
-                          style={styles.input}
+                          style={{
+                            width: 60,
+                            height: 36,
+                            backgroundColor: themeColors.surfaceElevated,
+                            borderRadius: 8,
+                            paddingHorizontal: 8,
+                            fontSize: 14,
+                            textAlign: 'center',
+                            color: themeColors.textPrimary,
+                          }}
                           value={
                             splitMode === 'percentage' 
                               ? participant.percentage.toFixed(0)
@@ -443,7 +453,7 @@ export function CustomSplitModal({
                           keyboardType="decimal-pad"
                           placeholder="0"
                         />
-                        <Text fontSize={14} color={colors.light.textMuted}>
+                        <Text fontSize={14} color={themeColors.textMuted}>
                           {splitMode === 'percentage' ? '%' : '$'}
                         </Text>
                       </XStack>
@@ -451,7 +461,7 @@ export function CustomSplitModal({
 
                     {/* Equal mode: show calculated share */}
                     {splitMode === 'equal' && (
-                      <Text fontSize={14} color={colors.light.textSecondary}>
+                      <Text fontSize={14} color={themeColors.textSecondary}>
                         {participant.percentage.toFixed(0)}%
                       </Text>
                     )}
@@ -461,7 +471,7 @@ export function CustomSplitModal({
                       onPress={() => handleRemovePerson(participant.userId)}
                       hitSlop={8}
                     >
-                      <Minus size={18} color={colors.light.error} />
+                      <Minus size={18} color={themeColors.error} />
                     </Pressable>
                   </XStack>
                 ))}
@@ -472,7 +482,7 @@ export function CustomSplitModal({
           {/* Add More People */}
           {nonParticipants.length > 0 && (
             <YStack marginBottom="$4">
-              <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+              <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
                 Add People
               </Text>
               <Card variant="surface">
@@ -486,17 +496,17 @@ export function CustomSplitModal({
                       gap="$3"
                       paddingVertical="$3"
                       borderTopWidth={index > 0 ? 1 : 0}
-                      borderTopColor={colors.light.border}
+                      borderTopColor={themeColors.border}
                     >
                       <Avatar
                         name={member.user.full_name}
                         colorIndex={member.color_index}
                         size="md"
                       />
-                      <Text fontSize={16} color={colors.light.textPrimary} flex={1}>
+                      <Text fontSize={16} color={themeColors.textPrimary} flex={1}>
                         {member.user_id === currentUserId ? 'You' : member.user.full_name}
                       </Text>
-                      <Plus size={18} color={colors.light.primary} />
+                      <Plus size={18} color={themeColors.primary} />
                     </XStack>
                   </Pressable>
                 ))}
@@ -509,16 +519,16 @@ export function CustomSplitModal({
             <Card 
               variant="elevated" 
               marginBottom="$4"
-              backgroundColor={isValid ? colors.light.successBg : colors.light.warningBg}
+              backgroundColor={isValid ? themeColors.successBg : themeColors.warningBg}
               borderWidth={1}
-              borderColor={isValid ? colors.light.success : colors.light.warning}
+              borderColor={isValid ? themeColors.success : themeColors.warning}
             >
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack>
-                  <Text fontSize={14} color={colors.light.textSecondary}>
+                  <Text fontSize={14} color={themeColors.textSecondary}>
                     Total Allocated
                   </Text>
-                  <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+                  <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
                     ${totalAmount.toFixed(2)} ({totalPercentage.toFixed(0)}%)
                   </Text>
                 </YStack>
@@ -526,7 +536,7 @@ export function CustomSplitModal({
                   width={32}
                   height={32}
                   borderRadius={16}
-                  backgroundColor={isValid ? colors.light.success : colors.light.warning}
+                  backgroundColor={isValid ? themeColors.success : themeColors.warning}
                   justifyContent="center"
                   alignItems="center"
                 >
@@ -557,18 +567,5 @@ export function CustomSplitModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  input: {
-    width: 60,
-    height: 36,
-    backgroundColor: colors.light.surfaceElevated,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    fontSize: 14,
-    textAlign: 'center',
-    color: colors.light.textPrimary,
-  },
-});
 
 export default CustomSplitModal;

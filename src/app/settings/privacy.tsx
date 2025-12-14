@@ -8,7 +8,7 @@ import { Pressable } from 'react-native';
 import { ArrowLeft, Shield, Eye, Database, Lock, Users, Bell } from 'lucide-react-native';
 
 import { Screen, Card } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface PolicySectionProps {
   icon: React.ReactNode;
@@ -17,6 +17,8 @@ interface PolicySectionProps {
 }
 
 function PolicySection({ icon, title, content }: PolicySectionProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <Card variant="surface" marginBottom="$4">
       <YStack gap="$2">
@@ -25,17 +27,17 @@ function PolicySection({ icon, title, content }: PolicySectionProps) {
             width={32}
             height={32}
             borderRadius={8}
-            backgroundColor={colors.light.primaryLight}
+            backgroundColor={themeColors.primaryLight}
             justifyContent="center"
             alignItems="center"
           >
             {icon}
           </Stack>
-          <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+          <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
             {title}
           </Text>
         </XStack>
-        <Text fontSize={14} color={colors.light.textSecondary} lineHeight={22}>
+        <Text fontSize={14} color={themeColors.textSecondary} lineHeight={22}>
           {content}
         </Text>
       </YStack>
@@ -45,15 +47,16 @@ function PolicySection({ icon, title, content }: PolicySectionProps) {
 
 export default function PrivacyScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
 
   return (
     <Screen scroll>
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Privacy Policy
         </Text>
         <Stack width={24} />
@@ -66,19 +69,19 @@ export default function PrivacyScreen() {
             width={56}
             height={56}
             borderRadius={28}
-            backgroundColor={colors.light.successBg}
+            backgroundColor={themeColors.successBg}
             justifyContent="center"
             alignItems="center"
           >
-            <Shield size={28} color={colors.light.success} />
+            <Shield size={28} color={themeColors.success} />
           </Stack>
-          <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+          <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
             Your Privacy Matters
           </Text>
-          <Text fontSize={14} color={colors.light.textSecondary} textAlign="center">
+          <Text fontSize={14} color={themeColors.textSecondary} textAlign="center">
             We're committed to protecting your personal information and being transparent about how we use it.
           </Text>
-          <Text fontSize={12} color={colors.light.textMuted} marginTop="$2">
+          <Text fontSize={12} color={themeColors.textMuted} marginTop="$2">
             Last updated: December 2024
           </Text>
         </YStack>
@@ -86,31 +89,31 @@ export default function PrivacyScreen() {
 
       {/* Policy Sections */}
       <PolicySection
-        icon={<Database size={16} color={colors.light.primary} />}
+        icon={<Database size={16} color={themeColors.primary} />}
         title="Information We Collect"
         content="We collect information you provide directly, including your name, email address, and profile photo. We also collect expense data you enter, group membership information, and basic usage analytics to improve the app experience."
       />
 
       <PolicySection
-        icon={<Eye size={16} color={colors.light.primary} />}
+        icon={<Eye size={16} color={themeColors.primary} />}
         title="How We Use Your Information"
         content="Your information is used to provide and improve PrismSplit services, including calculating balances, facilitating group expense tracking, sending notifications about your expenses, and providing customer support when needed."
       />
 
       <PolicySection
-        icon={<Users size={16} color={colors.light.primary} />}
+        icon={<Users size={16} color={themeColors.primary} />}
         title="Information Sharing"
         content="We share your name and profile information with other members of your groups so they can identify you in shared expenses. We never sell your personal data to third parties or use it for advertising purposes."
       />
 
       <PolicySection
-        icon={<Lock size={16} color={colors.light.primary} />}
+        icon={<Lock size={16} color={themeColors.primary} />}
         title="Data Security"
         content="We use industry-standard encryption to protect your data both in transit and at rest. Your financial information is securely stored and we regularly audit our security practices to ensure your data remains safe."
       />
 
       <PolicySection
-        icon={<Bell size={16} color={colors.light.primary} />}
+        icon={<Bell size={16} color={themeColors.primary} />}
         title="Your Choices"
         content="You can update or delete your account information at any time from the Profile settings. You control notification preferences and can opt out of non-essential communications. You may request a copy of your data or ask us to delete it."
       />
@@ -118,10 +121,10 @@ export default function PrivacyScreen() {
       {/* Contact */}
       <Card variant="surface" marginBottom="$4">
         <YStack gap="$2">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textPrimary}>
+          <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
             Questions About Privacy?
           </Text>
-          <Text fontSize={13} color={colors.light.textSecondary}>
+          <Text fontSize={13} color={themeColors.textSecondary}>
             If you have any questions about this privacy policy or our data practices, please contact us at privacy@prismsplit.app
           </Text>
         </YStack>
@@ -130,7 +133,7 @@ export default function PrivacyScreen() {
       {/* Footer */}
       <Text 
         fontSize={12} 
-        color={colors.light.textMuted} 
+        color={themeColors.textMuted} 
         textAlign="center"
         marginBottom="$4"
       >

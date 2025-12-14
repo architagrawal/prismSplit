@@ -18,7 +18,7 @@ import {
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Avatar, Button } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { demoGroups, demoGroupMembers, currentUser } from '@/lib/api/demo';
 
 interface SettingsRowProps {
@@ -29,6 +29,8 @@ interface SettingsRowProps {
 }
 
 function SettingsRow({ icon, label, onPress, danger }: SettingsRowProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <Pressable onPress={onPress}>
       <XStack 
@@ -41,7 +43,7 @@ function SettingsRow({ icon, label, onPress, danger }: SettingsRowProps) {
             width={36} 
             height={36} 
             borderRadius={8}
-            backgroundColor={danger ? colors.light.errorBg : colors.light.surfaceElevated}
+            backgroundColor={danger ? themeColors.errorBg : themeColors.surfaceElevated}
             justifyContent="center"
             alignItems="center"
           >
@@ -49,12 +51,12 @@ function SettingsRow({ icon, label, onPress, danger }: SettingsRowProps) {
           </Stack>
           <Text 
             fontSize={16} 
-            color={danger ? colors.light.error : colors.light.textPrimary}
+            color={danger ? themeColors.error : themeColors.textPrimary}
           >
             {label}
           </Text>
         </XStack>
-        <ChevronRight size={20} color={colors.light.textMuted} />
+        <ChevronRight size={20} color={themeColors.textMuted} />
       </XStack>
     </Pressable>
   );
@@ -62,6 +64,7 @@ function SettingsRow({ icon, label, onPress, danger }: SettingsRowProps) {
 
 export default function GroupSettingsScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const group = demoGroups.find(g => g.id === id) || demoGroups[0];
@@ -105,9 +108,9 @@ export default function GroupSettingsScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Group Settings
         </Text>
         <Stack width={24} />
@@ -120,17 +123,17 @@ export default function GroupSettingsScreen() {
             width={80}
             height={80}
             borderRadius={20}
-            backgroundColor={colors.light.surfaceElevated}
+            backgroundColor={themeColors.surfaceElevated}
             justifyContent="center"
             alignItems="center"
           >
             <Text fontSize={40}>{group.emoji}</Text>
           </Stack>
           <YStack alignItems="center">
-            <Text fontSize={20} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
               {group.name}
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               {group.member_count} members • {group.currency}
             </Text>
           </YStack>
@@ -138,7 +141,7 @@ export default function GroupSettingsScreen() {
             <Button
               variant="outlined"
               size="sm"
-              icon={<Edit size={16} color={colors.light.primary} />}
+              icon={<Edit size={16} color={themeColors.primary} />}
               onPress={() => router.push(`/group/edit?id=${group.id}` as any)}
             >
               Edit Group
@@ -150,13 +153,13 @@ export default function GroupSettingsScreen() {
       {/* Members */}
       <YStack marginBottom="$6">
         <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-          <Text fontSize={14} fontWeight="600" color={colors.light.textMuted}>
+          <Text fontSize={14} fontWeight="600" color={themeColors.textMuted}>
             MEMBERS
           </Text>
           <Pressable onPress={() => router.push(`/group/invite?id=${group.id}` as any)}>
             <XStack alignItems="center" gap="$1">
-              <UserPlus size={16} color={colors.light.primary} />
-              <Text fontSize={14} color={colors.light.primary}>Invite</Text>
+              <UserPlus size={16} color={themeColors.primary} />
+              <Text fontSize={14} color={themeColors.primary}>Invite</Text>
             </XStack>
           </Pressable>
         </XStack>
@@ -169,7 +172,7 @@ export default function GroupSettingsScreen() {
               gap="$3"
               paddingVertical="$3"
               borderTopWidth={index > 0 ? 1 : 0}
-              borderTopColor={colors.light.border}
+              borderTopColor={themeColors.border}
             >
               <Avatar
                 name={member.user.full_name}
@@ -178,14 +181,14 @@ export default function GroupSettingsScreen() {
               />
               <YStack flex={1}>
                 <XStack alignItems="center" gap="$2">
-                  <Text fontSize={16} fontWeight="500" color={colors.light.textPrimary}>
+                  <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
                     {member.user.full_name}
                   </Text>
                   {member.user_id === currentUser.id && (
-                    <Text fontSize={12} color={colors.light.textMuted}>(You)</Text>
+                    <Text fontSize={12} color={themeColors.textMuted}>(You)</Text>
                   )}
                 </XStack>
-                <Text fontSize={12} color={colors.light.textSecondary}>
+                <Text fontSize={12} color={themeColors.textSecondary}>
                   {member.role === 'admin' ? 'Admin' : 'Member'}
                 </Text>
               </YStack>
@@ -196,17 +199,17 @@ export default function GroupSettingsScreen() {
 
       {/* Settings */}
       <YStack marginBottom="$6">
-        <Text fontSize={14} fontWeight="600" color={colors.light.textMuted} marginBottom="$3">
+        <Text fontSize={14} fontWeight="600" color={themeColors.textMuted} marginBottom="$3">
           SETTINGS
         </Text>
         <Card variant="surface">
           <SettingsRow
-            icon={<Bell size={18} color={colors.light.textSecondary} />}
+            icon={<Bell size={18} color={themeColors.textSecondary} />}
             label="Notifications"
             onPress={() => router.push('/settings/notifications' as any)}
           />
           <SettingsRow
-            icon={<UserPlus size={18} color={colors.light.textSecondary} />}
+            icon={<UserPlus size={18} color={themeColors.textSecondary} />}
             label="Invite Members"
             onPress={() => router.push(`/group/invite?id=${group.id}` as any)}
           />
@@ -215,19 +218,19 @@ export default function GroupSettingsScreen() {
 
       {/* Danger Zone */}
       <YStack>
-        <Text fontSize={14} fontWeight="600" color={colors.light.textMuted} marginBottom="$3">
+        <Text fontSize={14} fontWeight="600" color={themeColors.textMuted} marginBottom="$3">
           DANGER ZONE
         </Text>
         <Card variant="surface">
           <SettingsRow
-            icon={<LogOut size={18} color={colors.light.error} />}
+            icon={<LogOut size={18} color={themeColors.error} />}
             label="Leave Group"
             danger
             onPress={handleLeave}
           />
           {isAdmin && (
             <SettingsRow
-              icon={<Trash2 size={18} color={colors.light.error} />}
+              icon={<Trash2 size={18} color={themeColors.error} />}
               label="Delete Group"
               danger
               onPress={handleDelete}

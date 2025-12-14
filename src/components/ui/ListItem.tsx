@@ -5,11 +5,11 @@
  */
 
 import { Stack, Text } from 'tamagui';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Avatar, AvatarGroup } from './Avatar';
 import { BalanceBadge, StatusBadge, CategoryBadge } from './Badge';
 import { SplitBar } from './SplitBar';
@@ -33,20 +33,31 @@ export function GroupListItem({
   lastActivity,
   onPress,
 }: GroupListItemProps) {
+  const themeColors = useThemeColors();
+  
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
   };
 
   return (
-    <Pressable onPress={handlePress} style={styles.listItem}>
+    <Pressable 
+      onPress={handlePress} 
+      style={{
+        backgroundColor: themeColors.surface,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: themeColors.border,
+      }}
+    >
       <Stack flexDirection="row" alignItems="center" gap="$3">
         {/* Emoji Avatar */}
         <Stack
           width={48}
           height={48}
           borderRadius={12}
-          backgroundColor={colors.light.surfaceElevated}
+          backgroundColor={themeColors.surfaceElevated}
           justifyContent="center"
           alignItems="center"
         >
@@ -58,13 +69,13 @@ export function GroupListItem({
           <Text
             fontSize={16}
             fontWeight="600"
-            color={colors.light.textPrimary}
+            color={themeColors.textPrimary}
           >
             {name}
           </Text>
           <Text
             fontSize={14}
-            color={colors.light.textSecondary}
+            color={themeColors.textSecondary}
           >
             {memberCount} members{lastActivity ? ` • ${lastActivity}` : ''}
           </Text>
@@ -73,7 +84,7 @@ export function GroupListItem({
         {/* Balance */}
         <Stack alignItems="flex-end" gap="$1">
           <BalanceBadge amount={balance} size="sm" />
-          <ChevronRight size={20} color={colors.light.textMuted} />
+          <ChevronRight size={20} color={themeColors.textMuted} />
         </Stack>
       </Stack>
     </Pressable>
@@ -105,13 +116,24 @@ export function BillListItem({
   participants,
   onPress,
 }: BillListItemProps) {
+  const themeColors = useThemeColors();
+  
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
   };
 
   return (
-    <Pressable onPress={handlePress} style={styles.listItem}>
+    <Pressable 
+      onPress={handlePress} 
+      style={{
+        backgroundColor: themeColors.surface,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: themeColors.border,
+      }}
+    >
       <Stack gap="$2">
         {/* Top row */}
         <Stack flexDirection="row" justifyContent="space-between" alignItems="flex-start">
@@ -119,7 +141,7 @@ export function BillListItem({
             <Text
               fontSize={16}
               fontWeight="600"
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
             >
               {title}
             </Text>
@@ -132,13 +154,13 @@ export function BillListItem({
             <Text
               fontSize={16}
               fontWeight="600"
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
             >
               ${amount.toFixed(2)}
             </Text>
             <Text
               fontSize={12}
-              color={colors.light.textSecondary}
+              color={themeColors.textSecondary}
             >
               Your share: ${yourShare.toFixed(2)}
             </Text>
@@ -149,7 +171,7 @@ export function BillListItem({
         <Stack flexDirection="row" justifyContent="space-between" alignItems="center">
           <Text
             fontSize={12}
-            color={colors.light.textMuted}
+            color={themeColors.textMuted}
           >
             {date} • Paid by {payerName}
           </Text>
@@ -181,6 +203,8 @@ export function ItemRow({
   onPress,
   onExpand,
 }: ItemRowProps) {
+  const themeColors = useThemeColors();
+  
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
@@ -192,9 +216,9 @@ export function ItemRow({
   return (
     <Pressable onPress={handlePress}>
       <Stack
-        backgroundColor={isSelected ? colors.light.surfaceElevated : colors.light.surface}
+        backgroundColor={isSelected ? themeColors.surfaceElevated : themeColors.surface}
         borderWidth={isSelected ? 2 : 1}
-        borderColor={isSelected ? colors.light.primary : colors.light.border}
+        borderColor={isSelected ? themeColors.primary : themeColors.border}
         borderRadius={12}
         padding="$3"
         gap="$2"
@@ -205,14 +229,14 @@ export function ItemRow({
             <Text
               fontSize={16}
               fontWeight="500"
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
             >
               {name}
             </Text>
             {quantity > 1 && (
               <Text
                 fontSize={12}
-                color={colors.light.textSecondary}
+                color={themeColors.textSecondary}
               >
                 Qty: {quantity}
               </Text>
@@ -222,7 +246,7 @@ export function ItemRow({
           <Text
             fontSize={16}
             fontWeight="600"
-            color={colors.light.primary}
+            color={themeColors.primary}
           >
             ${totalPrice.toFixed(2)}
           </Text>
@@ -238,7 +262,7 @@ export function ItemRow({
           ) : (
             <Text
               fontSize={12}
-              color={colors.light.warning}
+              color={themeColors.warning}
             >
               ⚠️ No one yet
             </Text>
@@ -259,13 +283,3 @@ export function ItemRow({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  listItem: {
-    backgroundColor: colors.light.surface,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-  },
-});

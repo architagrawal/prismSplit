@@ -20,7 +20,7 @@ import {
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Avatar, Button } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useUIStore } from '@/lib/store';
 
 interface SettingsItemProps {
@@ -32,6 +32,8 @@ interface SettingsItemProps {
 }
 
 function SettingsItem({ icon, label, onPress, showChevron = true, rightElement }: SettingsItemProps) {
+  const themeColors = useThemeColors();
+  
   const handlePress = () => {
     if (onPress) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -50,19 +52,19 @@ function SettingsItem({ icon, label, onPress, showChevron = true, rightElement }
           width={40} 
           height={40} 
           borderRadius={10}
-          backgroundColor={colors.light.surfaceElevated}
+          backgroundColor={themeColors.surfaceElevated}
           justifyContent="center"
           alignItems="center"
           marginRight="$3"
         >
           {icon}
         </Stack>
-        <Text flex={1} fontSize={16} color={colors.light.textPrimary}>
+        <Text flex={1} fontSize={16} color={themeColors.textPrimary}>
           {label}
         </Text>
         {rightElement}
         {showChevron && !rightElement && (
-          <ChevronRight size={20} color={colors.light.textMuted} />
+          <ChevronRight size={20} color={themeColors.textMuted} />
         )}
       </Stack>
     </Pressable>
@@ -71,6 +73,7 @@ function SettingsItem({ icon, label, onPress, showChevron = true, rightElement }
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { user, logout } = useAuthStore();
   const { theme, setTheme, showToast } = useUIStore();
 
@@ -81,7 +84,13 @@ export default function ProfileScreen() {
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    showToast({
+      type: 'success',
+      message: `Switched to ${newTheme} mode`,
+    });
   };
 
   const handleEditProfile = () => {
@@ -104,11 +113,13 @@ export default function ProfileScreen() {
     router.push('/settings/privacy' as any);
   };
 
+  const isDark = theme === 'dark';
+
   return (
     <Screen scroll safeBottom={false}>
       {/* Header */}
       <Stack paddingTop="$2" paddingBottom="$6">
-        <Text fontSize={28} fontWeight="700" color={colors.light.textPrimary}>
+        <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
           Account
         </Text>
       </Stack>
@@ -122,10 +133,10 @@ export default function ProfileScreen() {
             size="xl"
           />
           <YStack flex={1}>
-            <Text fontSize={20} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
               {user?.full_name || 'User'}
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               {user?.email || 'email@example.com'}
             </Text>
           </YStack>
@@ -136,7 +147,7 @@ export default function ProfileScreen() {
           size="sm"
           fullWidth
           onPress={handleEditProfile}
-          icon={<User size={16} color={colors.light.primary} />}
+          icon={<User size={16} color={themeColors.primary} />}
         >
           Edit Profile
         </Button>
@@ -144,18 +155,18 @@ export default function ProfileScreen() {
 
       {/* Settings */}
       <YStack>
-        <Text fontSize={14} fontWeight="600" color={colors.light.textMuted} marginBottom="$2">
+        <Text fontSize={14} fontWeight="600" color={themeColors.textMuted} marginBottom="$2">
           PREFERENCES
         </Text>
         
         <Card variant="surface" marginBottom="$4">
           <SettingsItem
-            icon={<Bell size={20} color={colors.light.textSecondary} />}
+            icon={<Bell size={20} color={themeColors.textSecondary} />}
             label="Notifications"
             onPress={handleNotifications}
           />
           <SettingsItem
-            icon={<Moon size={20} color={colors.light.textSecondary} />}
+            icon={<Moon size={20} color={themeColors.textSecondary} />}
             label="Dark Mode"
             showChevron={false}
             onPress={toggleTheme}
@@ -164,9 +175,9 @@ export default function ProfileScreen() {
                 width={50}
                 height={28}
                 borderRadius={14}
-                backgroundColor={theme === 'dark' ? colors.light.primary : colors.light.border}
+                backgroundColor={isDark ? themeColors.primary : themeColors.border}
                 padding="$1"
-                justifyContent={theme === 'dark' ? 'flex-end' : 'flex-start'}
+                justifyContent={isDark ? 'flex-end' : 'flex-start'}
                 flexDirection="row"
               >
                 <Stack
@@ -180,18 +191,18 @@ export default function ProfileScreen() {
           />
         </Card>
 
-        <Text fontSize={14} fontWeight="600" color={colors.light.textMuted} marginBottom="$2">
+        <Text fontSize={14} fontWeight="600" color={themeColors.textMuted} marginBottom="$2">
           SUPPORT
         </Text>
         
         <Card variant="surface" marginBottom="$4">
           <SettingsItem
-            icon={<HelpCircle size={20} color={colors.light.textSecondary} />}
+            icon={<HelpCircle size={20} color={themeColors.textSecondary} />}
             label="Help & FAQ"
             onPress={handleHelp}
           />
           <SettingsItem
-            icon={<Shield size={20} color={colors.light.textSecondary} />}
+            icon={<Shield size={20} color={themeColors.textSecondary} />}
             label="Privacy Policy"
             onPress={handlePrivacy}
           />

@@ -7,15 +7,16 @@
 import { useState } from 'react';
 import { Stack, Text, YStack, XStack } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { Pressable, TextInput, StyleSheet } from 'react-native';
+import { Pressable, TextInput } from 'react-native';
 import { ArrowLeft, Check, Camera } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Card } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function JoinGroupScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -44,17 +45,17 @@ export default function JoinGroupScreen() {
             width={100}
             height={100}
             borderRadius={50}
-            backgroundColor={colors.light.successBg}
+            backgroundColor={themeColors.successBg}
             justifyContent="center"
             alignItems="center"
           >
-            <Check size={48} color={colors.light.success} />
+            <Check size={48} color={themeColors.success} />
           </Stack>
           <YStack alignItems="center" gap="$2">
-            <Text fontSize={24} fontWeight="700" color={colors.light.textPrimary}>
+            <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
               You're In!
             </Text>
-            <Text fontSize={16} color={colors.light.textSecondary} textAlign="center">
+            <Text fontSize={16} color={themeColors.textSecondary} textAlign="center">
               You've joined the group. Redirecting...
             </Text>
           </YStack>
@@ -68,9 +69,9 @@ export default function JoinGroupScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Join Group
         </Text>
         <Stack width={24} />
@@ -80,7 +81,7 @@ export default function JoinGroupScreen() {
       <YStack alignItems="center" marginBottom="$8">
         <Text 
           fontSize={16} 
-          color={colors.light.textSecondary}
+          color={themeColors.textSecondary}
           textAlign="center"
         >
           Enter the 6-character invite code to join a group
@@ -94,14 +95,22 @@ export default function JoinGroupScreen() {
             value={code}
             onChangeText={(text) => setCode(text.toUpperCase().slice(0, 6))}
             placeholder="XXXXXX"
-            placeholderTextColor={colors.light.textMuted}
+            placeholderTextColor={themeColors.textMuted}
             maxLength={6}
             autoCapitalize="characters"
             autoCorrect={false}
             autoFocus
-            style={styles.codeInput}
+            style={{
+              fontSize: 36,
+              fontWeight: '700',
+              letterSpacing: 8,
+              textAlign: 'center',
+              color: themeColors.textPrimary,
+              paddingVertical: 16,
+              width: '100%',
+            }}
           />
-          <Text fontSize={12} color={colors.light.textMuted}>
+          <Text fontSize={12} color={themeColors.textMuted}>
             {code.length}/6 characters
           </Text>
         </YStack>
@@ -111,8 +120,8 @@ export default function JoinGroupScreen() {
       <Card variant="outlined" marginBottom="$6">
         <Pressable onPress={() => router.push('/group/scan' as any)}>
           <XStack justifyContent="center" alignItems="center" gap="$2">
-            <Camera size={20} color={colors.light.primary} />
-            <Text fontSize={14} fontWeight="500" color={colors.light.primary}>
+            <Camera size={20} color={themeColors.primary} />
+            <Text fontSize={14} fontWeight="500" color={themeColors.primary}>
               Scan QR Code Instead
             </Text>
           </XStack>
@@ -134,15 +143,3 @@ export default function JoinGroupScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  codeInput: {
-    fontSize: 36,
-    fontWeight: '700',
-    letterSpacing: 8,
-    textAlign: 'center',
-    color: colors.light.textPrimary,
-    paddingVertical: 16,
-    width: '100%',
-  },
-});

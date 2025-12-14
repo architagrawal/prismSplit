@@ -13,11 +13,12 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Screen, Card, Avatar, Button, Input } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useUIStore } from '@/lib/store';
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { user, updateProfile } = useAuthStore();
   const { showToast } = useUIStore();
   
@@ -147,9 +148,9 @@ export default function EditProfileScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Edit Profile
         </Text>
         <Stack width={24} />
@@ -187,18 +188,18 @@ export default function EditProfileScreen() {
               width={32}
               height={32}
               borderRadius={16}
-              backgroundColor={colors.light.primary}
+              backgroundColor={themeColors.primary}
               justifyContent="center"
               alignItems="center"
               borderWidth={2}
-              borderColor={colors.light.background}
+              borderColor={themeColors.background}
             >
               <Camera size={16} color="white" />
             </Stack>
           </Stack>
         </Pressable>
         <Pressable onPress={handleChangePhoto}>
-          <Text fontSize={14} color={colors.light.primary} marginTop="$2">
+          <Text fontSize={14} color={themeColors.primary} marginTop="$2">
             Change Photo
           </Text>
         </Pressable>
@@ -224,10 +225,10 @@ export default function EditProfileScreen() {
       {/* Info Card */}
       <Card variant="surface" marginBottom="$6">
         <YStack gap="$2">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textPrimary}>
+          <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
             About Your Profile
           </Text>
-          <Text fontSize={13} color={colors.light.textSecondary}>
+          <Text fontSize={13} color={themeColors.textSecondary}>
             Your name will be visible to other members in your groups. 
             Your email is used for account recovery and notifications.
           </Text>

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface TabIconProps {
   Icon: React.ComponentType<{ size: number; color: string }>;
@@ -31,10 +31,11 @@ interface TabIconProps {
 }
 
 function TabIcon({ Icon, focused }: TabIconProps) {
+  const themeColors = useThemeColors();
   return (
     <Icon 
       size={24} 
-      color={focused ? colors.light.primary : colors.light.textMuted} 
+      color={focused ? themeColors.primary : themeColors.textMuted} 
     />
   );
 }
@@ -42,6 +43,7 @@ function TabIcon({ Icon, focused }: TabIconProps) {
 // Center FAB with menu
 function CenterFAB() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const [isOpen, setIsOpen] = useState(false);
   const [animation] = useState(new Animated.Value(0));
   
@@ -102,7 +104,7 @@ function CenterFAB() {
       <View style={styles.fabContainer}>
         <Pressable 
           onPress={isOpen ? () => closeMenu() : openMenu}
-          style={styles.fab}
+          style={[styles.fab, { backgroundColor: themeColors.primary, shadowColor: themeColors.primary }]}
         >
           <Animated.View style={{ transform: [{ rotate: rotation }] }}>
             <Plus size={28} color="white" />
@@ -145,7 +147,7 @@ function CenterFAB() {
               flexDirection="row"
               alignItems="center"
               gap="$3"
-              backgroundColor={colors.light.surface}
+              backgroundColor={themeColors.surface}
               paddingHorizontal="$4"
               paddingVertical="$3"
               borderRadius={16}
@@ -158,17 +160,17 @@ function CenterFAB() {
                 width={40}
                 height={40}
                 borderRadius={20}
-                backgroundColor={colors.light.accent}
+                backgroundColor={themeColors.accent}
                 justifyContent="center"
                 alignItems="center"
               >
-                <Zap size={20} color={colors.light.primary} />
+                <Zap size={20} color={themeColors.primary} />
               </Stack>
               <YStack>
-                <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
                   Quick Bill
                 </Text>
-                <Text fontSize={12} color={colors.light.textSecondary}>
+                <Text fontSize={12} color={themeColors.textSecondary}>
                   Simple expense, no items
                 </Text>
               </YStack>
@@ -181,7 +183,7 @@ function CenterFAB() {
               flexDirection="row"
               alignItems="center"
               gap="$3"
-              backgroundColor={colors.light.surface}
+              backgroundColor={themeColors.surface}
               paddingHorizontal="$4"
               paddingVertical="$3"
               borderRadius={16}
@@ -194,17 +196,17 @@ function CenterFAB() {
                 width={40}
                 height={40}
                 borderRadius={20}
-                backgroundColor={colors.light.primaryLight}
+                backgroundColor={themeColors.primaryLight}
                 justifyContent="center"
                 alignItems="center"
               >
-                <FileText size={20} color={colors.light.primary} />
+                <FileText size={20} color={themeColors.primary} />
               </Stack>
               <YStack>
-                <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
                   Detailed Bill
                 </Text>
-                <Text fontSize={12} color={colors.light.textSecondary}>
+                <Text fontSize={12} color={themeColors.textSecondary}>
                   Itemized with Speed Parser
                 </Text>
               </YStack>
@@ -218,17 +220,18 @@ function CenterFAB() {
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const themeColors = useThemeColors();
   const bottomPadding = Math.max(insets.bottom, 8);
   
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.light.primary,
-        tabBarInactiveTintColor: colors.light.textMuted,
+        tabBarActiveTintColor: themeColors.primary,
+        tabBarInactiveTintColor: themeColors.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.light.surface,
+          backgroundColor: themeColors.surface,
           borderTopWidth: 1,
-          borderTopColor: colors.light.border,
+          borderTopColor: themeColors.border,
           height: 56 + bottomPadding,
           paddingTop: 8,
           paddingBottom: bottomPadding,
@@ -316,14 +319,6 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.light.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.light.border,
-    height: 80,
-    paddingTop: 8,
-    paddingBottom: 24,
-  },
   tabBarLabel: {
     fontSize: 11,
     fontWeight: '500',
@@ -333,11 +328,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: -28,
-    shadowColor: colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -22,13 +22,14 @@ import {
   BalanceBadge,
   Button
 } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useBillsStore } from '@/lib/store';
 import { demoGroupMembers } from '@/lib/api/demo';
 import { categoryIcons } from '@/types/models';
 
 export default function GroupDetailScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<'bills' | 'balances'>('bills');
 
@@ -69,7 +70,7 @@ export default function GroupDetailScreen() {
     return (
       <Screen safeBottom={false}>
         <Stack flex={1} justifyContent="center" alignItems="center">
-          <Text color={colors.light.textSecondary}>Loading...</Text>
+          <Text color={themeColors.textSecondary}>Loading...</Text>
         </Stack>
       </Screen>
     );
@@ -87,7 +88,7 @@ export default function GroupDetailScreen() {
         <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
           <XStack justifyContent="flex-end" alignItems="center" marginBottom="$4">
             <Pressable onPress={() => router.push(`/group/settings?id=${id}` as any)}>
-              <Settings size={24} color={colors.light.textPrimary} />
+              <Settings size={24} color={themeColors.textPrimary} />
             </Pressable>
           </XStack>
 
@@ -97,16 +98,16 @@ export default function GroupDetailScreen() {
               width={80}
               height={80}
               borderRadius={20}
-              backgroundColor={colors.light.surfaceElevated}
+              backgroundColor={themeColors.surfaceElevated}
               justifyContent="center"
               alignItems="center"
             >
               <Text fontSize={40}>{group.emoji}</Text>
             </Stack>
-            <Text fontSize={24} fontWeight="700" color={colors.light.textPrimary}>
+            <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
               {group.name}
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               {group.member_count} members • {group.currency}
             </Text>
           </YStack>
@@ -114,7 +115,7 @@ export default function GroupDetailScreen() {
           {/* Balance Card */}
           <Card variant="elevated" marginBottom="$4">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize={14} color={colors.light.textSecondary}>
+              <Text fontSize={14} color={themeColors.textSecondary}>
                 Your Balance
               </Text>
               <BalanceBadge amount={group.your_balance ?? 0} size="lg" />
@@ -123,13 +124,13 @@ export default function GroupDetailScreen() {
 
           {/* Members */}
           <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-            <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
               Members
             </Text>
             <Pressable onPress={() => router.push(`/group/invite?id=${id}` as any)}>
               <XStack alignItems="center" gap="$1">
-                <UserPlus size={18} color={colors.light.primary} />
-                <Text fontSize={14} color={colors.light.primary}>Invite</Text>
+                <UserPlus size={18} color={themeColors.primary} />
+                <Text fontSize={14} color={themeColors.primary}>Invite</Text>
               </XStack>
             </Pressable>
           </XStack>
@@ -144,7 +145,7 @@ export default function GroupDetailScreen() {
                 />
                 <Text 
                   fontSize={12} 
-                  color={colors.light.textSecondary}
+                  color={themeColors.textSecondary}
                   numberOfLines={1}
                 >
                   {member.user.full_name.split(' ')[0]}
@@ -157,11 +158,11 @@ export default function GroupDetailScreen() {
                   width={48}
                   height={48}
                   borderRadius={24}
-                  backgroundColor={colors.light.border}
+                  backgroundColor={themeColors.border}
                   justifyContent="center"
                   alignItems="center"
                 >
-                  <Text fontSize={14} color={colors.light.textSecondary}>
+                  <Text fontSize={14} color={themeColors.textSecondary}>
                     +{groupMembers.length - 5}
                   </Text>
                 </Stack>
@@ -171,7 +172,7 @@ export default function GroupDetailScreen() {
 
           {/* Tabs */}
           <XStack 
-            backgroundColor={colors.light.surfaceElevated}
+            backgroundColor={themeColors.surfaceElevated}
             borderRadius={12}
             padding="$1"
             marginBottom="$4"
@@ -183,12 +184,12 @@ export default function GroupDetailScreen() {
               <Stack
                 paddingVertical="$2"
                 borderRadius={10}
-                backgroundColor={activeTab === 'bills' ? colors.light.surface : 'transparent'}
+                backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
                 alignItems="center"
               >
                 <Text 
                   fontWeight={activeTab === 'bills' ? '600' : '400'}
-                  color={activeTab === 'bills' ? colors.light.textPrimary : colors.light.textSecondary}
+                  color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
                 >
                   Bills
                 </Text>
@@ -201,12 +202,12 @@ export default function GroupDetailScreen() {
               <Stack
                 paddingVertical="$2"
                 borderRadius={10}
-                backgroundColor={activeTab === 'balances' ? colors.light.surface : 'transparent'}
+                backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
                 alignItems="center"
               >
                 <Text 
                   fontWeight={activeTab === 'balances' ? '600' : '400'}
-                  color={activeTab === 'balances' ? colors.light.textPrimary : colors.light.textSecondary}
+                  color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
                 >
                   Balances
                 </Text>
@@ -235,7 +236,7 @@ export default function GroupDetailScreen() {
               ))
             ) : (
               <YStack alignItems="center" paddingVertical="$8" gap="$4">
-                <Text fontSize={16} color={colors.light.textSecondary}>
+                <Text fontSize={16} color={themeColors.textSecondary}>
                   No bills yet
                 </Text>
                 <Button
@@ -257,10 +258,10 @@ export default function GroupDetailScreen() {
                     size="md"
                   />
                   <YStack flex={1}>
-                    <Text fontSize={16} fontWeight="500" color={colors.light.textPrimary}>
+                    <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
                       {member.user.full_name}
                     </Text>
-                    <Text fontSize={12} color={colors.light.textSecondary}>
+                    <Text fontSize={12} color={themeColors.textSecondary}>
                       {member.role === 'admin' ? 'Admin' : 'Member'}
                     </Text>
                   </YStack>

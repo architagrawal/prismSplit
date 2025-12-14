@@ -9,6 +9,7 @@ import { Stack } from 'tamagui';
 import { View, StyleSheet } from 'react-native';
 
 import { getAvatarColor } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface SplitSegment {
   userId: string;
@@ -27,6 +28,7 @@ export function SplitBar({
   height = 4,
   unclaimed = 0,
 }: SplitBarProps) {
+  const themeColors = useThemeColors();
   const totalClaimed = segments.reduce((sum, s) => sum + s.percentage, 0);
   const unclaimedPercent = unclaimed > 0 ? unclaimed : Math.max(0, 100 - totalClaimed);
 
@@ -36,7 +38,7 @@ export function SplitBar({
       height={height}
       borderRadius={height / 2}
       overflow="hidden"
-      backgroundColor="#E5E5E5"
+      backgroundColor={themeColors.border}
     >
       {segments.map((segment, index) => (
         <View
@@ -54,8 +56,10 @@ export function SplitBar({
         <View
           style={[
             styles.segment,
-            styles.unclaimed,
-            { width: `${unclaimedPercent}%` },
+            { 
+              width: `${unclaimedPercent}%`,
+              backgroundColor: themeColors.border,
+            },
           ]}
         />
       )}
@@ -90,9 +94,5 @@ export function AnimatedSplitBar({
 const styles = StyleSheet.create({
   segment: {
     height: '100%',
-  },
-  unclaimed: {
-    backgroundColor: '#E5E5E5',
-    borderStyle: 'dashed',
   },
 });

@@ -6,7 +6,7 @@
 
 import { Stack, Text } from 'tamagui';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 // === Balance Badge ===
 
@@ -21,14 +21,16 @@ export function BalanceBadge({
   currency = '$',
   size = 'md',
 }: BalanceBadgeProps) {
+  const themeColors = useThemeColors();
+  
   const isOwed = amount > 0;
   const isOwing = amount < 0;
   
   const color = isOwed 
-    ? colors.light.success 
+    ? themeColors.success 
     : isOwing 
-      ? colors.light.error 
-      : colors.light.textSecondary;
+      ? themeColors.error 
+      : themeColors.textSecondary;
   
   const fontSize = size === 'sm' ? 14 : size === 'md' ? 18 : 24;
   const fontWeight = size === 'lg' ? '700' : '600';
@@ -56,30 +58,32 @@ interface StatusBadgeProps {
   status: StatusType;
 }
 
-const statusConfig: Record<StatusType, { label: string; bg: string; text: string }> = {
-  draft: { 
-    label: 'Draft', 
-    bg: colors.light.borderLight, 
-    text: colors.light.textSecondary 
-  },
-  active: { 
-    label: 'Active', 
-    bg: colors.light.infoBg, 
-    text: colors.light.info 
-  },
-  settled: { 
-    label: 'Settled', 
-    bg: colors.light.successBg, 
-    text: colors.light.success 
-  },
-  pending: { 
-    label: 'Pending', 
-    bg: colors.light.warningBg, 
-    text: colors.light.warning 
-  },
-};
-
 export function StatusBadge({ status }: StatusBadgeProps) {
+  const themeColors = useThemeColors();
+  
+  const statusConfig: Record<StatusType, { label: string; bg: string; text: string }> = {
+    draft: { 
+      label: 'Draft', 
+      bg: themeColors.borderLight, 
+      text: themeColors.textSecondary 
+    },
+    active: { 
+      label: 'Active', 
+      bg: themeColors.infoBg, 
+      text: themeColors.info 
+    },
+    settled: { 
+      label: 'Settled', 
+      bg: themeColors.successBg, 
+      text: themeColors.success 
+    },
+    pending: { 
+      label: 'Pending', 
+      bg: themeColors.warningBg, 
+      text: themeColors.warning 
+    },
+  };
+  
   const config = statusConfig[status];
 
   return (
@@ -108,11 +112,13 @@ interface CategoryBadgeProps {
 }
 
 export function CategoryBadge({ category, icon }: CategoryBadgeProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <Stack
       flexDirection="row"
       alignItems="center"
-      backgroundColor={colors.light.borderLight}
+      backgroundColor={themeColors.borderLight}
       paddingHorizontal="$2"
       paddingVertical="$1"
       borderRadius={6}
@@ -122,7 +128,7 @@ export function CategoryBadge({ category, icon }: CategoryBadgeProps) {
         <Text fontSize={12}>{icon}</Text>
       )}
       <Text
-        color={colors.light.textSecondary}
+        color={themeColors.textSecondary}
         fontSize={12}
         fontWeight="500"
         textTransform="capitalize"
@@ -136,11 +142,13 @@ export function CategoryBadge({ category, icon }: CategoryBadgeProps) {
 // === Unclaimed Badge ===
 
 export function UnclaimedBadge() {
+  const themeColors = useThemeColors();
+  
   return (
     <Stack
       flexDirection="row"
       alignItems="center"
-      backgroundColor={colors.light.warningBg}
+      backgroundColor={themeColors.warningBg}
       paddingHorizontal="$2"
       paddingVertical="$1"
       borderRadius={6}
@@ -148,7 +156,7 @@ export function UnclaimedBadge() {
     >
       <Text fontSize={12}>⚠️</Text>
       <Text
-        color={colors.light.warning}
+        color={themeColors.warning}
         fontSize={12}
         fontWeight="500"
       >

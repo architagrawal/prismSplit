@@ -11,18 +11,9 @@ import { useRouter } from 'expo-router';
 import { Receipt, CheckCircle, UserPlus, MousePointer } from 'lucide-react-native';
 
 import { Screen, Card, Avatar } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useActivityStore } from '@/lib/store';
 import type { ActivityType } from '@/types/models';
-
-const activityIcons: Record<ActivityType, React.ReactNode> = {
-  bill_created: <Receipt size={16} color={colors.light.primary} />,
-  bill_shared: <Receipt size={16} color={colors.light.secondary} />,
-  bill_finalized: <CheckCircle size={16} color={colors.light.success} />,
-  item_selected: <MousePointer size={16} color={colors.light.primary} />,
-  settlement_created: <CheckCircle size={16} color={colors.light.success} />,
-  member_joined: <UserPlus size={16} color={colors.light.info} />,
-};
 
 const activityLabels: Record<ActivityType, string> = {
   bill_created: 'created a bill',
@@ -35,7 +26,28 @@ const activityLabels: Record<ActivityType, string> = {
 
 export default function ActivityScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { activities, isLoading, fetchActivities, markAsRead } = useActivityStore();
+
+  // Activity icons - use themeColors
+  const getActivityIcon = (type: ActivityType) => {
+    switch (type) {
+      case 'bill_created':
+        return <Receipt size={16} color={themeColors.primary} />;
+      case 'bill_shared':
+        return <Receipt size={16} color={themeColors.secondary} />;
+      case 'bill_finalized':
+        return <CheckCircle size={16} color={themeColors.success} />;
+      case 'item_selected':
+        return <MousePointer size={16} color={themeColors.primary} />;
+      case 'settlement_created':
+        return <CheckCircle size={16} color={themeColors.success} />;
+      case 'member_joined':
+        return <UserPlus size={16} color={themeColors.info} />;
+      default:
+        return null;
+    }
+  };
 
   useEffect(() => {
     fetchActivities();
@@ -70,7 +82,7 @@ export default function ActivityScreen() {
       >
         {/* Header */}
         <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
-          <Text fontSize={28} fontWeight="700" color={colors.light.textPrimary}>
+          <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
             Activity
           </Text>
         </Stack>
@@ -79,7 +91,7 @@ export default function ActivityScreen() {
         <YStack paddingHorizontal="$4" gap="$3" paddingBottom="$8">
           {activities.length === 0 && !isLoading ? (
             <YStack alignItems="center" paddingVertical="$12" gap="$2">
-              <Text fontSize={16} color={colors.light.textSecondary}>
+              <Text fontSize={16} color={themeColors.textSecondary}>
                 No activity yet
               </Text>
             </YStack>
@@ -99,30 +111,30 @@ export default function ActivityScreen() {
                   />
                   <YStack flex={1} gap="$1">
                     <XStack alignItems="center" gap="$2" flexWrap="wrap">
-                      <Text fontSize={14} fontWeight="600" color={colors.light.textPrimary}>
+                      <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
                         {activity.user.full_name}
                       </Text>
-                      <Text fontSize={14} color={colors.light.textSecondary}>
+                      <Text fontSize={14} color={themeColors.textSecondary}>
                         {activityLabels[activity.type]}
                       </Text>
                     </XStack>
                     
                     <XStack alignItems="center" gap="$2">
                       <Text fontSize={16}>{activity.group.emoji}</Text>
-                      <Text fontSize={13} color={colors.light.textMuted}>
+                      <Text fontSize={13} color={themeColors.textMuted}>
                         {activity.group.name}
                       </Text>
-                      <Text fontSize={13} color={colors.light.textMuted}>
+                      <Text fontSize={13} color={themeColors.textMuted}>
                         •
                       </Text>
-                      <Text fontSize={13} color={colors.light.textMuted}>
+                      <Text fontSize={13} color={themeColors.textMuted}>
                         {formatTime(activity.created_at)}
                       </Text>
                     </XStack>
                   </YStack>
                   
                   <Stack padding="$2">
-                    {activityIcons[activity.type]}
+                    {getActivityIcon(activity.type)}
                   </Stack>
                 </XStack>
               </Card>

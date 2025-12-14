@@ -20,7 +20,7 @@ import {
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Button } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface FAQItemProps {
   question: string;
@@ -30,6 +30,8 @@ interface FAQItemProps {
 }
 
 function FAQItem({ question, answer, isOpen, onToggle }: FAQItemProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <Pressable onPress={() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -41,21 +43,21 @@ function FAQItem({ question, answer, isOpen, onToggle }: FAQItemProps) {
             flex={1} 
             fontSize={15} 
             fontWeight="500" 
-            color={colors.light.textPrimary}
+            color={themeColors.textPrimary}
             marginRight="$2"
           >
             {question}
           </Text>
           {isOpen ? (
-            <ChevronUp size={20} color={colors.light.textMuted} />
+            <ChevronUp size={20} color={themeColors.textMuted} />
           ) : (
-            <ChevronDown size={20} color={colors.light.textMuted} />
+            <ChevronDown size={20} color={themeColors.textMuted} />
           )}
         </XStack>
         {isOpen && (
           <Text 
             fontSize={14} 
-            color={colors.light.textSecondary} 
+            color={themeColors.textSecondary} 
             marginTop="$2"
             lineHeight={22}
           >
@@ -76,18 +78,20 @@ interface FAQSectionProps {
 }
 
 function FAQSection({ icon, title, faqs, openIndex, onToggle }: FAQSectionProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <YStack marginBottom="$6">
       <XStack alignItems="center" gap="$2" marginBottom="$2">
         {icon}
-        <Text fontSize={14} fontWeight="600" color={colors.light.textMuted}>
+        <Text fontSize={14} fontWeight="600" color={themeColors.textMuted}>
           {title}
         </Text>
       </XStack>
       <Card variant="surface">
         {faqs.map((faq, index) => (
           <YStack key={index}>
-            {index > 0 && <Stack height={1} backgroundColor={colors.light.border} />}
+            {index > 0 && <Stack height={1} backgroundColor={themeColors.border} />}
             <FAQItem
               question={faq.question}
               answer={faq.answer}
@@ -170,6 +174,7 @@ const FAQ_DATA = {
 
 export default function HelpScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const [openSections, setOpenSections] = useState<{[key: string]: number | null}>({
     general: null,
     groups: null,
@@ -194,9 +199,9 @@ export default function HelpScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Help & FAQ
         </Text>
         <Stack width={24} />
@@ -209,16 +214,16 @@ export default function HelpScreen() {
             width={56}
             height={56}
             borderRadius={28}
-            backgroundColor={colors.light.primaryLight}
+            backgroundColor={themeColors.primaryLight}
             justifyContent="center"
             alignItems="center"
           >
-            <HelpCircle size={28} color={colors.light.primary} />
+            <HelpCircle size={28} color={themeColors.primary} />
           </Stack>
-          <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+          <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
             How can we help?
           </Text>
-          <Text fontSize={14} color={colors.light.textSecondary} textAlign="center">
+          <Text fontSize={14} color={themeColors.textSecondary} textAlign="center">
             Find answers to common questions below, or contact our support team.
           </Text>
         </YStack>
@@ -226,7 +231,7 @@ export default function HelpScreen() {
 
       {/* FAQ Sections */}
       <FAQSection
-        icon={<HelpCircle size={16} color={colors.light.textMuted} />}
+        icon={<HelpCircle size={16} color={themeColors.textMuted} />}
         title="GENERAL"
         faqs={FAQ_DATA.general}
         openIndex={openSections.general}
@@ -234,7 +239,7 @@ export default function HelpScreen() {
       />
 
       <FAQSection
-        icon={<Users size={16} color={colors.light.textMuted} />}
+        icon={<Users size={16} color={themeColors.textMuted} />}
         title="GROUPS"
         faqs={FAQ_DATA.groups}
         openIndex={openSections.groups}
@@ -242,7 +247,7 @@ export default function HelpScreen() {
       />
 
       <FAQSection
-        icon={<Receipt size={16} color={colors.light.textMuted} />}
+        icon={<Receipt size={16} color={themeColors.textMuted} />}
         title="EXPENSES & BILLS"
         faqs={FAQ_DATA.expenses}
         openIndex={openSections.expenses}
@@ -250,7 +255,7 @@ export default function HelpScreen() {
       />
 
       <FAQSection
-        icon={<CreditCard size={16} color={colors.light.textMuted} />}
+        icon={<CreditCard size={16} color={themeColors.textMuted} />}
         title="SETTLING UP"
         faqs={FAQ_DATA.settling}
         openIndex={openSections.settling}
@@ -260,13 +265,13 @@ export default function HelpScreen() {
       {/* Contact Support */}
       <Card variant="surface" marginBottom="$4">
         <YStack alignItems="center" gap="$3">
-          <Text fontSize={14} color={colors.light.textSecondary} textAlign="center">
+          <Text fontSize={14} color={themeColors.textSecondary} textAlign="center">
             Still need help? Our support team is here for you.
           </Text>
           <Button
             variant="outlined"
             size="md"
-            icon={<Mail size={18} color={colors.light.primary} />}
+            icon={<Mail size={18} color={themeColors.primary} />}
             onPress={handleContactSupport}
           >
             Contact Support

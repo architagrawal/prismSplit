@@ -5,13 +5,12 @@
  * Follows the pastel design system.
  */
 
-import { styled, GetProps, Stack, Text } from 'tamagui';
+import { Stack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { forwardRef } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 // Button variants
 export type ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'ghost' | 'success' | 'error';
@@ -46,6 +45,7 @@ export function Button({
   icon,
   iconPosition = 'left',
 }: ButtonProps) {
+  const themeColors = useThemeColors();
   const sizeStyle = sizeStyles[size];
   
   const handlePress = () => {
@@ -69,7 +69,7 @@ export function Button({
         ]}
       >
         <LinearGradient
-          colors={[colors.light.primary, colors.light.secondary]}
+          colors={[themeColors.primary, themeColors.secondary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.gradient, { borderRadius: 12 }]}
@@ -90,30 +90,30 @@ export function Button({
     );
   }
 
-  // Other variants
+  // Other variants - use theme colors
   const variantStyles = {
     secondary: {
-      backgroundColor: colors.light.secondary,
+      backgroundColor: themeColors.secondary,
       borderColor: 'transparent',
       textColor: 'white',
     },
     outlined: {
       backgroundColor: 'transparent',
-      borderColor: colors.light.primary,
-      textColor: colors.light.primary,
+      borderColor: themeColors.primary,
+      textColor: themeColors.primary,
     },
     ghost: {
       backgroundColor: 'transparent',
       borderColor: 'transparent',
-      textColor: colors.light.primary,
+      textColor: themeColors.primary,
     },
     success: {
-      backgroundColor: colors.light.success,
+      backgroundColor: themeColors.success,
       borderColor: 'transparent',
       textColor: 'white',
     },
     error: {
-      backgroundColor: colors.light.error,
+      backgroundColor: themeColors.error,
       borderColor: 'transparent',
       textColor: 'white',
     },

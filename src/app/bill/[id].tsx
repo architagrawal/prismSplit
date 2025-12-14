@@ -21,7 +21,7 @@ import {
   SplitBar,
   CustomSplitModal
 } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useAuthStore, useUIStore } from '@/lib/store';
 import { demoBillItems, currentUser, demoGroupMembers } from '@/lib/api/demo';
 import type { BillItemWithSplits } from '@/types/models';
@@ -29,6 +29,7 @@ import type { BillItemWithSplits } from '@/types/models';
 export default function BillDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const themeColors = useThemeColors();
   
   const { 
     currentBill, 
@@ -307,7 +308,7 @@ export default function BillDetailScreen() {
     return (
       <Screen>
         <Stack flex={1} justifyContent="center" alignItems="center">
-          <Text color={colors.light.textSecondary}>Loading...</Text>
+          <Text color={themeColors.textSecondary}>Loading...</Text>
         </Stack>
       </Screen>
     );
@@ -319,18 +320,18 @@ export default function BillDetailScreen() {
       <Stack paddingHorizontal="$4" paddingVertical="$3">
         <XStack justifyContent="space-between" alignItems="center">
           <Pressable onPress={() => router.back()}>
-            <ArrowLeft size={24} color={colors.light.textPrimary} />
+            <ArrowLeft size={24} color={themeColors.textPrimary} />
           </Pressable>
           <YStack alignItems="center">
-            <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               {bill.title}
             </Text>
-            <Text fontSize={12} color={colors.light.textSecondary}>
+            <Text fontSize={12} color={themeColors.textSecondary}>
               Tap items to join split
             </Text>
           </YStack>
           <Pressable>
-            <Share2 size={24} color={colors.light.textPrimary} />
+            <Share2 size={24} color={themeColors.textPrimary} />
           </Pressable>
         </XStack>
       </Stack>
@@ -347,23 +348,23 @@ export default function BillDetailScreen() {
           <Card variant="elevated">
             <XStack justifyContent="space-between" alignItems="center">
               <YStack>
-                <Text fontSize={14} color={colors.light.textSecondary}>Total</Text>
-                <Text fontSize={24} fontWeight="700" color={colors.light.textPrimary}>
+                <Text fontSize={14} color={themeColors.textSecondary}>Total</Text>
+                <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
                   ${bill.total_amount.toFixed(2)}
                 </Text>
               </YStack>
               <YStack alignItems="flex-end">
-                <Text fontSize={14} color={colors.light.textSecondary}>Your Share</Text>
+                <Text fontSize={14} color={themeColors.textSecondary}>Your Share</Text>
                 <BalanceBadge amount={-yourShare} size="md" />
               </YStack>
             </XStack>
             
-            <Stack height={1} backgroundColor={colors.light.border} marginVertical="$3" />
+            <Stack height={1} backgroundColor={themeColors.border} marginVertical="$3" />
             
             <XStack justifyContent="space-between" alignItems="center">
               <XStack alignItems="center" gap="$2">
                 <Avatar name={bill.payer.full_name} colorIndex={0} size="sm" />
-                <Text fontSize={14} color={colors.light.textSecondary}>
+                <Text fontSize={14} color={themeColors.textSecondary}>
                   Paid by {bill.payer.full_name}
                 </Text>
               </XStack>
@@ -374,7 +375,7 @@ export default function BillDetailScreen() {
         {/* Instructions */}
         <Stack paddingHorizontal="$4" marginBottom="$3">
           <XStack 
-            backgroundColor={colors.light.infoBg}
+            backgroundColor={themeColors.infoBg}
             paddingHorizontal="$3"
             paddingVertical="$2"
             borderRadius={8}
@@ -382,7 +383,7 @@ export default function BillDetailScreen() {
             gap="$2"
           >
             <Text fontSize={14}>💡</Text>
-            <Text fontSize={13} color={colors.light.textSecondary} flex={1}>
+            <Text fontSize={13} color={themeColors.textSecondary} flex={1}>
               Tap to select items. Long-press for custom split options.
             </Text>
           </XStack>
@@ -445,14 +446,14 @@ export default function BillDetailScreen() {
                   variant={isSelected ? 'elevated' : 'surface'}
                   padding="$3"
                   borderWidth={isSelected ? 2 : 1}
-                  borderColor={isSelected ? colors.light.primary : colors.light.border}
+                  borderColor={isSelected ? themeColors.primary : themeColors.border}
                 >
                   <XStack alignItems="center" gap="$3">
                     <Stack
                       width={24}
                       height={24}
                       borderRadius={12}
-                      backgroundColor={isSelected ? colors.light.primary : colors.light.border}
+                      backgroundColor={isSelected ? themeColors.primary : themeColors.border}
                       justifyContent="center"
                       alignItems="center"
                     >
@@ -464,14 +465,14 @@ export default function BillDetailScreen() {
                         <Text 
                           fontSize={16} 
                           fontWeight="500" 
-                          color={colors.light.textPrimary}
+                          color={themeColors.textPrimary}
                         >
                           {item.name}
                         </Text>
                         <Text 
                           fontSize={16} 
                           fontWeight="600" 
-                          color={isSelected ? colors.light.primary : colors.light.textPrimary}
+                          color={isSelected ? themeColors.primary : themeColors.textPrimary}
                         >
                           ${item.price.toFixed(2)}
                         </Text>
@@ -489,7 +490,7 @@ export default function BillDetailScreen() {
                             size="sm"
                           />
                         ) : (
-                          <Text fontSize={12} color={colors.light.warning}>
+                          <Text fontSize={12} color={themeColors.warning}>
                             ⚠️ No one yet
                           </Text>
                         )}
@@ -516,16 +517,16 @@ export default function BillDetailScreen() {
         paddingHorizontal="$4" 
         paddingVertical="$4"
         borderTopWidth={1}
-        borderTopColor={colors.light.border}
-        backgroundColor={colors.light.surface}
+        borderTopColor={themeColors.border}
+        backgroundColor={themeColors.surface}
       >
         <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-          <Text fontSize={14} color={colors.light.textSecondary}>
+          <Text fontSize={14} color={themeColors.textSecondary}>
             {selectedItems.size} items selected
           </Text>
           <YStack alignItems="flex-end">
-            <Text fontSize={12} color={colors.light.textSecondary}>Your share</Text>
-            <Text fontSize={20} fontWeight="700" color={colors.light.primary}>
+            <Text fontSize={12} color={themeColors.textSecondary}>Your share</Text>
+            <Text fontSize={20} fontWeight="700" color={themeColors.primary}>
               ${yourShare.toFixed(2)}
             </Text>
           </YStack>

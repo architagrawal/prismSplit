@@ -14,11 +14,12 @@ import { Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Card } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
 
 export default function QRScannerScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { joinGroup, isLoading } = useGroupsStore();
   const { showToast } = useUIStore();
 
@@ -68,7 +69,7 @@ export default function QRScannerScreen() {
     return (
       <Screen>
         <YStack flex={1} justifyContent="center" alignItems="center">
-          <Text color={colors.light.textSecondary}>Requesting camera permission...</Text>
+          <Text color={themeColors.textSecondary}>Requesting camera permission...</Text>
         </YStack>
       </Screen>
     );
@@ -81,9 +82,9 @@ export default function QRScannerScreen() {
         {/* Header */}
         <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
           <Pressable onPress={() => router.back()}>
-            <X size={24} color={colors.light.textPrimary} />
+            <X size={24} color={themeColors.textPrimary} />
           </Pressable>
-          <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+          <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
             Scan QR Code
           </Text>
           <Stack width={24} />
@@ -94,18 +95,18 @@ export default function QRScannerScreen() {
             width={120}
             height={120}
             borderRadius={60}
-            backgroundColor={colors.light.warningBg}
+            backgroundColor={themeColors.warningBg}
             justifyContent="center"
             alignItems="center"
           >
-            <QrCode size={60} color={colors.light.warning} />
+            <QrCode size={60} color={themeColors.warning} />
           </Stack>
 
           <YStack alignItems="center" gap="$2">
-            <Text fontSize={20} fontWeight="600" color={colors.light.textPrimary} textAlign="center">
+            <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary} textAlign="center">
               Camera Permission Needed
             </Text>
-            <Text fontSize={16} color={colors.light.textSecondary} textAlign="center">
+            <Text fontSize={16} color={themeColors.textSecondary} textAlign="center">
               We need camera access to scan QR codes for joining groups.
             </Text>
           </YStack>
@@ -119,7 +120,7 @@ export default function QRScannerScreen() {
           </Button>
 
           <Pressable onPress={() => router.back()}>
-            <Text fontSize={16} color={colors.light.textMuted}>
+            <Text fontSize={16} color={themeColors.textMuted}>
               Enter code manually instead
             </Text>
           </Pressable>
@@ -173,7 +174,7 @@ export default function QRScannerScreen() {
               width={40}
               height={40}
               borderRadius={20}
-              backgroundColor={torch ? colors.light.primary : "rgba(0,0,0,0.5)"}
+              backgroundColor={torch ? themeColors.primary : "rgba(0,0,0,0.5)"}
               justifyContent="center"
               alignItems="center"
             >
@@ -205,7 +206,7 @@ export default function QRScannerScreen() {
               height={50} 
               borderTopWidth={4}
               borderLeftWidth={4}
-              borderColor={colors.light.primary}
+              borderColor={themeColors.primary}
               borderTopLeftRadius={24}
             />
             <Stack 
@@ -216,7 +217,7 @@ export default function QRScannerScreen() {
               height={50} 
               borderTopWidth={4}
               borderRightWidth={4}
-              borderColor={colors.light.primary}
+              borderColor={themeColors.primary}
               borderTopRightRadius={24}
             />
             <Stack 
@@ -227,7 +228,7 @@ export default function QRScannerScreen() {
               height={50} 
               borderBottomWidth={4}
               borderLeftWidth={4}
-              borderColor={colors.light.primary}
+              borderColor={themeColors.primary}
               borderBottomLeftRadius={24}
             />
             <Stack 
@@ -238,7 +239,7 @@ export default function QRScannerScreen() {
               height={50} 
               borderBottomWidth={4}
               borderRightWidth={4}
-              borderColor={colors.light.primary}
+              borderColor={themeColors.primary}
               borderBottomRightRadius={24}
             />
           </Stack>
@@ -258,7 +259,7 @@ export default function QRScannerScreen() {
           {scanned && isLoading && (
             <Card variant="elevated">
               <XStack justifyContent="center" alignItems="center" gap="$2">
-                <Text color={colors.light.textPrimary}>Joining group...</Text>
+                <Text color={themeColors.textPrimary}>Joining group...</Text>
               </XStack>
             </Card>
           )}

@@ -13,7 +13,7 @@ import { X, Plus, Trash2, Save } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Input, CurrencyInput, Card, CategoryBadge } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useUIStore } from '@/lib/store';
 import { categoryIcons, type Category } from '@/types/models';
 
@@ -38,6 +38,7 @@ const categories: { key: Category; icon: string; label: string }[] = [
 export default function BillEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const themeColors = useThemeColors();
   
   const { currentBill, fetchBillById, billItems, fetchBillItems, updateBill, isLoading } = useBillsStore();
   const { showToast } = useUIStore();
@@ -171,13 +172,13 @@ export default function BillEditScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
         <Pressable onPress={handleCancel}>
-          <X size={24} color={colors.light.textPrimary} />
+          <X size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Edit Bill
         </Text>
         <Pressable onPress={handleSave} disabled={isLoading}>
-          <Save size={24} color={colors.light.primary} />
+          <Save size={24} color={themeColors.primary} />
         </Pressable>
       </XStack>
 
@@ -198,7 +199,7 @@ export default function BillEditScreen() {
 
           {/* Category */}
           <YStack marginBottom="$4">
-            <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+            <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
               Category
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -217,19 +218,19 @@ export default function BillEditScreen() {
                       paddingVertical="$2"
                       borderRadius={20}
                       backgroundColor={category === cat.key 
-                        ? `${colors.light.primary}20` 
-                        : colors.light.surfaceElevated
+                        ? `${themeColors.primary}20` 
+                        : themeColors.surfaceElevated
                       }
                       borderWidth={category === cat.key ? 2 : 0}
-                      borderColor={colors.light.primary}
+                      borderColor={themeColors.primary}
                     >
                       <XStack alignItems="center" gap="$1">
                         <Text fontSize={16}>{cat.icon}</Text>
                         <Text 
                           fontSize={14} 
                           color={category === cat.key 
-                            ? colors.light.primary 
-                            : colors.light.textSecondary
+                            ? themeColors.primary 
+                            : themeColors.textSecondary
                           }
                         >
                           {cat.label}
@@ -245,13 +246,13 @@ export default function BillEditScreen() {
           {/* Items */}
           <YStack marginBottom="$4">
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$2">
-              <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary}>
+              <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary}>
                 Items ({items.length})
               </Text>
               <Pressable onPress={handleAddItem}>
                 <XStack alignItems="center" gap="$1">
-                  <Plus size={16} color={colors.light.primary} />
-                  <Text fontSize={14} color={colors.light.primary}>Add Item</Text>
+                  <Plus size={16} color={themeColors.primary} />
+                  <Text fontSize={14} color={themeColors.primary}>Add Item</Text>
                 </XStack>
               </Pressable>
             </XStack>
@@ -266,14 +267,14 @@ export default function BillEditScreen() {
                       onChangeText={(val) => handleItemChange(index, 'name', val)}
                       style={{
                         fontSize: 16,
-                        color: colors.light.textPrimary,
+                        color: themeColors.textPrimary,
                         padding: 0,
                       }}
-                      placeholderTextColor={colors.light.textMuted}
+                      placeholderTextColor={themeColors.textMuted}
                     />
                     <XStack gap="$3">
                       <XStack alignItems="center" gap="$1" flex={1}>
-                        <Text fontSize={14} color={colors.light.textMuted}>$</Text>
+                        <Text fontSize={14} color={themeColors.textMuted}>$</Text>
                         <TextInput
                           placeholder="0.00"
                           value={item.price > 0 ? item.price.toString() : ''}
@@ -282,14 +283,14 @@ export default function BillEditScreen() {
                           style={{
                             flex: 1,
                             fontSize: 14,
-                            color: colors.light.textPrimary,
+                            color: themeColors.textPrimary,
                             padding: 0,
                           }}
-                          placeholderTextColor={colors.light.textMuted}
+                          placeholderTextColor={themeColors.textMuted}
                         />
                       </XStack>
                       <XStack alignItems="center" gap="$1">
-                        <Text fontSize={14} color={colors.light.textMuted}>Qty:</Text>
+                        <Text fontSize={14} color={themeColors.textMuted}>Qty:</Text>
                         <TextInput
                           value={item.quantity.toString()}
                           onChangeText={(val) => handleItemChange(index, 'quantity', val)}
@@ -297,7 +298,7 @@ export default function BillEditScreen() {
                           style={{
                             width: 40,
                             fontSize: 14,
-                            color: colors.light.textPrimary,
+                            color: themeColors.textPrimary,
                             padding: 0,
                             textAlign: 'center',
                           }}
@@ -308,7 +309,7 @@ export default function BillEditScreen() {
                   
                   {items.length > 1 && (
                     <Pressable onPress={() => handleRemoveItem(index)}>
-                      <Trash2 size={18} color={colors.light.error} />
+                      <Trash2 size={18} color={themeColors.error} />
                     </Pressable>
                   )}
                 </XStack>
@@ -320,16 +321,16 @@ export default function BillEditScreen() {
           <Card variant="surface" marginBottom="$4">
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={colors.light.textSecondary}>Subtotal</Text>
-                <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+                <Text fontSize={14} color={themeColors.textSecondary}>Subtotal</Text>
+                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
                   ${subtotal.toFixed(2)}
                 </Text>
               </XStack>
               
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={colors.light.textSecondary}>Tax</Text>
+                <Text fontSize={14} color={themeColors.textSecondary}>Tax</Text>
                 <XStack alignItems="center" gap="$1">
-                  <Text fontSize={14} color={colors.light.textMuted}>$</Text>
+                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
                   <TextInput
                     placeholder="0.00"
                     value={tax}
@@ -338,18 +339,18 @@ export default function BillEditScreen() {
                     style={{
                       width: 60,
                       fontSize: 16,
-                      color: colors.light.textPrimary,
+                      color: themeColors.textPrimary,
                       textAlign: 'right',
                     }}
-                    placeholderTextColor={colors.light.textMuted}
+                    placeholderTextColor={themeColors.textMuted}
                   />
                 </XStack>
               </XStack>
 
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={colors.light.textSecondary}>Tip</Text>
+                <Text fontSize={14} color={themeColors.textSecondary}>Tip</Text>
                 <XStack alignItems="center" gap="$1">
-                  <Text fontSize={14} color={colors.light.textMuted}>$</Text>
+                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
                   <TextInput
                     placeholder="0.00"
                     value={tip}
@@ -358,19 +359,19 @@ export default function BillEditScreen() {
                     style={{
                       width: 60,
                       fontSize: 16,
-                      color: colors.light.textPrimary,
+                      color: themeColors.textPrimary,
                       textAlign: 'right',
                     }}
-                    placeholderTextColor={colors.light.textMuted}
+                    placeholderTextColor={themeColors.textMuted}
                   />
                 </XStack>
               </XStack>
 
-              <Stack height={1} backgroundColor={colors.light.border} />
+              <Stack height={1} backgroundColor={themeColors.border} />
 
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>Total</Text>
-                <Text fontSize={20} fontWeight="700" color={colors.light.primary}>
+                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>Total</Text>
+                <Text fontSize={20} fontWeight="700" color={themeColors.primary}>
                   ${total.toFixed(2)}
                 </Text>
               </XStack>
@@ -382,11 +383,11 @@ export default function BillEditScreen() {
             <Card 
               variant="surface" 
               marginBottom="$4"
-              backgroundColor={colors.light.warningBg}
+              backgroundColor={themeColors.warningBg}
               borderWidth={1}
-              borderColor={colors.light.warning}
+              borderColor={themeColors.warning}
             >
-              <Text fontSize={14} color={colors.light.textPrimary}>
+              <Text fontSize={14} color={themeColors.textPrimary}>
                 ⚠️ Editing item names or prices will reset participant selections. They'll need to re-select their items.
               </Text>
             </Card>

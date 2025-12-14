@@ -10,7 +10,7 @@ import { ArrowLeft, Bell, MessageSquare, CreditCard, Users, Check } from 'lucide
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Button } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUIStore } from '@/lib/store';
 
 interface NotificationToggleProps {
@@ -22,6 +22,8 @@ interface NotificationToggleProps {
 }
 
 function NotificationToggle({ icon, title, description, value, onValueChange }: NotificationToggleProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <XStack 
       alignItems="center" 
@@ -33,17 +35,17 @@ function NotificationToggle({ icon, title, description, value, onValueChange }: 
           width={40} 
           height={40} 
           borderRadius={10}
-          backgroundColor={colors.light.surfaceElevated}
+          backgroundColor={themeColors.surfaceElevated}
           justifyContent="center"
           alignItems="center"
         >
           {icon}
         </Stack>
         <YStack flex={1}>
-          <Text fontSize={16} fontWeight="500" color={colors.light.textPrimary}>
+          <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
             {title}
           </Text>
-          <Text fontSize={13} color={colors.light.textSecondary}>
+          <Text fontSize={13} color={themeColors.textSecondary}>
             {description}
           </Text>
         </YStack>
@@ -54,7 +56,7 @@ function NotificationToggle({ icon, title, description, value, onValueChange }: 
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onValueChange(val);
         }}
-        trackColor={{ false: colors.light.border, true: colors.light.primary }}
+        trackColor={{ false: themeColors.border, true: themeColors.primary }}
         thumbColor="white"
       />
     </XStack>
@@ -63,6 +65,7 @@ function NotificationToggle({ icon, title, description, value, onValueChange }: 
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { showToast } = useUIStore();
   
   const [billReminders, setBillReminders] = useState(true);
@@ -81,9 +84,9 @@ export default function NotificationsScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Notifications
         </Text>
         <Stack width={24} />
@@ -91,36 +94,36 @@ export default function NotificationsScreen() {
 
       {/* Push Notifications */}
       <YStack marginBottom="$6">
-        <Text fontSize={14} fontWeight="600" color={colors.light.textMuted} marginBottom="$2">
+        <Text fontSize={14} fontWeight="600" color={themeColors.textMuted} marginBottom="$2">
           PUSH NOTIFICATIONS
         </Text>
         <Card variant="surface">
           <NotificationToggle
-            icon={<Bell size={20} color={colors.light.textSecondary} />}
+            icon={<Bell size={20} color={themeColors.textSecondary} />}
             title="Bill Reminders"
             description="Get reminded about pending bills"
             value={billReminders}
             onValueChange={setBillReminders}
           />
-          <Stack height={1} backgroundColor={colors.light.border} />
+          <Stack height={1} backgroundColor={themeColors.border} />
           <NotificationToggle
-            icon={<CreditCard size={20} color={colors.light.textSecondary} />}
+            icon={<CreditCard size={20} color={themeColors.textSecondary} />}
             title="New Expenses"
             description="When someone adds an expense"
             value={newExpenses}
             onValueChange={setNewExpenses}
           />
-          <Stack height={1} backgroundColor={colors.light.border} />
+          <Stack height={1} backgroundColor={themeColors.border} />
           <NotificationToggle
-            icon={<MessageSquare size={20} color={colors.light.textSecondary} />}
+            icon={<MessageSquare size={20} color={themeColors.textSecondary} />}
             title="Settlements"
             description="When someone settles with you"
             value={settlements}
             onValueChange={setSettlements}
           />
-          <Stack height={1} backgroundColor={colors.light.border} />
+          <Stack height={1} backgroundColor={themeColors.border} />
           <NotificationToggle
-            icon={<Users size={20} color={colors.light.textSecondary} />}
+            icon={<Users size={20} color={themeColors.textSecondary} />}
             title="Group Updates"
             description="New members and group changes"
             value={groupUpdates}
@@ -132,10 +135,10 @@ export default function NotificationsScreen() {
       {/* Info */}
       <Card variant="surface" marginBottom="$6">
         <YStack gap="$2">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textPrimary}>
+          <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
             About Notifications
           </Text>
-          <Text fontSize={13} color={colors.light.textSecondary}>
+          <Text fontSize={13} color={themeColors.textSecondary}>
             You can also manage notification permissions in your device settings. 
             Some notifications may be required for important account updates.
           </Text>

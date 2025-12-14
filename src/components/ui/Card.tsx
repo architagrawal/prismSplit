@@ -4,55 +4,73 @@
  * Surface and elevated card variants with consistent styling.
  */
 
-import { styled, Stack, GetProps } from 'tamagui';
+import { Stack, GetProps } from 'tamagui';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
-// Base Card styled component
-const CardBase = styled(Stack, {
-  borderRadius: 12,
-  padding: '$4',
+// Card variant type
+type CardVariant = 'surface' | 'elevated' | 'outlined';
+
+interface CardProps {
+  children: React.ReactNode;
+  variant?: CardVariant;
+  pressable?: boolean;
+  padding?: number | string;
+  borderRadius?: number;
+  [key: string]: any;
+}
+
+export type { CardProps };
+
+export function Card({ 
+  children, 
+  variant = 'surface',
+  pressable = false,
+  padding,
+  borderRadius = 12,
+  ...props 
+}: CardProps) {
+  const themeColors = useThemeColors();
   
-  variants: {
-    variant: {
-      surface: {
-        backgroundColor: colors.light.surface,
-        borderWidth: 1,
-        borderColor: colors.light.border,
-      },
-      elevated: {
-        backgroundColor: colors.light.surfaceElevated,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-      },
-      outlined: {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: colors.light.border,
-      },
+  const variantStyles = {
+    surface: {
+      backgroundColor: themeColors.surface,
+      borderWidth: 1,
+      borderColor: themeColors.border,
     },
-    pressable: {
-      true: {
+    elevated: {
+      backgroundColor: themeColors.surfaceElevated,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    outlined: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: themeColors.border,
+    },
+  };
+  
+  const style = variantStyles[variant];
+  
+  return (
+    <Stack
+      borderRadius={borderRadius}
+      padding={padding ?? '$4'}
+      {...style}
+      {...(pressable && {
         pressStyle: {
           opacity: 0.9,
           scale: 0.99,
         },
-      },
-    },
-  } as const,
-  
-  defaultVariants: {
-    variant: 'surface',
-  },
-});
-
-export type CardProps = GetProps<typeof CardBase>;
-
-export function Card({ children, ...props }: CardProps) {
-  return <CardBase {...props}>{children}</CardBase>;
+      })}
+      {...props}
+    >
+      {children}
+    </Stack>
+  );
 }
 
 // Specialized card for balance display with glow effect
@@ -61,15 +79,17 @@ export function BalanceCard({
   type = 'neutral',
   ...props 
 }: CardProps & { type?: 'owed' | 'owing' | 'neutral' }) {
+  const themeColors = useThemeColors();
+  
   const glowColor = type === 'owed' 
-    ? colors.light.successLight 
+    ? themeColors.successLight 
     : type === 'owing' 
-      ? colors.light.errorLight 
-      : colors.light.primary;
+      ? themeColors.errorLight 
+      : themeColors.primary;
   
   return (
     <Stack
-      backgroundColor={colors.light.surface}
+      backgroundColor={themeColors.surface}
       borderRadius={16}
       padding="$4"
       shadowColor={glowColor}

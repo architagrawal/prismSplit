@@ -12,11 +12,12 @@ import { ArrowLeft, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Avatar, Button, CurrencyInput } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { demoUsers, demoBalances, currentUser } from '@/lib/api/demo';
 
 export default function SettleScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   
   // Find the person to settle with
@@ -45,17 +46,17 @@ export default function SettleScreen() {
             width={100}
             height={100}
             borderRadius={50}
-            backgroundColor={colors.light.successBg}
+            backgroundColor={themeColors.successBg}
             justifyContent="center"
             alignItems="center"
           >
-            <Check size={48} color={colors.light.success} />
+            <Check size={48} color={themeColors.success} />
           </Stack>
           <YStack alignItems="center" gap="$2">
-            <Text fontSize={24} fontWeight="700" color={colors.light.textPrimary}>
+            <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
               Settled!
             </Text>
-            <Text fontSize={16} color={colors.light.textSecondary} textAlign="center">
+            <Text fontSize={16} color={themeColors.textSecondary} textAlign="center">
               You recorded a payment of ${parseFloat(amount).toFixed(2)} to {person.full_name}
             </Text>
           </YStack>
@@ -69,9 +70,9 @@ export default function SettleScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Settle Up
         </Text>
         <Stack width={24} />
@@ -86,10 +87,10 @@ export default function SettleScreen() {
             size="xl" 
           />
           <YStack alignItems="center">
-            <Text fontSize={20} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
               {person.full_name}
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               {amountOwed < 0 ? 'You owe' : 'Owes you'} ${Math.abs(amountOwed).toFixed(2)}
             </Text>
           </YStack>
@@ -101,7 +102,7 @@ export default function SettleScreen() {
         <Text 
           fontSize={14} 
           fontWeight="500" 
-          color={colors.light.textSecondary}
+          color={themeColors.textSecondary}
           marginBottom="$2"
         >
           Settlement Amount
@@ -129,7 +130,7 @@ export default function SettleScreen() {
                 <Text 
                   fontSize={14} 
                   fontWeight="500" 
-                  color={amount === quickAmount.toFixed(2) ? colors.light.primary : colors.light.textSecondary}
+                  color={amount === quickAmount.toFixed(2) ? themeColors.primary : themeColors.textSecondary}
                   textAlign="center"
                 >
                   ${quickAmount.toFixed(0)}
@@ -143,10 +144,10 @@ export default function SettleScreen() {
       {/* Payment Method Info */}
       <Card variant="surface" marginBottom="$6">
         <YStack gap="$2">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textPrimary}>
+          <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
             Record Payment
           </Text>
-          <Text fontSize={13} color={colors.light.textSecondary}>
+          <Text fontSize={13} color={themeColors.textSecondary}>
             This records that a payment was made outside the app (cash, Venmo, etc.).
             PrismSplit does not process actual payments.
           </Text>

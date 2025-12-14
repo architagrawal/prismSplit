@@ -12,11 +12,12 @@ import { ArrowLeft, Copy, Share2, QrCode, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Card } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { demoGroups } from '@/lib/api/demo';
 
 export default function GroupInviteScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [copied, setCopied] = useState(false);
 
@@ -47,9 +48,9 @@ export default function GroupInviteScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Invite Members
         </Text>
         <Stack width={24} />
@@ -61,17 +62,17 @@ export default function GroupInviteScreen() {
           width={80}
           height={80}
           borderRadius={20}
-          backgroundColor={colors.light.surfaceElevated}
+          backgroundColor={themeColors.surfaceElevated}
           justifyContent="center"
           alignItems="center"
           marginBottom="$3"
         >
           <Text fontSize={40}>{group.emoji}</Text>
         </Stack>
-        <Text fontSize={20} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
           {group.name}
         </Text>
-        <Text fontSize={14} color={colors.light.textSecondary}>
+        <Text fontSize={14} color={themeColors.textSecondary}>
           {group.member_count} members
         </Text>
       </YStack>
@@ -83,14 +84,14 @@ export default function GroupInviteScreen() {
             width={140}
             height={140}
             borderRadius={12}
-            backgroundColor={colors.light.surfaceElevated}
+            backgroundColor={themeColors.surfaceElevated}
             justifyContent="center"
             alignItems="center"
             marginBottom="$2"
           >
-            <QrCode size={80} color={colors.light.textMuted} />
+            <QrCode size={80} color={themeColors.textMuted} />
           </Stack>
-          <Text fontSize={12} color={colors.light.textMuted}>
+          <Text fontSize={12} color={themeColors.textMuted}>
             Scan to join group
           </Text>
         </YStack>
@@ -101,7 +102,7 @@ export default function GroupInviteScreen() {
         <Text 
           fontSize={14} 
           fontWeight="500" 
-          color={colors.light.textSecondary}
+          color={themeColors.textSecondary}
           marginBottom="$2"
         >
           Invite Code
@@ -111,7 +112,7 @@ export default function GroupInviteScreen() {
             <Text 
               fontSize={24} 
               fontWeight="700" 
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
               letterSpacing={4}
             >
               {inviteCode}
@@ -121,14 +122,14 @@ export default function GroupInviteScreen() {
                 width={40}
                 height={40}
                 borderRadius={20}
-                backgroundColor={copied ? colors.light.successBg : colors.light.surfaceElevated}
+                backgroundColor={copied ? themeColors.successBg : themeColors.surfaceElevated}
                 justifyContent="center"
                 alignItems="center"
               >
                 {copied ? (
-                  <Check size={20} color={colors.light.success} />
+                  <Check size={20} color={themeColors.success} />
                 ) : (
-                  <Copy size={20} color={colors.light.primary} />
+                  <Copy size={20} color={themeColors.primary} />
                 )}
               </Stack>
             </Pressable>
@@ -141,7 +142,7 @@ export default function GroupInviteScreen() {
         <Text 
           fontSize={14} 
           fontWeight="500" 
-          color={colors.light.textSecondary}
+          color={themeColors.textSecondary}
           marginBottom="$2"
         >
           Invite Link
@@ -150,14 +151,14 @@ export default function GroupInviteScreen() {
           <XStack justifyContent="space-between" alignItems="center">
             <Text 
               fontSize={14} 
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
               flex={1}
               numberOfLines={1}
             >
               {inviteLink}
             </Text>
             <Pressable onPress={handleCopy}>
-              <Copy size={20} color={colors.light.primary} />
+              <Copy size={20} color={themeColors.primary} />
             </Pressable>
           </XStack>
         </Card>
@@ -179,4 +180,3 @@ export default function GroupInviteScreen() {
     </Screen>
   );
 }
-

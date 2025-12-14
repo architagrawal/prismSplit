@@ -10,11 +10,12 @@ import { useRouter } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 
 import { Button, Input, Screen } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore } from '@/lib/store';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { login, loginWithGoogle, isLoading } = useAuthStore();
   
   const [email, setEmail] = useState('');
@@ -57,7 +58,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen keyboardAvoiding backgroundColor={colors.light.background}>
+    <Screen keyboardAvoiding>
       <Stack flex={1} justifyContent="center">
         {/* Logo / Header - Compact */}
         <YStack alignItems="center" marginBottom="$2">
@@ -66,7 +67,7 @@ export default function LoginScreen() {
               width={50}
               height={50}
               borderRadius={14}
-              backgroundColor={colors.light.primary}
+              backgroundColor={themeColors.primary}
               justifyContent="center"
               alignItems="center"
             >
@@ -75,14 +76,14 @@ export default function LoginScreen() {
             <Text
               fontSize={28}
               fontWeight="700"
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
             >
               PrismSplit
             </Text>
           </XStack>
           <Text
             fontSize={15}
-            color={colors.light.textSecondary}
+            color={themeColors.textSecondary}
           >
             Log in to continue
           </Text>
@@ -97,7 +98,7 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             error={errors.email}
             keyboardType="email-address"
-            leftIcon={<Mail size={18} color={colors.light.textMuted} />}
+            leftIcon={<Mail size={18} color={themeColors.textMuted} />}
           />
 
           <Input
@@ -107,12 +108,12 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             error={errors.password}
             secureTextEntry={!showPassword}
-            leftIcon={<Lock size={18} color={colors.light.textMuted} />}
+            leftIcon={<Lock size={18} color={themeColors.textMuted} />}
             rightIcon={
               <Stack onPress={() => setShowPassword(!showPassword)}>
                 {showPassword 
-                  ? <EyeOff size={18} color={colors.light.textMuted} /> 
-                  : <Eye size={18} color={colors.light.textMuted} />
+                  ? <EyeOff size={18} color={themeColors.textMuted} /> 
+                  : <Eye size={18} color={themeColors.textMuted} />
                 }
               </Stack>
             }
@@ -123,7 +124,7 @@ export default function LoginScreen() {
             <Text
               fontSize={13}
               fontWeight="500"
-              color={colors.light.primary}
+              color={themeColors.primary}
               onPress={() => {/* TODO: Forgot password */}}
             >
               Forgot password?
@@ -145,9 +146,9 @@ export default function LoginScreen() {
 
           {/* Divider */}
           <Stack flexDirection="row" alignItems="center" gap="$3">
-            <Stack flex={1} height={1} backgroundColor={colors.light.border} />
-            <Text fontSize={13} color={colors.light.textMuted}>or</Text>
-            <Stack flex={1} height={1} backgroundColor={colors.light.border} />
+            <Stack flex={1} height={1} backgroundColor={themeColors.border} />
+            <Text fontSize={13} color={themeColors.textMuted}>or</Text>
+            <Stack flex={1} height={1} backgroundColor={themeColors.border} />
           </Stack>
 
           {/* Google OAuth */}
@@ -168,13 +169,13 @@ export default function LoginScreen() {
           marginTop="$4"
           gap="$1"
         >
-          <Text fontSize={14} color={colors.light.textSecondary}>
+          <Text fontSize={14} color={themeColors.textSecondary}>
             Don't have an account?
           </Text>
           <Text
             fontSize={14}
             fontWeight="600"
-            color={colors.light.primary}
+            color={themeColors.primary}
             onPress={() => router.push('/(auth)/signup' as any)}
           >
             Sign up
@@ -184,4 +185,3 @@ export default function LoginScreen() {
     </Screen>
   );
 }
-

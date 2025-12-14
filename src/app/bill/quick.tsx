@@ -13,7 +13,7 @@ import { X, ChevronDown, Check, Users, User } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Input, Card, Avatar } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 import { categoryIcons, type Category } from '@/types/models';
 import { demoGroupMembers } from '@/lib/api/demo';
@@ -33,6 +33,7 @@ const categories: { key: Category; icon: string; label: string }[] = [
 
 export default function QuickBillScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { createBill, isLoading } = useBillsStore();
   const { groups, fetchGroups } = useGroupsStore();
   const { showToast } = useUIStore();
@@ -123,9 +124,9 @@ export default function QuickBillScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <X size={24} color={colors.light.textPrimary} />
+          <X size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Quick Bill
         </Text>
         <Stack width={24} />
@@ -145,19 +146,19 @@ export default function QuickBillScreen() {
 
         {/* Amount */}
         <YStack marginBottom="$5">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+          <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
             Amount
           </Text>
           <Stack
-            backgroundColor={colors.light.surface}
+            backgroundColor={themeColors.surface}
             borderWidth={1}
-            borderColor={colors.light.border}
+            borderColor={themeColors.border}
             borderRadius={12}
             paddingHorizontal="$4"
             paddingVertical="$3"
           >
             <XStack alignItems="center">
-              <Text fontSize={32} fontWeight="700" color={colors.light.textPrimary}>$</Text>
+              <Text fontSize={32} fontWeight="700" color={themeColors.textPrimary}>$</Text>
               <TextInput
                 value={amount}
                 onChangeText={setAmount}
@@ -166,11 +167,11 @@ export default function QuickBillScreen() {
                 style={{
                   fontSize: 32,
                   fontWeight: '700',
-                  color: colors.light.textPrimary,
+                  color: themeColors.textPrimary,
                   flex: 1,
                   marginLeft: 4,
                 }}
-                placeholderTextColor={colors.light.textMuted}
+                placeholderTextColor={themeColors.textMuted}
               />
             </XStack>
           </Stack>
@@ -178,7 +179,7 @@ export default function QuickBillScreen() {
 
         {/* Group Selector */}
         <YStack marginBottom="$5">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+          <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
             Group
           </Text>
           <Pressable onPress={() => setShowGroupPicker(!showGroupPicker)}>
@@ -186,11 +187,11 @@ export default function QuickBillScreen() {
               <XStack justifyContent="space-between" alignItems="center">
                 <XStack alignItems="center" gap="$2">
                   <Text fontSize={20}>{selectedGroup?.emoji || '👥'}</Text>
-                  <Text fontSize={16} color={colors.light.textPrimary}>
+                  <Text fontSize={16} color={themeColors.textPrimary}>
                     {selectedGroup?.name || 'Select Group'}
                   </Text>
                 </XStack>
-                <ChevronDown size={20} color={colors.light.textMuted} />
+                <ChevronDown size={20} color={themeColors.textMuted} />
               </XStack>
             </Card>
           </Pressable>
@@ -211,14 +212,14 @@ export default function QuickBillScreen() {
                     gap="$3" 
                     paddingVertical="$2"
                     borderTopWidth={index > 0 ? 1 : 0}
-                    borderTopColor={colors.light.border}
+                    borderTopColor={themeColors.border}
                   >
                     <Text fontSize={20}>{group.emoji}</Text>
-                    <Text fontSize={16} color={colors.light.textPrimary} flex={1}>
+                    <Text fontSize={16} color={themeColors.textPrimary} flex={1}>
                       {group.name}
                     </Text>
                     {index === selectedGroupIndex && (
-                      <Check size={18} color={colors.light.primary} />
+                      <Check size={18} color={themeColors.primary} />
                     )}
                   </XStack>
                 </Pressable>
@@ -229,7 +230,7 @@ export default function QuickBillScreen() {
 
         {/* Category */}
         <YStack marginBottom="$5">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+          <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
             Category
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -247,19 +248,19 @@ export default function QuickBillScreen() {
                     paddingVertical="$2"
                     borderRadius={20}
                     backgroundColor={selectedCategory === cat.key 
-                      ? `${colors.light.primary}20` 
-                      : colors.light.surfaceElevated
+                      ? `${themeColors.primary}20` 
+                      : themeColors.surfaceElevated
                     }
                     borderWidth={selectedCategory === cat.key ? 2 : 0}
-                    borderColor={colors.light.primary}
+                    borderColor={themeColors.primary}
                   >
                     <XStack alignItems="center" gap="$1">
                       <Text fontSize={16}>{cat.icon}</Text>
                       <Text 
                         fontSize={14} 
                         color={selectedCategory === cat.key 
-                          ? colors.light.primary 
-                          : colors.light.textSecondary
+                          ? themeColors.primary 
+                          : themeColors.textSecondary
                         }
                       >
                         {cat.label}
@@ -274,7 +275,7 @@ export default function QuickBillScreen() {
 
         {/* Split Type */}
         <YStack marginBottom="$5">
-          <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+          <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
             How to split?
           </Text>
           <XStack gap="$2">
@@ -291,14 +292,14 @@ export default function QuickBillScreen() {
                 variant={splitType === 'equal' ? 'elevated' : 'outlined'}
                 padding="$3"
                 borderWidth={splitType === 'equal' ? 2 : 1}
-                borderColor={splitType === 'equal' ? colors.light.primary : colors.light.border}
+                borderColor={splitType === 'equal' ? themeColors.primary : themeColors.border}
               >
                 <YStack alignItems="center" gap="$1">
-                  <Users size={24} color={splitType === 'equal' ? colors.light.primary : colors.light.textMuted} />
+                  <Users size={24} color={splitType === 'equal' ? themeColors.primary : themeColors.textMuted} />
                   <Text 
                     fontSize={14} 
                     fontWeight="500"
-                    color={splitType === 'equal' ? colors.light.primary : colors.light.textSecondary}
+                    color={splitType === 'equal' ? themeColors.primary : themeColors.textSecondary}
                   >
                     Equal
                   </Text>
@@ -319,17 +320,17 @@ export default function QuickBillScreen() {
                 variant={splitType === 'select' ? 'elevated' : 'outlined'}
                 padding="$3"
                 borderWidth={splitType === 'select' ? 2 : 1}
-                borderColor={splitType === 'select' ? colors.light.primary : colors.light.border}
+                borderColor={splitType === 'select' ? themeColors.primary : themeColors.border}
               >
                 <YStack alignItems="center" gap="$1">
                   <Stack position="relative">
-                    <Users size={24} color={splitType === 'select' ? colors.light.primary : colors.light.textMuted} />
+                    <Users size={24} color={splitType === 'select' ? themeColors.primary : themeColors.textMuted} />
                     {selectedMembers.size > 0 && (
                       <Stack
                         position="absolute"
                         top={-4}
                         right={-8}
-                        backgroundColor={colors.light.primary}
+                        backgroundColor={themeColors.primary}
                         borderRadius={10}
                         width={18}
                         height={18}
@@ -345,7 +346,7 @@ export default function QuickBillScreen() {
                   <Text 
                     fontSize={14} 
                     fontWeight="500"
-                    color={splitType === 'select' ? colors.light.primary : colors.light.textSecondary}
+                    color={splitType === 'select' ? themeColors.primary : themeColors.textSecondary}
                   >
                     Select
                   </Text>
@@ -366,14 +367,14 @@ export default function QuickBillScreen() {
                 variant={splitType === 'just_me' ? 'elevated' : 'outlined'}
                 padding="$3"
                 borderWidth={splitType === 'just_me' ? 2 : 1}
-                borderColor={splitType === 'just_me' ? colors.light.primary : colors.light.border}
+                borderColor={splitType === 'just_me' ? themeColors.primary : themeColors.border}
               >
                 <YStack alignItems="center" gap="$1">
-                  <User size={24} color={splitType === 'just_me' ? colors.light.primary : colors.light.textMuted} />
+                  <User size={24} color={splitType === 'just_me' ? themeColors.primary : themeColors.textMuted} />
                   <Text 
                     fontSize={14} 
                     fontWeight="500"
-                    color={splitType === 'just_me' ? colors.light.primary : colors.light.textSecondary}
+                    color={splitType === 'just_me' ? themeColors.primary : themeColors.textSecondary}
                   >
                     Just Me
                   </Text>
@@ -386,7 +387,7 @@ export default function QuickBillScreen() {
         {/* Member Picker (for Select type) */}
         {splitType === 'select' && showMemberPicker && (
           <YStack marginBottom="$5">
-            <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+            <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
               Select people
             </Text>
             <Card variant="surface">
@@ -400,14 +401,14 @@ export default function QuickBillScreen() {
                     gap="$3" 
                     paddingVertical="$3"
                     borderTopWidth={index > 0 ? 1 : 0}
-                    borderTopColor={colors.light.border}
+                    borderTopColor={themeColors.border}
                   >
                     <Avatar
                       name={member.user.full_name}
                       colorIndex={member.color_index}
                       size="md"
                     />
-                    <Text fontSize={16} color={colors.light.textPrimary} flex={1}>
+                    <Text fontSize={16} color={themeColors.textPrimary} flex={1}>
                       {member.user.full_name}
                     </Text>
                     <Stack
@@ -415,8 +416,8 @@ export default function QuickBillScreen() {
                       height={24}
                       borderRadius={12}
                       backgroundColor={selectedMembers.has(member.user_id) 
-                        ? colors.light.primary 
-                        : colors.light.border
+                        ? themeColors.primary 
+                        : themeColors.border
                       }
                       justifyContent="center"
                       alignItems="center"
@@ -436,10 +437,10 @@ export default function QuickBillScreen() {
         {amount && parseFloat(amount) > 0 && (
           <Card variant="elevated" marginBottom="$5">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize={14} color={colors.light.textSecondary}>
+              <Text fontSize={14} color={themeColors.textSecondary}>
                 {getSplitSummary()}
               </Text>
-              <Text fontSize={24} fontWeight="700" color={colors.light.primary}>
+              <Text fontSize={24} fontWeight="700" color={themeColors.primary}>
                 ${parseFloat(amount).toFixed(2)}
               </Text>
             </YStack>

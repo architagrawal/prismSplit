@@ -14,13 +14,14 @@ import { Search, UserPlus } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Avatar, BalanceBadge, Button } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useGroupsStore, useUIStore } from '@/lib/store';
 import { demoBalances } from '@/lib/api/demo';
 import type { MemberBalance } from '@/types/models';
 
 export default function FriendsScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { groups, fetchGroups, isLoading: groupsLoading } = useGroupsStore();
@@ -76,10 +77,10 @@ export default function FriendsScreen() {
       <YStack paddingTop={insets.top > 0 ? 0 : '$4'} marginBottom="$4">
         <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
           <YStack>
-            <Text fontSize={28} fontWeight="700" color={colors.light.textPrimary}>
+            <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
               Friends
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               {balances.length} people across {groups.length} groups
             </Text>
           </YStack>
@@ -88,11 +89,11 @@ export default function FriendsScreen() {
               width={40}
               height={40}
               borderRadius={20}
-              backgroundColor={colors.light.surfaceElevated}
+              backgroundColor={themeColors.surfaceElevated}
               justifyContent="center"
               alignItems="center"
             >
-              <UserPlus size={20} color={colors.light.primary} />
+              <UserPlus size={20} color={themeColors.primary} />
             </Stack>
           </Pressable>
         </XStack>
@@ -101,20 +102,20 @@ export default function FriendsScreen() {
         <XStack gap="$3" marginBottom="$4">
           <Card variant="elevated" flex={1}>
             <YStack alignItems="center" gap="$1">
-              <Text fontSize={12} color={colors.light.textSecondary}>
+              <Text fontSize={12} color={themeColors.textSecondary}>
                 Owed to you
               </Text>
-              <Text fontSize={20} fontWeight="700" color={colors.light.success}>
+              <Text fontSize={20} fontWeight="700" color={themeColors.success}>
                 +${totalOwedToYou.toFixed(2)}
               </Text>
             </YStack>
           </Card>
           <Card variant="elevated" flex={1}>
             <YStack alignItems="center" gap="$1">
-              <Text fontSize={12} color={colors.light.textSecondary}>
+              <Text fontSize={12} color={themeColors.textSecondary}>
                 You owe
               </Text>
-              <Text fontSize={20} fontWeight="700" color={colors.light.error}>
+              <Text fontSize={20} fontWeight="700" color={themeColors.error}>
                 -${totalYouOwe.toFixed(2)}
               </Text>
             </YStack>
@@ -125,12 +126,12 @@ export default function FriendsScreen() {
         <XStack 
           alignItems="center" 
           gap="$2"
-          backgroundColor={colors.light.surfaceElevated}
+          backgroundColor={themeColors.surfaceElevated}
           borderRadius={12}
           paddingHorizontal="$3"
           paddingVertical="$2"
         >
-          <Search size={18} color={colors.light.textMuted} />
+          <Search size={18} color={themeColors.textMuted} />
           <TextInput
             placeholder="Search friends..."
             value={searchQuery}
@@ -138,9 +139,9 @@ export default function FriendsScreen() {
             style={{ 
               flex: 1, 
               fontSize: 16,
-              color: colors.light.textPrimary,
+              color: themeColors.textPrimary,
             }}
-            placeholderTextColor={colors.light.textMuted}
+            placeholderTextColor={themeColors.textMuted}
           />
         </XStack>
       </YStack>
@@ -156,7 +157,7 @@ export default function FriendsScreen() {
         {filteredBalances.length === 0 ? (
           <YStack alignItems="center" paddingVertical="$8" gap="$4">
             <Text fontSize={48}>👥</Text>
-            <Text fontSize={16} color={colors.light.textSecondary} textAlign="center">
+            <Text fontSize={16} color={themeColors.textSecondary} textAlign="center">
               {searchQuery 
                 ? 'No friends match your search'
                 : 'No balances with friends yet'
@@ -171,7 +172,7 @@ export default function FriendsScreen() {
                 <Text 
                   fontSize={14} 
                   fontWeight="600" 
-                  color={colors.light.textSecondary}
+                  color={themeColors.textSecondary}
                   marginTop="$2"
                   marginBottom="$1"
                 >
@@ -199,7 +200,7 @@ export default function FriendsScreen() {
                 <Text 
                   fontSize={14} 
                   fontWeight="600" 
-                  color={colors.light.textSecondary}
+                  color={themeColors.textSecondary}
                   marginTop="$4"
                   marginBottom="$1"
                 >
@@ -225,7 +226,7 @@ export default function FriendsScreen() {
                 <Text 
                   fontSize={14} 
                   fontWeight="600" 
-                  color={colors.light.textSecondary}
+                  color={themeColors.textSecondary}
                   marginTop="$4"
                   marginBottom="$1"
                 >
@@ -261,6 +262,8 @@ interface FriendCardProps {
 }
 
 function FriendCard({ friend, onPress, onRemind, showRemind }: FriendCardProps) {
+  const themeColors = useThemeColors();
+  
   return (
     <Pressable onPress={onPress}>
       <Card variant="surface">
@@ -272,10 +275,10 @@ function FriendCard({ friend, onPress, onRemind, showRemind }: FriendCardProps) 
           />
           
           <YStack flex={1}>
-            <Text fontSize={16} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
               {friend.user.full_name}
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               {friend.balance > 0 
                 ? 'owes you' 
                 : friend.balance < 0 
@@ -295,7 +298,7 @@ function FriendCard({ friend, onPress, onRemind, showRemind }: FriendCardProps) 
                   onRemind?.();
                 }}
               >
-                <Text fontSize={12} color={colors.light.primary}>
+                <Text fontSize={12} color={themeColors.primary}>
                   Remind
                 </Text>
               </Pressable>

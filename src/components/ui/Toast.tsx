@@ -16,47 +16,13 @@ import {
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUIStore } from '@/lib/store';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TOAST_DURATION = 300; // Animation duration
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
-
-interface ToastConfig {
-  icon: React.ReactNode;
-  backgroundColor: string;
-  borderColor: string;
-  iconColor: string;
-}
-
-const toastConfigs: Record<ToastType, ToastConfig> = {
-  success: {
-    icon: <CheckCircle size={20} />,
-    backgroundColor: colors.light.successBg,
-    borderColor: colors.light.success,
-    iconColor: colors.light.success,
-  },
-  error: {
-    icon: <XCircle size={20} />,
-    backgroundColor: colors.light.errorBg,
-    borderColor: colors.light.error,
-    iconColor: colors.light.error,
-  },
-  info: {
-    icon: <Info size={20} />,
-    backgroundColor: colors.light.infoBg,
-    borderColor: colors.light.info,
-    iconColor: colors.light.info,
-  },
-  warning: {
-    icon: <AlertCircle size={20} />,
-    backgroundColor: colors.light.warningBg,
-    borderColor: colors.light.warning,
-    iconColor: colors.light.warning,
-  },
-};
 
 interface SingleToastProps {
   id: string;
@@ -70,8 +36,33 @@ function SingleToast({ id, type, message, onDismiss, index }: SingleToastProps) 
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.9)).current;
+  const themeColors = useThemeColors();
 
-  const config = toastConfigs[type];
+  // Get toast config based on type and current theme
+  const getToastConfig = () => ({
+    success: {
+      backgroundColor: themeColors.successBg,
+      borderColor: themeColors.success,
+      iconColor: themeColors.success,
+    },
+    error: {
+      backgroundColor: themeColors.errorBg,
+      borderColor: themeColors.error,
+      iconColor: themeColors.error,
+    },
+    info: {
+      backgroundColor: themeColors.infoBg,
+      borderColor: themeColors.info,
+      iconColor: themeColors.info,
+    },
+    warning: {
+      backgroundColor: themeColors.warningBg,
+      borderColor: themeColors.warning,
+      iconColor: themeColors.warning,
+    },
+  });
+
+  const config = getToastConfig()[type];
 
   useEffect(() => {
     // Animate in
@@ -144,7 +135,7 @@ function SingleToast({ id, type, message, onDismiss, index }: SingleToastProps) 
           shadowRadius={12}
         >
           <XStack alignItems="center" gap="$3">
-            <Stack style={{ color: config.iconColor }}>
+            <Stack>
               {type === 'success' && <CheckCircle size={20} color={config.iconColor} />}
               {type === 'error' && <XCircle size={20} color={config.iconColor} />}
               {type === 'info' && <Info size={20} color={config.iconColor} />}
@@ -155,13 +146,13 @@ function SingleToast({ id, type, message, onDismiss, index }: SingleToastProps) 
               flex={1}
               fontSize={14} 
               fontWeight="500"
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
             >
               {message}
             </Text>
             
             <Pressable onPress={handleDismiss} hitSlop={8}>
-              <X size={16} color={colors.light.textMuted} />
+              <X size={16} color={themeColors.textMuted} />
             </Pressable>
           </XStack>
         </Stack>

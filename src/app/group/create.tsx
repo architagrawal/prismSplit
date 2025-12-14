@@ -12,7 +12,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Input, Card } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { supportedCurrencies, currencySymbols, type Currency } from '@/types/models';
 import { useGroupsStore, useUIStore } from '@/lib/store';
 
@@ -20,6 +20,7 @@ const emojis = ['🏠', '✈️', '🍕', '🎉', '🛒', '💼', '🎮', '🏖�
 
 export default function CreateGroupScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { createGroup, isLoading } = useGroupsStore();
   const { showToast } = useUIStore();
   
@@ -48,9 +49,9 @@ export default function CreateGroupScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           New Group
         </Text>
         <Stack width={24} />
@@ -73,7 +74,7 @@ export default function CreateGroupScreen() {
           <Text 
             fontSize={14} 
             fontWeight="500" 
-            color={colors.light.textSecondary}
+            color={themeColors.textSecondary}
             marginBottom="$2"
           >
             Group Icon
@@ -92,11 +93,11 @@ export default function CreateGroupScreen() {
                   height={56}
                   borderRadius={12}
                   backgroundColor={selectedEmoji === emoji 
-                    ? `${colors.light.primary}20` 
-                    : colors.light.surfaceElevated
+                    ? `${themeColors.primary}20` 
+                    : themeColors.surfaceElevated
                   }
                   borderWidth={selectedEmoji === emoji ? 2 : 0}
-                  borderColor={colors.light.primary}
+                  borderColor={themeColors.primary}
                   justifyContent="center"
                   alignItems="center"
                 >
@@ -112,7 +113,7 @@ export default function CreateGroupScreen() {
           <Text 
             fontSize={14} 
             fontWeight="500" 
-            color={colors.light.textSecondary}
+            color={themeColors.textSecondary}
             marginBottom="$2"
           >
             Currency
@@ -130,16 +131,16 @@ export default function CreateGroupScreen() {
                   variant={selectedCurrency === currency ? 'elevated' : 'outlined'}
                   padding="$2"
                   borderColor={selectedCurrency === currency 
-                    ? colors.light.primary 
-                    : colors.light.border
+                    ? themeColors.primary 
+                    : themeColors.border
                   }
                   borderWidth={selectedCurrency === currency ? 2 : 1}
                 >
                   <XStack alignItems="center" gap="$1">
-                    <Text fontSize={16} fontWeight="500" color={colors.light.textPrimary}>
+                    <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
                       {currencySymbols[currency]}
                     </Text>
-                    <Text fontSize={14} color={colors.light.textSecondary}>
+                    <Text fontSize={14} color={themeColors.textSecondary}>
                       {currency}
                     </Text>
                   </XStack>
@@ -156,16 +157,16 @@ export default function CreateGroupScreen() {
               width={64}
               height={64}
               borderRadius={16}
-              backgroundColor={colors.light.surfaceElevated}
+              backgroundColor={themeColors.surfaceElevated}
               justifyContent="center"
               alignItems="center"
             >
               <Text fontSize={32}>{selectedEmoji}</Text>
             </Stack>
-            <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               {name || 'Group Name'}
             </Text>
-            <Text fontSize={14} color={colors.light.textSecondary}>
+            <Text fontSize={14} color={themeColors.textSecondary}>
               1 member • {selectedCurrency}
             </Text>
           </YStack>

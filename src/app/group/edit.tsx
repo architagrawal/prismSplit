@@ -12,7 +12,7 @@ import { ArrowLeft, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Button, Input } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
 import { demoGroups } from '@/lib/api/demo';
 
@@ -21,6 +21,7 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
 export default function EditGroupScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useUIStore();
   
@@ -53,9 +54,9 @@ export default function EditGroupScreen() {
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
         <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.light.textPrimary} />
+          <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
-        <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
           Edit Group
         </Text>
         <Stack width={24} />
@@ -73,7 +74,7 @@ export default function EditGroupScreen() {
 
       {/* Emoji Selector */}
       <YStack marginBottom="$6">
-        <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+        <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
           Group Icon
         </Text>
         <Card variant="surface">
@@ -91,9 +92,9 @@ export default function EditGroupScreen() {
                     width={48}
                     height={48}
                     borderRadius={12}
-                    backgroundColor={selectedEmoji === emoji ? colors.light.primaryLight : colors.light.surfaceElevated}
+                    backgroundColor={selectedEmoji === emoji ? themeColors.primaryLight : themeColors.surfaceElevated}
                     borderWidth={selectedEmoji === emoji ? 2 : 0}
-                    borderColor={colors.light.primary}
+                    borderColor={themeColors.primary}
                     justifyContent="center"
                     alignItems="center"
                   >
@@ -108,7 +109,7 @@ export default function EditGroupScreen() {
 
       {/* Currency Selector */}
       <YStack marginBottom="$6">
-        <Text fontSize={14} fontWeight="500" color={colors.light.textSecondary} marginBottom="$2">
+        <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
           Currency
         </Text>
         <Card variant="surface">
@@ -125,12 +126,12 @@ export default function EditGroupScreen() {
                   paddingHorizontal="$4"
                   paddingVertical="$2"
                   borderRadius={20}
-                  backgroundColor={selectedCurrency === currency ? colors.light.primary : colors.light.surfaceElevated}
+                  backgroundColor={selectedCurrency === currency ? themeColors.primary : themeColors.surfaceElevated}
                 >
                   <Text
                     fontSize={14}
                     fontWeight="500"
-                    color={selectedCurrency === currency ? 'white' : colors.light.textPrimary}
+                    color={selectedCurrency === currency ? 'white' : themeColors.textPrimary}
                   >
                     {currency}
                   </Text>
@@ -144,23 +145,23 @@ export default function EditGroupScreen() {
       {/* Preview */}
       <Card variant="elevated" marginBottom="$6">
         <YStack alignItems="center" gap="$2">
-          <Text fontSize={14} color={colors.light.textSecondary}>Preview</Text>
+          <Text fontSize={14} color={themeColors.textSecondary}>Preview</Text>
           <XStack alignItems="center" gap="$3">
             <Stack
               width={56}
               height={56}
               borderRadius={14}
-              backgroundColor={colors.light.surfaceElevated}
+              backgroundColor={themeColors.surfaceElevated}
               justifyContent="center"
               alignItems="center"
             >
               <Text fontSize={28}>{selectedEmoji}</Text>
             </Stack>
             <YStack>
-              <Text fontSize={18} fontWeight="600" color={colors.light.textPrimary}>
+              <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
                 {name || 'Group Name'}
               </Text>
-              <Text fontSize={14} color={colors.light.textSecondary}>
+              <Text fontSize={14} color={themeColors.textSecondary}>
                 Currency: {selectedCurrency}
               </Text>
             </YStack>

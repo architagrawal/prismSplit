@@ -6,7 +6,7 @@
 
 import { useState, useRef } from 'react';
 import { Stack, Text, XStack, YStack } from 'tamagui';
-import { Dimensions, Animated, FlatList, ViewToken, StyleSheet, View } from 'react-native';
+import { Dimensions, Animated, FlatList, ViewToken, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react-native';
 
 import { Button } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width } = Dimensions.get('window');
 
@@ -26,47 +26,63 @@ interface OnboardingSlide {
   id: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
-  color: string;
+  iconType: 'receipt' | 'users' | 'grid' | 'check';
+  colorKey: 'primary' | 'secondary' | 'success';
 }
 
-const slides: OnboardingSlide[] = [
+const slidesData: OnboardingSlide[] = [
   {
     id: '1',
     title: 'Split Any Bill',
     description: 'From groceries to group trips, split expenses fairly with item-level precision.',
-    icon: <Receipt size={64} color={colors.light.primary} />,
-    color: colors.light.primary,
+    iconType: 'receipt',
+    colorKey: 'primary',
   },
   {
     id: '2',
     title: 'Invite Your Group',
     description: 'Create groups for roommates, trips, or any shared expense. Invite via link or QR code.',
-    icon: <Users size={64} color={colors.light.secondary} />,
-    color: colors.light.secondary,
+    iconType: 'users',
+    colorKey: 'secondary',
   },
   {
     id: '3',
     title: 'Self-Select Items',
     description: 'Participants choose what they\'re splitting. No more manual assignments.',
-    icon: <LayoutGrid size={64} color={colors.light.success} />,
-    color: colors.light.success,
+    iconType: 'grid',
+    colorKey: 'success',
   },
   {
     id: '4',
     title: 'Settle Up Easily',
     description: 'See who owes what at a glance. Mark payments as settled with one tap.',
-    icon: <CheckCircle size={64} color={colors.light.primary} />,
-    color: colors.light.primary,
+    iconType: 'check',
+    colorKey: 'primary',
   },
 ];
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const themeColors = useThemeColors();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Build slides with themed colors
+  const slides = slidesData.map(slide => ({
+    ...slide,
+    color: themeColors[slide.colorKey],
+    icon: (() => {
+      const iconProps = { size: 64, color: themeColors[slide.colorKey] };
+      switch (slide.iconType) {
+        case 'receipt': return <Receipt {...iconProps} />;
+        case 'users': return <Users {...iconProps} />;
+        case 'grid': return <LayoutGrid {...iconProps} />;
+        case 'check': return <CheckCircle {...iconProps} />;
+      }
+    })(),
+  }));
 
   const viewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -90,7 +106,7 @@ export default function WelcomeScreen() {
     router.push('/(auth)/login' as any);
   };
 
-  const renderSlide = ({ item }: { item: OnboardingSlide }) => (
+  const renderSlide = ({ item }: { item: typeof slides[0] }) => (
     <Stack width={width} alignItems="center" paddingHorizontal="$6" paddingTop="$12">
       <Stack
         width={160}
@@ -107,7 +123,7 @@ export default function WelcomeScreen() {
       <Text
         fontSize={28}
         fontWeight="700"
-        color={colors.light.textPrimary}
+        color={themeColors.textPrimary}
         textAlign="center"
         marginBottom="$4"
       >
@@ -116,7 +132,7 @@ export default function WelcomeScreen() {
       
       <Text
         fontSize={16}
-        color={colors.light.textSecondary}
+        color={themeColors.textSecondary}
         textAlign="center"
         lineHeight={24}
       >
@@ -127,15 +143,14 @@ export default function WelcomeScreen() {
 
   return (
     <View 
-      style={[
-        styles.container, 
-        { 
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        }
-      ]}
+      style={{ 
+        flex: 1,
+        backgroundColor: themeColors.background,
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
     >
       {/* Skip button */}
       <Stack 
@@ -178,8 +193,8 @@ export default function WelcomeScreen() {
             borderRadius={4}
             backgroundColor={
               index === currentIndex 
-                ? colors.light.primary 
-                : colors.light.border
+                ? themeColors.primary 
+                : themeColors.border
             }
           />
         ))}
@@ -210,10 +225,3 @@ export default function WelcomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.light.background,
-  },
-});

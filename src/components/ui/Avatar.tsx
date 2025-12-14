@@ -8,6 +8,7 @@ import { Stack, Text } from 'tamagui';
 import { Image } from 'expo-image';
 
 import { getAvatarColor, avatarColors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface AvatarProps {
   /** User's full name - used for initials */
@@ -38,6 +39,7 @@ export function Avatar({
 }: AvatarProps) {
   const sizeStyle = sizes[size];
   const backgroundColor = getAvatarColor(colorIndex);
+  const themeColors = useThemeColors();
   
   // Get initials from name (first letter of first and last name)
   const initials = name
@@ -56,7 +58,7 @@ export function Avatar({
       justifyContent="center"
       alignItems="center"
       borderWidth={bordered ? sizeStyle.borderWidth : 0}
-      borderColor="white"
+      borderColor={themeColors.background}
       overflow="hidden"
     >
       {imageUrl ? (
@@ -96,6 +98,7 @@ interface AvatarGroupProps {
 }
 
 export function AvatarGroup({ users, max = 3, size = 'sm' }: AvatarGroupProps) {
+  const themeColors = useThemeColors();
   const displayed = users.slice(0, max);
   const overflow = users.length - max;
   const sizeStyle = sizes[size];
@@ -124,14 +127,14 @@ export function AvatarGroup({ users, max = 3, size = 'sm' }: AvatarGroupProps) {
           width={sizeStyle.container}
           height={sizeStyle.container}
           borderRadius={sizeStyle.container / 2}
-          backgroundColor="#E5E5E5"
+          backgroundColor={themeColors.border}
           justifyContent="center"
           alignItems="center"
           borderWidth={size === 'sm' ? 1 : 2}
-          borderColor="white"
+          borderColor={themeColors.background}
         >
           <Text
-            color="#78716C"
+            color={themeColors.textSecondary}
             fontSize={sizeStyle.fontSize - 2}
             fontWeight="600"
           >

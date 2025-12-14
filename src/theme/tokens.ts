@@ -58,8 +58,13 @@ export const colors = {
     // Primary
     primary: '#A78BFA',
     primaryDark: '#8B5CF6',
+    primaryLight: '#C4B5FD',    // Lighter lavender
+    accent: '#3F3F46',          // Dark accent
     secondary: '#FDBA74',
     secondaryDark: '#F59E0B',
+    secondaryLight: '#FED7AA',  // Lighter peach
+    tertiary: '#6EE7B7',        // Mint
+    tertiaryLight: '#A7F3D0',   // Lighter mint
     
     // Semantic
     success: '#10B981',

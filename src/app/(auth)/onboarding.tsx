@@ -25,56 +25,77 @@ import {
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Button } from '@/components/ui';
-import { colors } from '@/theme/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore } from '@/lib/store';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-interface OnboardingSlide {
+interface OnboardingSlideData {
   id: string;
-  icon: React.ReactNode;
+  iconType: 'receipt' | 'users' | 'sparkles' | 'piechart';
   title: string;
   description: string;
-  color: string;
+  colorKey: 'accent' | 'secondaryLight' | 'tertiaryLight' | 'successBg';
+  iconColorKey: 'primary' | 'secondary' | 'tertiary' | 'success';
 }
 
-const slides: OnboardingSlide[] = [
+const slidesData: OnboardingSlideData[] = [
   {
     id: '1',
-    icon: <Receipt size={80} color={colors.light.primary} />,
+    iconType: 'receipt',
     title: 'Split Bills Easily',
     description: 'Add items, select what you\'re paying for, and let PrismSplit calculate everyone\'s share automatically.',
-    color: colors.light.accent,
+    colorKey: 'accent',
+    iconColorKey: 'primary',
   },
   {
     id: '2',
-    icon: <Users size={80} color={colors.light.secondary} />,
+    iconType: 'users',
     title: 'Create Groups',
     description: 'Organize expenses with roommates, trip buddies, or dinner friends. Share via link or QR code.',
-    color: colors.light.secondaryLight,
+    colorKey: 'secondaryLight',
+    iconColorKey: 'secondary',
   },
   {
     id: '3',
-    icon: <Sparkles size={80} color={colors.light.tertiary} />,
+    iconType: 'sparkles',
     title: 'Self-Select Items',
     description: 'Tap items you\'re splitting. See who else joined each item with colorful avatars.',
-    color: colors.light.tertiaryLight,
+    colorKey: 'tertiaryLight',
+    iconColorKey: 'tertiary',
   },
   {
     id: '4',
-    icon: <PieChart size={80} color={colors.light.success} />,
+    iconType: 'piechart',
     title: 'Track Balances',
     description: 'See who owes who at a glance. Settle up with a tap and keep friendships balanced.',
-    color: colors.light.successBg,
+    colorKey: 'successBg',
+    iconColorKey: 'success',
   },
 ];
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { setOnboarded } = useAuthStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Build slides with themed colors
+  const slides = slidesData.map(slide => ({
+    ...slide,
+    color: themeColors[slide.colorKey] || themeColors.surfaceElevated,
+    icon: (() => {
+      const iconColor = themeColors[slide.iconColorKey] || themeColors.primary;
+      switch (slide.iconType) {
+        case 'receipt': return <Receipt size={80} color={iconColor} />;
+        case 'users': return <Users size={80} color={iconColor} />;
+        case 'sparkles': return <Sparkles size={80} color={iconColor} />;
+        case 'piechart': return <PieChart size={80} color={iconColor} />;
+      }
+    })(),
+  }));
 
   const viewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0 && viewableItems[0].index !== null) {
@@ -103,7 +124,7 @@ export default function OnboardingScreen() {
     router.replace('/(auth)/login' as any);
   };
 
-  const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => {
+  const renderSlide = ({ item, index }: { item: typeof slides[0]; index: number }) => {
     const inputRange = [
       (index - 1) * SCREEN_WIDTH,
       index * SCREEN_WIDTH,
@@ -150,14 +171,14 @@ export default function OnboardingScreen() {
             <Text 
               fontSize={28} 
               fontWeight="700" 
-              color={colors.light.textPrimary}
+              color={themeColors.textPrimary}
               textAlign="center"
             >
               {item.title}
             </Text>
             <Text 
               fontSize={16} 
-              color={colors.light.textSecondary}
+              color={themeColors.textSecondary}
               textAlign="center"
               lineHeight={24}
             >
@@ -198,7 +219,7 @@ export default function OnboardingScreen() {
               {
                 width: dotWidth,
                 opacity: dotOpacity,
-                backgroundColor: colors.light.primary,
+                backgroundColor: themeColors.primary,
               },
             ]}
           />
@@ -214,7 +235,7 @@ export default function OnboardingScreen() {
       {/* Skip Button */}
       <XStack justifyContent="flex-end" paddingTop="$2">
         <Pressable onPress={handleSkip}>
-          <Text fontSize={16} color={colors.light.textMuted} paddingVertical="$2">
+          <Text fontSize={16} color={themeColors.textMuted} paddingVertical="$2">
             Skip
           </Text>
         </Pressable>
@@ -271,7 +292,7 @@ export default function OnboardingScreen() {
           <Pressable onPress={handleGetStarted}>
             <Text 
               fontSize={14} 
-              color={colors.light.textSecondary} 
+              color={themeColors.textSecondary} 
               textAlign="center"
               paddingVertical="$2"
             >
