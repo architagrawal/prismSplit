@@ -35,28 +35,60 @@ export default function BillDetailScreen() {
     isLoading,
     fetchBillById, 
     toggleItemSelection, 
-    confirmSelections 
+    confirmSelections,
+    clearSelections
   } = useBillsStore();
   const { user } = useAuthStore();
   const { showToast } = useUIStore();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
+  // Fetch bill on mount
   useEffect(() => {
     if (id) {
       fetchBillById(id);
     }
+    // Clear selections when leaving screen
+    return () => {
+      clearSelections();
+    };
   }, [id]);
+
+  // Pre-populate selections from existing splits where current user participates
+  useEffect(() => {
+    if (!initialized && user) {
+      // Check each item to see if current user is already in the split
+      const preSelectedIds: string[] = [];
+      demoBillItems.forEach(item => {
+        const userAlreadyInSplit = item.splits.some(s => s.user_id === user.id);
+        if (userAlreadyInSplit) {
+          preSelectedIds.push(item.id);
+        }
+      });
+      
+      // Add pre-selected items to store
+      preSelectedIds.forEach(itemId => {
+        if (!selectedItems.has(itemId)) {
+          toggleItemSelection(itemId);
+        }
+      });
+      
+      setInitialized(true);
+    }
+  }, [user, initialized]);
 
   const bill = currentBill;
 
-  // Calculate user's share
+  // Calculate user's share based on current selections
   const calculateYourShare = () => {
     let total = 0;
     demoBillItems.forEach(item => {
       if (selectedItems.has(item.id)) {
-        const participants = item.splits.length + 1;
-        total += item.price / Math.max(participants, 1);
+        // Count other participants + current user
+        const otherParticipants = item.splits.filter(s => s.user_id !== user?.id).length;
+        const totalParticipants = otherParticipants + 1; // +1 for current user
+        total += item.price / Math.max(totalParticipants, 1);
       }
     });
     return total;
@@ -176,21 +208,29 @@ export default function BillDetailScreen() {
         <YStack paddingHorizontal="$4" gap="$3" paddingBottom="$4">
           {demoBillItems.map((item) => {
             const isSelected = selectedItems.has(item.id);
-            const hasParticipants = item.splits.length > 0;
             
-            const segments = item.splits.map(s => ({
+            // Filter out current user from existing splits - we'll add them based on isSelected
+            const otherParticipants = item.splits.filter(s => s.user_id !== user?.id);
+            const hasOtherParticipants = otherParticipants.length > 0;
+            
+            // Build segments: other participants + current user (if selected)
+            const segments = otherParticipants.map(s => ({
               userId: s.user_id,
               colorIndex: s.color_index,
               percentage: (s.amount / item.price) * 100,
             }));
             
-            if (isSelected && !item.splits.find(s => s.user_id === user?.id)) {
-              const currentParticipants = item.splits.length + 1;
+            // Add current user to segments if they are selected
+            if (isSelected) {
+              const totalParticipants = otherParticipants.length + 1;
               segments.push({
                 userId: user?.id || 'current-user',
                 colorIndex: user?.color_index || 0,
-                percentage: 100 / currentParticipants,
+                percentage: 100 / totalParticipants,
               });
+              // Recalculate percentages to be equal
+              const equalPercentage = 100 / totalParticipants;
+              segments.forEach(s => s.percentage = equalPercentage);
             }
 
             return (
@@ -232,13 +272,15 @@ export default function BillDetailScreen() {
                       </XStack>
                       
                       <XStack alignItems="center" gap="$2">
-                        {hasParticipants || isSelected ? (
+                        {hasOtherParticipants || isSelected ? (
                           <AvatarGroup
                             users={[
-                              ...item.splits.map(s => ({
+                              // Other participants (excluding current user)
+                              ...otherParticipants.map(s => ({
                                 name: s.user.full_name,
                                 colorIndex: s.color_index,
                               })),
+                              // Add current user only if selected
                               ...(isSelected ? [{ 
                                 name: user?.full_name || 'You', 
                                 colorIndex: user?.color_index || 0 
@@ -257,7 +299,7 @@ export default function BillDetailScreen() {
                         <SplitBar
                           segments={segments}
                           height={4}
-                          unclaimed={!hasParticipants && !isSelected ? 100 : 0}
+                          unclaimed={!hasOtherParticipants && !isSelected ? 100 : 0}
                         />
                       </Stack>
                     </YStack>

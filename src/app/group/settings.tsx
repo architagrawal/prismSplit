@@ -139,6 +139,7 @@ export default function GroupSettingsScreen() {
               variant="outlined"
               size="sm"
               icon={<Edit size={16} color={colors.light.primary} />}
+              onPress={() => router.push(`/group/edit?id=${group.id}` as any)}
             >
               Edit Group
             </Button>
@@ -202,6 +203,7 @@ export default function GroupSettingsScreen() {
           <SettingsRow
             icon={<Bell size={18} color={colors.light.textSecondary} />}
             label="Notifications"
+            onPress={() => router.push('/settings/notifications' as any)}
           />
           <SettingsRow
             icon={<UserPlus size={18} color={colors.light.textSecondary} />}

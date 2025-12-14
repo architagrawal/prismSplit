@@ -93,21 +93,15 @@ export default function ProfileScreen() {
   };
 
   const handleNotifications = () => {
-    Alert.alert(
-      'Notifications',
-      'Notification settings will be available in a future update.',
-      [{ text: 'OK' }]
-    );
+    router.push('/settings/notifications' as any);
   };
 
   const handleHelp = () => {
-    showToast({ type: 'info', message: 'Opening Help center...' });
-    Linking.openURL('https://example.com/help');
+    router.push('/settings/help' as any);
   };
 
   const handlePrivacy = () => {
-    showToast({ type: 'info', message: 'Opening Privacy Policy...' });
-    Linking.openURL('https://example.com/privacy');
+    router.push('/settings/privacy' as any);
   };
 
   return (
