@@ -107,27 +107,153 @@ export function CustomSplitModal({
 
   const handleRemovePerson = (userId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    let updated = participants.filter(p => p.userId !== userId);
-    if (splitMode === 'equal') {
-      updated = recalculateEqualSplit(updated);
+    
+    // Find the person being removed
+    const removedPerson = participants.find(p => p.userId === userId);
+    const remaining = participants.filter(p => p.userId !== userId);
+    
+    if (!removedPerson || remaining.length === 0) {
+      setParticipants(remaining);
+      return;
     }
-    setParticipants(updated);
+    
+    if (splitMode === 'equal') {
+      // For equal mode, just recalculate equal split
+      setParticipants(recalculateEqualSplit(remaining));
+    } else {
+      // For percentage/amount modes, redistribute proportionally
+      // Calculate total percentage/amount of remaining participants
+      const remainingTotal = remaining.reduce((sum, p) => sum + p.percentage, 0);
+      
+      if (remainingTotal === 0) {
+        // If remaining participants have 0%, distribute the removed share equally
+        const equalShare = 100 / remaining.length;
+        const updated = remaining.map(p => ({
+          ...p,
+          percentage: equalShare,
+          amount: (itemPrice * equalShare) / 100,
+        }));
+        setParticipants(updated);
+      } else {
+        // Distribute the removed person's share proportionally among remaining
+        const removedPercentage = removedPerson.percentage;
+        const updated = remaining.map(p => {
+          // Each person gets additional share based on their proportion of remaining total
+          const additionalPercentage = (p.percentage / remainingTotal) * removedPercentage;
+          const newPercentage = p.percentage + additionalPercentage;
+          return {
+            ...p,
+            percentage: newPercentage,
+            amount: (itemPrice * newPercentage) / 100,
+          };
+        });
+        setParticipants(updated);
+      }
+    }
   };
 
-  const handlePercentageChange = (userId: string, value: string) => {
-    const percentage = parseFloat(value) || 0;
-    const amount = (itemPrice * percentage) / 100;
-    setParticipants(participants.map(p => 
-      p.userId === userId ? { ...p, percentage, amount } : p
-    ));
+  // Auto-rebalance: when one person changes their %, redistribute remaining to others proportionally
+  const handlePercentageChange = (userId: string, value: string, autoRebalance: boolean = true) => {
+    const newPercentage = parseFloat(value) || 0;
+    const clampedPercentage = Math.min(100, Math.max(0, newPercentage));
+    
+    if (autoRebalance) {
+      // Get current user's old percentage
+      const currentUser = participants.find(p => p.userId === userId);
+      const oldPercentage = currentUser?.percentage || 0;
+      
+      // Calculate the remaining percentage for others
+      const othersOldTotal = participants
+        .filter(p => p.userId !== userId)
+        .reduce((sum, p) => sum + p.percentage, 0);
+      
+      const remainingForOthers = 100 - clampedPercentage;
+      
+      if (othersOldTotal > 0 && remainingForOthers >= 0) {
+        // Redistribute remaining to others in their original ratios
+        const updated = participants.map(p => {
+          if (p.userId === userId) {
+            return {
+              ...p,
+              percentage: clampedPercentage,
+              amount: (itemPrice * clampedPercentage) / 100,
+            };
+          } else {
+            // Calculate new percentage based on original ratio
+            const ratio = p.percentage / othersOldTotal;
+            const newPct = remainingForOthers * ratio;
+            return {
+              ...p,
+              percentage: newPct,
+              amount: (itemPrice * newPct) / 100,
+            };
+          }
+        });
+        setParticipants(updated);
+      } else {
+        // Fallback: just update the single user
+        setParticipants(participants.map(p => 
+          p.userId === userId 
+            ? { ...p, percentage: clampedPercentage, amount: (itemPrice * clampedPercentage) / 100 } 
+            : p
+        ));
+      }
+    } else {
+      // Manual mode: just update the single user without rebalancing
+      const amount = (itemPrice * clampedPercentage) / 100;
+      setParticipants(participants.map(p => 
+        p.userId === userId ? { ...p, percentage: clampedPercentage, amount } : p
+      ));
+    }
   };
 
-  const handleAmountChange = (userId: string, value: string) => {
-    const amount = parseFloat(value) || 0;
-    const percentage = itemPrice > 0 ? (amount / itemPrice) * 100 : 0;
-    setParticipants(participants.map(p => 
-      p.userId === userId ? { ...p, amount, percentage } : p
-    ));
+  const handleAmountChange = (userId: string, value: string, autoRebalance: boolean = true) => {
+    const newAmount = parseFloat(value) || 0;
+    const clampedAmount = Math.min(itemPrice, Math.max(0, newAmount));
+    const newPercentage = itemPrice > 0 ? (clampedAmount / itemPrice) * 100 : 0;
+    
+    if (autoRebalance) {
+      // Get others' old total
+      const othersOldTotal = participants
+        .filter(p => p.userId !== userId)
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      const remainingForOthers = itemPrice - clampedAmount;
+      
+      if (othersOldTotal > 0 && remainingForOthers >= 0) {
+        // Redistribute remaining to others proportionally
+        const updated = participants.map(p => {
+          if (p.userId === userId) {
+            return {
+              ...p,
+              amount: clampedAmount,
+              percentage: newPercentage,
+            };
+          } else {
+            const ratio = p.amount / othersOldTotal;
+            const newAmt = remainingForOthers * ratio;
+            return {
+              ...p,
+              amount: newAmt,
+              percentage: (newAmt / itemPrice) * 100,
+            };
+          }
+        });
+        setParticipants(updated);
+      } else {
+        setParticipants(participants.map(p => 
+          p.userId === userId 
+            ? { ...p, amount: clampedAmount, percentage: newPercentage } 
+            : p
+        ));
+      }
+    } else {
+      setParticipants(participants.map(p => 
+        p.userId === userId 
+          ? { ...p, amount: clampedAmount, percentage: newPercentage } 
+          : p
+      ));
+    }
   };
 
   const handleModeChange = (mode: SplitMode) => {
