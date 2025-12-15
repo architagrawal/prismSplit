@@ -31,6 +31,14 @@ Place Tamagui component designs and specifications here.
 - ReceiptUpload
 - BalanceDisplay
 
+### Shared Screen Content Components
+
+These components contain the main content logic for screens that have both tab and standalone versions:
+
+- **GroupDetailContent** - Group detail screen with compact bill list, date grouping, and My View toggle
+- **SettleContent** - Settle up flow with amount input and quick amount buttons
+- **ProfileContent** - Account settings with theme toggle and navigation
+
 ## Design Tokens
 
 Document your Tamagui theme tokens here:

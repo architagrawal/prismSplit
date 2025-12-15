@@ -103,6 +103,8 @@ interface BillListItemProps {
   payerName: string;
   participants: Array<{ name: string; colorIndex: number }>;
   onPress?: () => void;
+  variant?: 'card' | 'compact';
+  isPayer?: boolean; // True if current user is the payer
 }
 
 export function BillListItem({
@@ -115,6 +117,8 @@ export function BillListItem({
   payerName,
   participants,
   onPress,
+  variant = 'card',
+  isPayer = false,
 }: BillListItemProps) {
   const themeColors = useThemeColors();
   
@@ -123,6 +127,92 @@ export function BillListItem({
     onPress?.();
   };
 
+  // Determine involvement and balance status
+  const isInvolved = yourShare > 0 || isPayer;
+  const netAmount = isPayer ? (amount - yourShare) : yourShare;
+  
+  // Get balance text and color
+  const getBalanceInfo = () => {
+    if (!isInvolved) {
+      return { text: 'not involved', color: themeColors.textMuted };
+    }
+    if (isPayer && netAmount > 0) {
+      return { text: `you lent $${netAmount.toFixed(2)}`, color: themeColors.success };
+    }
+    if (!isPayer && yourShare > 0) {
+      return { text: `you borrowed $${yourShare.toFixed(2)}`, color: themeColors.error };
+    }
+    return { text: `your share: $${yourShare.toFixed(2)}`, color: themeColors.textSecondary };
+  };
+
+  const balanceInfo = getBalanceInfo();
+
+  // Compact variant - high density row
+  if (variant === 'compact') {
+    return (
+      <Pressable 
+        onPress={handlePress} 
+        style={{
+          paddingVertical: 12,
+          paddingHorizontal: 4,
+          opacity: isInvolved ? 1 : 0.5,
+        }}
+      >
+        <Stack flexDirection="row" alignItems="center" gap="$3">
+          {/* Category Icon */}
+          <Stack
+            width={36}
+            height={36}
+            borderRadius={8}
+            backgroundColor={themeColors.surfaceElevated}
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text fontSize={18}>{categoryIcon || '📦'}</Text>
+          </Stack>
+          
+          {/* Title and Payer */}
+          <Stack flex={1} gap={2}>
+            <Text
+              fontSize={15}
+              fontWeight="500"
+              color={themeColors.textPrimary}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+            <Text
+              fontSize={12}
+              color={themeColors.textMuted}
+              numberOfLines={1}
+            >
+              {payerName} paid
+            </Text>
+          </Stack>
+          
+          {/* Amount and Balance */}
+          <Stack alignItems="flex-end" gap={2}>
+            <Text
+              fontSize={14}
+              fontWeight="600"
+              color={themeColors.textPrimary}
+            >
+              ${amount.toFixed(2)}
+            </Text>
+            <Text
+              fontSize={12}
+              fontWeight="500"
+              color={balanceInfo.color}
+            >
+              {balanceInfo.text}
+            </Text>
+          </Stack>
+        </Stack>
+      </Pressable>
+    );
+  }
+
+  // Card variant - original design
   return (
     <Pressable 
       onPress={handlePress} 
@@ -160,9 +250,10 @@ export function BillListItem({
             </Text>
             <Text
               fontSize={12}
-              color={themeColors.textSecondary}
+              color={balanceInfo.color}
+              fontWeight="500"
             >
-              Your share: ${yourShare.toFixed(2)}
+              {balanceInfo.text}
             </Text>
           </Stack>
         </Stack>

@@ -96,11 +96,17 @@ app/
 ```
 
 ### `src/components/`
-Reusable UI components.
+Reusable UI components and shared screen content.
 ```
 components/
-├── ui/                   # Primitives (Button, Card, Input, Avatar)
-└── shared/               # App-wide (SplitBar, BalanceBadge, Header)
+├── ui/                   # Primitives (Button, Card, Input, Avatar, ListItem)
+├── shared/               # App-wide (SplitBar, BalanceBadge, Header)
+├── group/                # Group screen shared content
+│   └── GroupDetailContent.tsx
+├── settle/               # Settle screen shared content
+│   └── SettleContent.tsx
+└── profile/              # Profile screen shared content
+    └── ProfileContent.tsx
 ```
 
 ### `src/features/`

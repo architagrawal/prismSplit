@@ -31,6 +31,12 @@
 
 ### Bills (Self-Select Model)
 
+- [x] **Compact Bill List:** High-density view grouped by date
+- [x] **Month/Day Headers:** Bills grouped by month then day (no repetitive dates)
+- [x] **Color-coded Balance:** Green (lent), Red (borrowed), Grey (not involved)
+- [x] **Daily Totals:** Show user's share per day in headers
+- [x] **My View Toggle:** Filter to show only items user is involved in
+- [x] **Settle Up Button:** Quick access when balance ≠ $0
 - [ ] Create new bill (Itemized or Quick)
 - [ ] **Speed Parser:** Fast item entry with auto-focus flow
 - [ ] Quantity input → expands to separate rows at split time

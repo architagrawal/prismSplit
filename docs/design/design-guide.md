@@ -302,20 +302,39 @@ Center FAB:
 ### Cards
 
 ```
-Group Card:
-  - Height: 76px
-  - Padding: 16px
-  - Background: #FFFBF5
-  - Border: 1px solid #E5E5E5
-  - Border-radius: 12px
+### Compact Bill Row (Group Detail View)
+
+```
+Layout:
+  - Height: 56px (High density)
+  - Grouping: Bills grouped by Month > Day to remove repetitive dates
+  - Background: Transparent (list items)
+  - Separator: 1px bottom border #E5E5E5
+  - Not Involved: 50% opacity (dimmed rows for items user not part of)
+
+  Row Content:
+  [Icon (36px)] [Gap 12px] [Title + Payer Stack] [Flex] [Amount + Balance Stack]
+
+  - Icon: Category emoji in 36px rounded square (#F5F3FF background)
+  - Title: 15px/500 #1C1917, truncated
+  - Payer: "{Name} paid" (12px #A8A29E)
+  - Amount: Total bill amount (14px/600 #1C1917)
+  - Balance: Color-coded status text (12px/500)
+    - "you lent $X.XX" (Green #059669) — User is payer, yourShare < total
+    - "you borrowed $X.XX" (Red #F87171) — User is not payer, yourShare > 0
+    - "not involved" (Gray #A8A29E) — yourShare = 0 and not payer
   
-  Layout:
-  [Emoji 44px] [12px gap] [Name + Subtitle stacked] [Flex] [Balance + Chevron]
-  
-  - Name: 16px/600 #1C1917
-  - Subtitle: 14px/400 #78716C
-  - Balance: 16px/600, colored (#059669 / #F87171)
-  - Chevron: 16px #A8A29E
+Headers:
+  - Month: "December 2024" (13px/600 #A8A29E, marginTop $4)
+  - Day: "Dec 10" + "Your share: $X.XX" (12px/500 #78716C, with bottom border)
+
+Interactive Elements:
+  - My View Toggle: Eye icon + "Show all" / "My items only" text
+    - Default: Show all (items user not involved in are dimmed)
+    - Active: My items only (hides items user not involved in completely)
+  - Settle Up Button: Appears in Balance Card when balance ≠ $0
+    - Primary variant (gradient) if user owes money
+    - Outlined variant if others owe user
 ```
 
 ```

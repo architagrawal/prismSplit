@@ -357,17 +357,22 @@ BILLS TAB (Default):
 - "Add Bill" button (top-right, lavender outlined)
 - Bills list (reverse chronological):
 
-Bill Card (white, subtle shadow):
-- Left: Category emoji (🛒)
+BILLS TAB (Default):
+- "Add Bill" button (top-right, lavender outlined)
+- Bills list (Grouped by Month > Day):
+
+Compact Bill Row:
+- Left: Small Category Icon
 - Center:
-  - Bill name: "Costco Grocery" (16px semibold)
-  - "Paid by Alex • Dec 10" (14px gray)
-  - Category badge: "Shopping" (12px, lavender bg)
+  - Bill name: "Costco Grocery" (15px semibold)
+  - "Alex paid" (12px gray)
 - Right:
-  - Total: "$142.50" (16px semibold)
-  - Your share: "-$28.50" (14px, coral)
-  - Status badge: "Pending" (peach) or "Finalized" (sage)
-- Bottom of card: Avatar dots showing participants
+  - "You borrowed" (12px coral)
+  - "$28.50" (15px bold coral)
+- Headers:
+  - Month: "DECEMBER 2024" (Sticky)
+  - Day: "Dec 10" (Sub-header)
+- "Not Involved" items are dimmed (opacity 0.5)
 
 BALANCES TAB:
 - List of members with individual balance
