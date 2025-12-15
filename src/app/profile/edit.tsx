@@ -12,7 +12,7 @@ import { ArrowLeft, Camera, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Screen, Card, Avatar, Button, Input } from '@/components/ui';
+import { Screen, Card, Avatar, Button, Input, ConfirmDialog } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useUIStore } from '@/lib/store';
 
@@ -26,6 +26,8 @@ export default function EditProfileScreen() {
   const [email, setEmail] = useState(user?.email || '');
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatar_url || null);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const handleSave = async () => {
     if (!fullName.trim()) {
@@ -47,6 +49,14 @@ export default function EditProfileScreen() {
     showToast({ type: 'success', message: 'Profile updated!' });
     setIsSaving(false);
     router.back();
+  };
+
+  const handleCancel = () => {
+    if (hasChanges) {
+      setShowConfirmDialog(true);
+    } else {
+      router.back();
+    }
   };
 
   const pickImageFromGallery = async () => {
@@ -147,7 +157,7 @@ export default function EditProfileScreen() {
     <Screen scroll keyboardAvoiding>
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={handleCancel}>
           <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
         <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
@@ -211,14 +221,14 @@ export default function EditProfileScreen() {
           label="Full Name"
           placeholder="Your name"
           value={fullName}
-          onChangeText={setFullName}
+          onChangeText={(val) => { setFullName(val); setHasChanges(true); }}
         />
         
         <Input
           label="Email"
           placeholder="your@email.com"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(val) => { setEmail(val); setHasChanges(true); }}
         />
       </YStack>
 
@@ -247,6 +257,17 @@ export default function EditProfileScreen() {
       >
         Save Changes
       </Button>
+
+      <ConfirmDialog
+        visible={showConfirmDialog}
+        title="Unsaved Changes"
+        message="You have changes that haven't been saved yet."
+        buttons={[
+          { text: 'Discard Changes', style: 'destructive', onPress: () => { setShowConfirmDialog(false); router.back(); } },
+          { text: 'Save', style: 'primary', onPress: () => { setShowConfirmDialog(false); handleSave(); } },
+        ]}
+        onDismiss={() => setShowConfirmDialog(false)}
+      />
     </Screen>
   );
 }

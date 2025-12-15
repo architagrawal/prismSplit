@@ -13,7 +13,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 // Button variants
-export type ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'ghost' | 'success' | 'error';
+export type ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'ghost' | 'ghostDestructive' | 'success' | 'error';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -107,6 +107,11 @@ export function Button({
       borderColor: 'transparent',
       textColor: themeColors.primary,
     },
+    ghostDestructive: {
+      backgroundColor: 'transparent',
+      borderColor: 'transparent',
+      textColor: themeColors.error,
+    },
     success: {
       backgroundColor: themeColors.success,
       borderColor: 'transparent',
@@ -132,19 +137,20 @@ export function Button({
           paddingHorizontal: sizeStyle.paddingHorizontal,
           backgroundColor: style.backgroundColor,
           borderColor: style.borderColor,
-          borderWidth: variant === 'outlined' ? 2 : 0,
+          borderWidth: variant === 'outlined' ? 1.5 : 0,
         },
         fullWidth && styles.fullWidth,
         disabled && styles.disabled,
         pressed && styles.pressed,
       ]}
     >
-      <Stack flexDirection="row" alignItems="center" gap="$2">
+      <Stack flexDirection="row" alignItems="center" justifyContent="center" gap="$2">
         {icon && iconPosition === 'left' && icon}
         <Text
           color={style.textColor}
           fontSize={sizeStyle.fontSize}
           fontWeight="600"
+          textAlign="center"
         >
           {loading ? 'Loading...' : children}
         </Text>
@@ -170,6 +176,7 @@ const styles = StyleSheet.create({
   },
   fullWidth: {
     width: '100%',
+    alignSelf: 'stretch',
   },
   disabled: {
     opacity: 0.5,

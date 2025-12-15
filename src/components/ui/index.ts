@@ -27,3 +27,4 @@ export { GroupListItem, BillListItem, ItemRow } from './ListItem';
 // Modals
 export { CustomSplitModal } from './CustomSplitModal';
 export { AddItemModal } from './AddItemModal';
+export { ConfirmDialog } from './ConfirmDialog';

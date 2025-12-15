@@ -23,9 +23,10 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { Button } from './Button';
 import { Avatar } from './Avatar';
 import { Card } from './Card';
+import { ConfirmDialog } from './ConfirmDialog';
 import type { User, GroupMember } from '@/types/models';
 
-type SplitMode = 'equal' | 'percentage' | 'amount';
+type SplitMode = 'quantity' | 'percentage' | 'amount';
 
 interface SplitParticipant {
   userId: string;
@@ -33,6 +34,7 @@ interface SplitParticipant {
   colorIndex: number;
   percentage: number;
   amount: number;
+  shares?: number;
   locked?: boolean;
 }
 
@@ -58,39 +60,65 @@ export function CustomSplitModal({
   currentUserId,
 }: CustomSplitModalProps) {
   const themeColors = useThemeColors();
-  const [splitMode, setSplitMode] = useState<SplitMode>('equal');
+  const [splitMode, setSplitMode] = useState<SplitMode>('quantity');
   const [participants, setParticipants] = useState<SplitParticipant[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
 
   useEffect(() => {
     if (visible) {
-      setParticipants(currentParticipants.map(p => ({ ...p, locked: false })));
+      // Initialize with shares = 1 if not present
+      setParticipants(currentParticipants.map(p => ({ 
+        ...p, 
+        shares: p.shares || 1,
+        locked: false 
+      })));
+      setHasChanges(false); // Reset on open
+      
       // Auto-detect mode from current data
       if (currentParticipants.length > 0) {
         const firstPercent = currentParticipants[0].percentage;
         const allEqual = currentParticipants.every(
           p => Math.abs(p.percentage - firstPercent) < 0.01
         );
-        setSplitMode(allEqual ? 'equal' : 'percentage');
+        setSplitMode(allEqual ? 'quantity' : 'percentage');
       }
     }
   }, [visible, currentParticipants]);
+
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  const handleClose = () => {
+    if (hasChanges) {
+      setShowConfirmDialog(true);
+    } else {
+      onClose();
+    }
+  };
 
   const nonParticipants = allMembers.filter(
     m => !participants.some(p => p.userId === m.user_id)
   );
 
-  const recalculateEqualSplit = (parts: SplitParticipant[]) => {
-    if (parts.length === 0) return parts;
-    const equalPercent = 100 / parts.length;
-    const equalAmount = itemPrice / parts.length;
+  const recalculateSharesSplit = (parts: SplitParticipant[]) => {
+    const totalShares = parts.reduce((sum, p) => sum + (p.shares || 1), 0);
+    if (totalShares === 0) return parts;
+    
     return parts.map(p => ({
       ...p,
-      percentage: equalPercent,
-      amount: equalAmount,
+      percentage: ((p.shares || 1) / totalShares) * 100,
+      amount: ((p.shares || 1) / totalShares) * itemPrice,
       locked: false,
     }));
+  };
+
+  const handleResetEqual = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const updated = participants.map(p => ({ ...p, shares: 1 }));
+    setParticipants(recalculateSharesSplit(updated));
+    setSplitMode('quantity');
+    setHasChanges(true);
   };
 
   const handleAddPerson = (member: GroupMember) => {
@@ -101,14 +129,16 @@ export function CustomSplitModal({
       colorIndex: member.color_index,
       percentage: 0,
       amount: 0,
+      shares: 1,
       locked: false,
     };
     
     let updated = [...participants, newParticipant];
-    if (splitMode === 'equal') {
-      updated = recalculateEqualSplit(updated);
+    if (splitMode === 'quantity') {
+      updated = recalculateSharesSplit(updated);
     }
     setParticipants(updated);
+    setHasChanges(true);
   };
 
   // Helper to rebalance remaining amount among unlocked participants
@@ -121,7 +151,6 @@ export function CustomSplitModal({
     const unlockedParticipants = currentList.filter(p => !p.locked && p.userId !== lockedUserId);
     
     if (unlockedParticipants.length === 0) {
-      // If everyone is locked, just return the list as is (manual mode)
       return currentList;
     }
 
@@ -138,8 +167,7 @@ export function CustomSplitModal({
           amount: (itemPrice * perPerson) / 100,
         };
       });
-    } else {
-      // Amount mode
+    } else if (splitMode === 'amount') {
       const lockedTotal = lockedParticipants.reduce((sum, p) => sum + p.amount, 0);
       const remaining = Math.max(0, itemPrice - lockedTotal);
       const perPerson = remaining / unlockedParticipants.length;
@@ -152,6 +180,11 @@ export function CustomSplitModal({
           percentage: itemPrice > 0 ? (perPerson / itemPrice) * 100 : 0,
         };
       });
+    } else {
+      // Quantity mode logic is handled by recalculateSharesSplit usually
+      // But if we're here, it implies rebalancing.
+      // In quantity mode, we usually recalculate everything based on shares.
+      return recalculateSharesSplit(currentList);
     }
   };
 
@@ -165,22 +198,29 @@ export function CustomSplitModal({
       return;
     }
     
-    if (splitMode === 'equal') {
-      setParticipants(recalculateEqualSplit(remaining));
+    if (splitMode === 'quantity') {
+      setParticipants(recalculateSharesSplit(remaining));
     } else {
-      // Distribute removed person's share among UNLOCKED participants if possible
-      // or among everyone if everyone was locked (reset locks for others?)
-      // Simplest: Just call distribute with no specific locked user, preserving existing locks
       const updated = distributeRemaining(remaining);
       setParticipants(updated);
     }
+    setHasChanges(true);
+  };
+
+  const handleQuantityChange = (userId: string, value: string) => {
+    const newShares = parseFloat(value) || 0;
+    // Update shares and recalculate all
+    const updated = participants.map(p => 
+      p.userId === userId ? { ...p, shares: newShares } : p
+    );
+    setParticipants(recalculateSharesSplit(updated));
+    setHasChanges(true);
   };
 
   const handlePercentageChange = (userId: string, value: string) => {
     const newPercentage = parseFloat(value) || 0;
     const clampedPercentage = Math.min(100, Math.max(0, newPercentage));
     
-    // Update the edited user and lock them
     const updatedUserList = participants.map(p => 
       p.userId === userId 
         ? { ...p, percentage: clampedPercentage, amount: (itemPrice * clampedPercentage) / 100, locked: true } 
@@ -207,8 +247,10 @@ export function CustomSplitModal({
   const handleModeChange = (mode: SplitMode) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSplitMode(mode);
-    if (mode === 'equal') {
-      setParticipants(recalculateEqualSplit(participants));
+    // If switching to quantity, recalculate based on current shares (or default 1)
+    if (mode === 'quantity') {
+       const updated = participants.map(p => ({ ...p, shares: p.shares || 1 }));
+       setParticipants(recalculateSharesSplit(updated));
     }
   };
 
@@ -223,11 +265,12 @@ export function CustomSplitModal({
   const isValid = participants.length > 0 && Math.abs(totalPercentage - 100) < 0.1;
 
   return (
+    <>
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <Stack flex={1} backgroundColor={themeColors.background} paddingHorizontal="$4">
         {/* Header */}
@@ -238,7 +281,7 @@ export function CustomSplitModal({
           borderBottomWidth={1}
           borderBottomColor={themeColors.border}
         >
-          <Pressable onPress={onClose}>
+          <Pressable onPress={handleClose}>
             <X size={24} color={themeColors.textPrimary} />
           </Pressable>
           <YStack alignItems="center">
@@ -249,7 +292,9 @@ export function CustomSplitModal({
               {itemName}
             </Text>
           </YStack>
-          <Stack width={24} />
+          <Button variant="ghost" size="sm" onPress={handleResetEqual}>
+            Split Equally
+          </Button>
         </XStack>
 
         <ScrollView 
@@ -311,22 +356,22 @@ export function CustomSplitModal({
               Split Type
             </Text>
             <XStack gap="$2">
-              {/* Equal */}
-              <Pressable style={{ flex: 1 }} onPress={() => handleModeChange('equal')}>
+              {/* Quantity */}
+              <Pressable style={{ flex: 1 }} onPress={() => handleModeChange('quantity')}>
                 <Card
-                  variant={splitMode === 'equal' ? 'elevated' : 'outlined'}
+                  variant={splitMode === 'quantity' ? 'elevated' : 'outlined'}
                   padding="$3"
-                  borderWidth={splitMode === 'equal' ? 2 : 1}
-                  borderColor={splitMode === 'equal' ? themeColors.primary : themeColors.border}
+                  borderWidth={splitMode === 'quantity' ? 2 : 1}
+                  borderColor={splitMode === 'quantity' ? themeColors.primary : themeColors.border}
                 >
                   <YStack alignItems="center" gap="$1">
-                    <Users size={20} color={splitMode === 'equal' ? themeColors.primary : themeColors.textMuted} />
+                    <Users size={20} color={splitMode === 'quantity' ? themeColors.primary : themeColors.textMuted} />
                     <Text 
                       fontSize={12} 
                       fontWeight="500"
-                      color={splitMode === 'equal' ? themeColors.primary : themeColors.textSecondary}
+                      color={splitMode === 'quantity' ? themeColors.primary : themeColors.textSecondary}
                     >
-                      Equal
+                      Quantity
                     </Text>
                   </YStack>
                 </Card>
@@ -419,65 +464,62 @@ export function CustomSplitModal({
                     </YStack>
 
                     {/* Input based on mode */}
-                    {splitMode !== 'equal' && (
-                      <XStack alignItems="center" gap="$1">
-                        <TextInput
-                          style={{
-                            width: 60,
-                            height: 36,
-                            backgroundColor: themeColors.surfaceElevated,
-                            borderRadius: 8,
-                            paddingHorizontal: 8,
-                            paddingVertical: 0, // Prevent Android vertical scrolling
-                            fontSize: 14,
-                            textAlign: 'center',
-                            textAlignVertical: 'center', // Align text vertically on Android
-                            color: themeColors.textPrimary,
-                          }}
-                          multiline={false}
-                          scrollEnabled={false} // Disable scrolling inside input
-                          value={
-                            editingId === participant.userId
-                              ? editValue
-                              : splitMode === 'percentage' 
-                                ? Number(participant.percentage.toFixed(2)).toString()
-                                : participant.amount.toFixed(2)
-                          }
-                          onChangeText={(value) => {
-                            setEditValue(value);
-                            // Don't rebalance while typing, just update local state
-                          }}
-                          onFocus={() => {
-                            setEditingId(participant.userId);
-                            const val = splitMode === 'percentage'
+                    <XStack alignItems="center" gap="$1">
+                      <TextInput
+                        style={{
+                          width: 60,
+                          height: 36,
+                          backgroundColor: themeColors.surfaceElevated,
+                          borderRadius: 8,
+                          paddingHorizontal: 8,
+                          paddingVertical: 0,
+                          fontSize: 14,
+                          textAlign: 'center',
+                          textAlignVertical: 'center',
+                          color: themeColors.textPrimary,
+                        }}
+                        multiline={false}
+                        scrollEnabled={false}
+                        value={
+                          editingId === participant.userId
+                            ? editValue
+                            : splitMode === 'percentage' 
                               ? Number(participant.percentage.toFixed(2)).toString()
-                              : participant.amount.toFixed(2);
-                            setEditValue(val === '0.00' || val === '0' ? '' : val);
-                          }}
-                          onBlur={() => {
-                            // Trigger smart rebalance with final value
-                            splitMode === 'percentage'
-                                ? handlePercentageChange(participant.userId, editValue)
-                                : handleAmountChange(participant.userId, editValue);
-                            setEditingId(null);
-                            setEditValue('');
-                          }}
-                          keyboardType="decimal-pad"
-                          placeholder="0"
-                          placeholderTextColor={themeColors.textMuted}
-                        />
-                        <Text fontSize={14} color={themeColors.textMuted}>
-                          {splitMode === 'percentage' ? '%' : '$'}
-                        </Text>
-                      </XStack>
-                    )}
-
-                    {/* Equal mode: show calculated share */}
-                    {splitMode === 'equal' && (
-                      <Text fontSize={14} color={themeColors.textSecondary}>
-                        {Number(participant.percentage.toFixed(2)).toString()}%
+                              : splitMode === 'amount'
+                                ? participant.amount.toFixed(2)
+                                : (participant.shares || 1).toString()
+                        }
+                        onChangeText={(value) => {
+                          setEditValue(value);
+                        }}
+                        onFocus={() => {
+                          setEditingId(participant.userId);
+                          const val = splitMode === 'percentage'
+                            ? Number(participant.percentage.toFixed(2)).toString()
+                            : splitMode === 'amount'
+                              ? participant.amount.toFixed(2)
+                              : (participant.shares || 1).toString();
+                          setEditValue(val === '0.00' || val === '0' ? '' : val);
+                        }}
+                        onBlur={() => {
+                          if (splitMode === 'percentage') {
+                             handlePercentageChange(participant.userId, editValue);
+                          } else if (splitMode === 'amount') {
+                             handleAmountChange(participant.userId, editValue);
+                          } else {
+                             handleQuantityChange(participant.userId, editValue);
+                          }
+                          setEditingId(null);
+                          setEditValue('');
+                        }}
+                        keyboardType="decimal-pad"
+                        placeholder="0"
+                        placeholderTextColor={themeColors.textMuted}
+                      />
+                      <Text fontSize={14} color={themeColors.textMuted}>
+                        {splitMode === 'percentage' ? '%' : splitMode === 'amount' ? '$' : 'qty'}
                       </Text>
-                    )}
+                    </XStack>
 
                     {/* Remove button */}
                     <Pressable 
@@ -527,7 +569,6 @@ export function CustomSplitModal({
             </YStack>
           )}
 
-
         </ScrollView>
 
         {/* Confirm Button */}
@@ -544,6 +585,18 @@ export function CustomSplitModal({
         </Stack>
       </Stack>
     </Modal>
+
+    <ConfirmDialog
+      visible={showConfirmDialog}
+      title="Unsaved Changes"
+      message="You have changes that haven't been saved yet."
+      buttons={[
+        { text: 'Discard Changes', style: 'destructive', onPress: () => { setShowConfirmDialog(false); onClose(); } },
+        { text: 'Save', style: 'primary', onPress: () => { setShowConfirmDialog(false); handleConfirm(); } },
+      ]}
+      onDismiss={() => setShowConfirmDialog(false)}
+    />
+    </>
   );
 }
 

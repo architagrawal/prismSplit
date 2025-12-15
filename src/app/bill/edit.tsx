@@ -6,13 +6,13 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, Text, XStack, YStack } from 'tamagui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Plus, Trash2, Save } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Button, Input, CurrencyInput, Card, CategoryBadge } from '@/components/ui';
+import { Screen, Button, Input, CurrencyInput, Card, CategoryBadge, ConfirmDialog } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useUIStore } from '@/lib/store';
 import { categoryIcons, type Category } from '@/types/models';
@@ -50,6 +50,7 @@ export default function BillEditScreen() {
   const [tax, setTax] = useState('');
   const [tip, setTip] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Load bill data
   useEffect(() => {
@@ -168,14 +169,7 @@ export default function BillEditScreen() {
 
   const handleCancel = () => {
     if (hasChanges) {
-      Alert.alert(
-        'Discard Changes?',
-        'You have unsaved changes. Are you sure you want to go back?',
-        [
-          { text: 'Keep Editing', style: 'cancel' },
-          { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-        ]
-      );
+      setShowConfirmDialog(true);
     } else {
       router.back();
     }
@@ -436,6 +430,17 @@ export default function BillEditScreen() {
           </Button>
         </Stack>
       </KeyboardAvoidingView>
+
+      <ConfirmDialog
+        visible={showConfirmDialog}
+        title="Unsaved Changes"
+        message="You have changes that haven't been saved yet."
+        buttons={[
+          { text: 'Discard Changes', style: 'destructive', onPress: () => { setShowConfirmDialog(false); router.back(); } },
+          { text: 'Save', style: 'primary', onPress: () => { setShowConfirmDialog(false); handleSave(); } },
+        ]}
+        onDismiss={() => setShowConfirmDialog(false)}
+      />
     </Screen>
   );
 }

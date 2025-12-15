@@ -11,7 +11,7 @@ import { Pressable } from 'react-native';
 import { ArrowLeft, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Card, Button, Input } from '@/components/ui';
+import { Screen, Card, Button, Input, ConfirmDialog } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
 import { demoGroups } from '@/lib/api/demo';
@@ -31,6 +31,8 @@ export default function EditGroupScreen() {
   const [selectedEmoji, setSelectedEmoji] = useState(group.emoji);
   const [selectedCurrency, setSelectedCurrency] = useState(group.currency);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -49,11 +51,19 @@ export default function EditGroupScreen() {
     router.back();
   };
 
+  const handleCancel = () => {
+    if (hasChanges) {
+      setShowConfirmDialog(true);
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <Screen scroll keyboardAvoiding>
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$6">
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={handleCancel}>
           <ArrowLeft size={24} color={themeColors.textPrimary} />
         </Pressable>
         <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
@@ -68,7 +78,7 @@ export default function EditGroupScreen() {
           label="Group Name"
           placeholder="Enter group name"
           value={name}
-          onChangeText={setName}
+          onChangeText={(val) => { setName(val); setHasChanges(true); }}
         />
       </YStack>
 
@@ -86,6 +96,7 @@ export default function EditGroupScreen() {
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSelectedEmoji(emoji);
+                    setHasChanges(true);
                   }}
                 >
                   <Stack
@@ -120,6 +131,7 @@ export default function EditGroupScreen() {
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSelectedCurrency(currency);
+                  setHasChanges(true);
                 }}
               >
                 <Stack
@@ -181,6 +193,17 @@ export default function EditGroupScreen() {
       >
         Save Changes
       </Button>
+
+      <ConfirmDialog
+        visible={showConfirmDialog}
+        title="Unsaved Changes"
+        message="You have changes that haven't been saved yet."
+        buttons={[
+          { text: 'Discard Changes', style: 'destructive', onPress: () => { setShowConfirmDialog(false); router.back(); } },
+          { text: 'Save', style: 'primary', onPress: () => { setShowConfirmDialog(false); handleSave(); } },
+        ]}
+        onDismiss={() => setShowConfirmDialog(false)}
+      />
     </Screen>
   );
 }
