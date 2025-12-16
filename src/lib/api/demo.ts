@@ -149,7 +149,7 @@ export const demoBills: BillSummary[] = [
     category: 'shopping',
     bill_date: '2024-12-15',
     created_at: '2024-12-15T22:00:00Z',
-    item_count: 1,
+    item_count: 5, // Itemized bill with 5 items
     your_share: 45.99, // Share = total (no one owes Alex)
     participant_count: 1,
     participant_avatars: ['user-1'],

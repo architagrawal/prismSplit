@@ -15,13 +15,20 @@ The initial design for the Group Expenses screen used a "Card" layout, showing d
 Refactored the Group Expenses screen to a **High-Density Compact List**.
 
 ### Key Changes
-1.  **Compact Rows**: Reduced item height to ~56px, fitting 6-7 items per screen.
-2.  **Date Grouping**: Implemented sticky headers for "Month Year" and sub-headers for "Day" (e.g., "Dec 10") to eliminate Repetitive Data.
-3.  **Smart Coloring**:
+1.  **Compact Rows**: Reduced item height to ~52px, fitting 7-8 items per screen.
+2.  **Date Grouping**: Sticky headers for "Month Year" and sub-headers for "Day" (e.g., "Dec 10").
+3.  **Sticky Month Headers**: Using React Native SectionList, month headers stick with monthly totals.
+4.  **Horizontal Hero Header**: Group info (emoji + name) on left, overlapping avatars on right.
+5.  **Credit Card Payer Badge**: Payer shown as mini credit card icon (22x16px) with initials, overlapping category icon corner.
+6.  **Itemized Bill Indicator**: ClipboardList icon after title for bills with item_count > 1.
+7.  **Emphasized Balance**: Balance text (you lent/borrowed) is larger (14px/600) than amount (12px muted).
+8.  **Smart Coloring**:
     -   **Green**: "You lent" (Positive impact)
     -   **Red**: "You borrowed" (Negative impact)
-    -   **Dimmed**: "Not involved" items have reduced opacity to focus attention on active debts.
-4.  **Category Icons**: Retained but resized to fit the compact row.
+    -   **Gray**: "You paid" (Solo expense, no balance impact)
+    -   **Dimmed**: "Not involved" items have reduced opacity.
+9.  **Category Icons**: Retained at 36px with payer badge overlay.
 
 ## Outcome
 The new design significantly improves scanability and usability for groups with high transaction volume.
+

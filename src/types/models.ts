@@ -73,6 +73,7 @@ export interface Bill {
   last_edited_by?: string; // User ID who made last edit
   your_share?: number; // Current user's share
   participant_avatars?: string[]; // For list display
+  is_itemized?: boolean; // True if bill has itemized splits
 }
 
 export interface BillSummary extends Bill {

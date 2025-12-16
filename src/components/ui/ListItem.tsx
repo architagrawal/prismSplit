@@ -6,10 +6,11 @@
 
 import { Stack, Text } from 'tamagui';
 import { Pressable } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, ClipboardList } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { getAvatarColor } from '@/theme/tokens';
 import { Avatar, AvatarGroup } from './Avatar';
 import { BalanceBadge, StatusBadge, CategoryBadge } from './Badge';
 import { SplitBar } from './SplitBar';
@@ -101,10 +102,12 @@ interface BillListItemProps {
   yourShare: number;
   date: string;
   payerName: string;
+  payerColorIndex?: number; // Avatar color for payer
   participants: Array<{ name: string; colorIndex: number }>;
   onPress?: () => void;
   variant?: 'card' | 'compact';
   isPayer?: boolean; // True if current user is the payer
+  isItemized?: boolean; // True if bill has itemized splits
 }
 
 export function BillListItem({
@@ -115,10 +118,12 @@ export function BillListItem({
   yourShare,
   date,
   payerName,
+  payerColorIndex = 0,
   participants,
   onPress,
   variant = 'card',
   isPayer = false,
+  isItemized = false,
 }: BillListItemProps) {
   const themeColors = useThemeColors();
   
@@ -142,10 +147,10 @@ export function BillListItem({
     if (isPayer) {
       if (netAmount > 0) {
         // Lent money to others
-        return { text: `you lent $${netAmount.toFixed(2)}`, color: themeColors.success };
+        return { text: `you get $${netAmount.toFixed(2)}`, color: themeColors.success };
       } else if (yourShare === amount) {
-        // Paid only for self (no one owes)
-        return { text: `your share: $${yourShare.toFixed(2)}`, color: themeColors.textSecondary };
+        // Paid only for self (no one owes) - just show "you paid"
+        return { text: 'you paid', color: themeColors.textMuted };
       } else {
         // Edge case: paid but somehow share > amount (shouldn't happen)
         return { text: `your share: $${yourShare.toFixed(2)}`, color: themeColors.textSecondary };
@@ -154,7 +159,7 @@ export function BillListItem({
     
     // User is not payer but has a share (borrowed)
     if (yourShare > 0) {
-      return { text: `you borrowed $${yourShare.toFixed(2)}`, color: themeColors.error };
+      return { text: `you give $${yourShare.toFixed(2)}`, color: themeColors.error };
     }
     
     // Fallback
@@ -175,49 +180,79 @@ export function BillListItem({
         }}
       >
         <Stack flexDirection="row" alignItems="center" gap="$3">
-          {/* Category Icon */}
-          <Stack
-            width={36}
-            height={36}
-            borderRadius={8}
-            backgroundColor={themeColors.surfaceElevated}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text fontSize={18}>{categoryIcon || '📦'}</Text>
+          {/* Category Icon with Credit Card Payer Badge */}
+          <Stack position="relative">
+            <Stack
+              width={36}
+              height={36}
+              borderRadius={8}
+              backgroundColor={themeColors.surfaceElevated}
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Text fontSize={18}>{categoryIcon || '📦'}</Text>
+            </Stack>
+            {/* Credit card payer badge */}
+            <Stack
+              position="absolute"
+              bottom={-6}
+              right={-6}
+              width={22}
+              height={16}
+              borderRadius={2}
+              backgroundColor={getAvatarColor(payerColorIndex)}
+              borderWidth={1.5}
+              borderColor={themeColors.background}
+              overflow="hidden"
+            >
+              {/* Magnetic stripe near top */}
+              <Stack
+                position="absolute"
+                top={2}
+                left={0}
+                right={0}
+                height={3}
+                backgroundColor="rgba(255,255,255,0.4)"
+              />
+              {/* Initials centered */}
+              <Stack flex={1} justifyContent="center" alignItems="center" paddingTop={3}>
+                <Text fontSize={7} fontWeight="700" color="white">
+                  {payerName.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                </Text>
+              </Stack>
+            </Stack>
           </Stack>
           
-          {/* Title and Payer */}
+          {/* Title only */}
           <Stack flex={1} gap={2}>
-            <Text
-              fontSize={15}
-              fontWeight="500"
-              color={themeColors.textPrimary}
-              numberOfLines={1}
-            >
-              {title}
-            </Text>
-            <Text
-              fontSize={12}
-              color={themeColors.textMuted}
-              numberOfLines={1}
-            >
-              {payerName} paid
-            </Text>
+            <Stack flexDirection="row" alignItems="center" gap="$1">
+              <Text
+                fontSize={15}
+                fontWeight="500"
+                color={themeColors.textPrimary}
+                numberOfLines={1}
+                flex={1}
+              >
+                {title}
+              </Text>
+              {isItemized && (
+                <ClipboardList size={14} color={themeColors.textMuted} />
+              )}
+            </Stack>
           </Stack>
           
           {/* Amount and Balance */}
           <Stack alignItems="flex-end" gap={2}>
             <Text
-              fontSize={14}
-              fontWeight="600"
-              color={themeColors.textPrimary}
+              fontSize={12}
+              fontWeight="400"
+              color={themeColors.textMuted}
             >
               ${amount.toFixed(2)}
             </Text>
             <Text
-              fontSize={12}
-              fontWeight="500"
+              fontSize={14}
+              fontWeight="600"
               color={balanceInfo.color}
             >
               {balanceInfo.text}

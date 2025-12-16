@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { Pressable, RefreshControl } from 'react-native';
+import { Pressable, RefreshControl, SectionList } from 'react-native';
 import { 
   ArrowLeft, 
   Settings, 
@@ -88,11 +88,9 @@ export function GroupDetailContent({
       monthGroups[monthKey].days[dayKey].push(bill);
     });
 
-    // Convert to array format with daily totals
-    return Object.entries(monthGroups).map(([monthKey, { monthLabel, days }]) => ({
-      monthKey,
-      monthLabel,
-      days: Object.entries(days).map(([dayKey, dayBills]) => {
+    // Convert to array format with daily and monthly totals
+    return Object.entries(monthGroups).map(([monthKey, { monthLabel, days }]) => {
+      const daysArray = Object.entries(days).map(([dayKey, dayBills]) => {
         const date = new Date(dayKey);
         // Calculate daily total (user's share for the day)
         const dailyTotal = dayBills.reduce((sum, bill) => {
@@ -105,8 +103,18 @@ export function GroupDetailContent({
           bills: dayBills,
           dailyTotal,
         };
-      }),
-    }));
+      });
+      
+      // Calculate monthly total
+      const monthlyTotal = daysArray.reduce((sum, day) => sum + day.dailyTotal, 0);
+      
+      return {
+        monthKey,
+        monthLabel,
+        monthlyTotal,
+        days: daysArray,
+      };
+    });
   }, [bills]);
 
   // Filter grouped bills based on myViewOnly toggle
@@ -114,9 +122,8 @@ export function GroupDetailContent({
     if (!myViewOnly) return groupedBills;
 
     return groupedBills
-      .map((monthGroup) => ({
-        ...monthGroup,
-        days: monthGroup.days
+      .map((monthGroup) => {
+        const filteredDays = monthGroup.days
           .map((dayGroup) => {
             const filteredBills = dayGroup.bills.filter((bill) => {
               const isPayer = bill.payer.id === user?.id;
@@ -130,8 +137,17 @@ export function GroupDetailContent({
               dailyTotal,
             };
           })
-          .filter((dayGroup) => dayGroup.bills.length > 0),
-      }))
+          .filter((dayGroup) => dayGroup.bills.length > 0);
+        
+        // Recalculate monthly total for filtered bills
+        const monthlyTotal = filteredDays.reduce((sum, day) => sum + day.dailyTotal, 0);
+        
+        return {
+          ...monthGroup,
+          days: filteredDays,
+          monthlyTotal,
+        };
+      })
       .filter((monthGroup) => monthGroup.days.length > 0);
   }, [groupedBills, myViewOnly, user?.id]);
 
@@ -162,6 +178,290 @@ export function GroupDetailContent({
     );
   }
 
+  // Header content rendered for both tabs
+  const HeaderContent = () => (
+    <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$2">
+      {/* Top bar with back/settings */}
+      <XStack justifyContent={showBackButton ? "space-between" : "flex-end"} alignItems="center" marginBottom="$2">
+        {showBackButton && (
+          <Pressable onPress={() => router.back()}>
+            <ArrowLeft size={24} color={themeColors.textPrimary} />
+          </Pressable>
+        )}
+        <Pressable onPress={() => router.push(`/group/settings?id=${groupId}` as any)}>
+          <Settings size={24} color={themeColors.textPrimary} />
+        </Pressable>
+      </XStack>
+
+      {/* Hero Row: Group Info + Members */}
+      <XStack alignItems="center" justifyContent="space-between" marginBottom="$3">
+        {/* Left: Group emoji + name */}
+        <XStack alignItems="center" gap="$3" flex={1}>
+          <Stack
+            width={48}
+            height={48}
+            borderRadius={12}
+            backgroundColor={themeColors.surfaceElevated}
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text fontSize={24}>{group.emoji}</Text>
+          </Stack>
+          <YStack flex={1}>
+            <Text fontSize={18} fontWeight="700" color={themeColors.textPrimary} numberOfLines={1}>
+              {group.name}
+            </Text>
+            <Text fontSize={12} color={themeColors.textSecondary}>
+              {group.member_count} members • {group.currency}
+            </Text>
+          </YStack>
+        </XStack>
+        
+        {/* Right: Member avatars */}
+        <XStack alignItems="center">
+          {groupMembers.slice(0, 4).map((member: GroupMember, index: number) => (
+            <Stack 
+              key={member.id} 
+              marginLeft={index > 0 ? -8 : 0}
+              borderWidth={2}
+              borderColor={themeColors.background}
+              borderRadius={16}
+            >
+              <Avatar
+                name={member.user.full_name}
+                colorIndex={member.color_index}
+                size="sm"
+              />
+            </Stack>
+          ))}
+          {groupMembers.length > 4 && (
+            <Stack
+              marginLeft={-8}
+              width={28}
+              height={28}
+              borderRadius={14}
+              backgroundColor={themeColors.border}
+              justifyContent="center"
+              alignItems="center"
+              borderWidth={2}
+              borderColor={themeColors.background}
+            >
+              <Text fontSize={10} color={themeColors.textSecondary}>
+              +{groupMembers.length - 4}
+              </Text>
+            </Stack>
+          )}
+        </XStack>
+      </XStack>
+
+      {/* Balance Row */}
+      <XStack 
+        backgroundColor={themeColors.surfaceElevated}
+        borderRadius={10}
+        padding="$2"
+        paddingHorizontal="$3"
+        marginBottom="$2"
+        alignItems="center"
+        justifyContent="space-between"
+      >
+        <XStack alignItems="center" gap="$2">
+          <Text fontSize={12} color={themeColors.textSecondary}>Balance:</Text>
+          <BalanceBadge amount={group.your_balance ?? 0} size="md" />
+        </XStack>
+        {(group.your_balance ?? 0) !== 0 && (
+          <Button
+            variant={group.your_balance! < 0 ? 'primary' : 'outlined'}
+            size="sm"
+            icon={<SendHorizontal size={14} color={group.your_balance! < 0 ? 'white' : themeColors.primary} />}
+            onPress={() => {
+              router.push(`/group/settings?id=${groupId}` as any);
+            }}
+          >
+            Settle Up
+          </Button>
+        )}
+      </XStack>
+
+      {/* Tabs */}
+      <XStack 
+        backgroundColor={themeColors.surfaceElevated}
+        borderRadius={10}
+        padding="$0.5"
+        marginBottom="$2"
+      >
+        <Pressable 
+          style={{ flex: 1 }}
+          onPress={() => setActiveTab('bills')}
+        >
+          <Stack
+            paddingVertical="$2"
+            borderRadius={10}
+            backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
+            alignItems="center"
+          >
+            <Text 
+              fontWeight={activeTab === 'bills' ? '600' : '400'}
+              color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
+            >
+              Bills
+            </Text>
+          </Stack>
+        </Pressable>
+        <Pressable 
+          style={{ flex: 1 }}
+          onPress={() => setActiveTab('balances')}
+        >
+          <Stack
+            paddingVertical="$2"
+            borderRadius={10}
+            backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
+            alignItems="center"
+          >
+            <Text 
+              fontWeight={activeTab === 'balances' ? '600' : '400'}
+              color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
+            >
+              Balances
+            </Text>
+          </Stack>
+        </Pressable>
+      </XStack>
+
+      {/* My View Toggle - only for bills tab */}
+      {activeTab === 'bills' && bills.length > 0 && (
+        <Pressable onPress={() => setMyViewOnly(!myViewOnly)}>
+          <XStack 
+            alignItems="center" 
+            justifyContent="flex-end"
+            gap="$2"
+            paddingVertical="$2"
+          >
+            {myViewOnly ? (
+              <EyeClosed size={16} color={themeColors.primary} />
+            ) : (
+              <Eye size={16} color={themeColors.primary} />
+            )}
+            <Text
+              fontSize={13}
+              fontWeight="500"
+              color={themeColors.primary}
+              minWidth={60}
+              textAlign="left"
+            >
+            {myViewOnly ? 'Your Bills' : 'All Bills'}
+            </Text>
+          </XStack>
+        </Pressable>
+      )}
+    </Stack>
+  );
+
+  // Bills tab with SectionList
+  if (activeTab === 'bills') {
+    return (
+      <SectionList
+        sections={filteredGroupedBills.map((monthGroup) => ({
+          key: monthGroup.monthKey,
+          monthLabel: monthGroup.monthLabel,
+          monthlyTotal: monthGroup.monthlyTotal,
+          data: monthGroup.days.flatMap((dayGroup) => 
+            dayGroup.bills.map((bill) => ({ ...bill, dayLabel: dayGroup.dayLabel, dayKey: dayGroup.dayKey }))
+          ),
+        }))}
+        keyExtractor={(item) => item.id}
+        stickySectionHeadersEnabled={true}
+        refreshControl={
+          <RefreshControl refreshing={isLoading || billsLoading} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        ListHeaderComponent={<HeaderContent />}
+        renderSectionHeader={({ section }) => (
+          <XStack
+            justifyContent="space-between"
+            alignItems="center"
+            backgroundColor={themeColors.background}
+            paddingVertical="$3"
+            paddingHorizontal="$4"
+          >
+            <Text
+              fontSize={14}
+              fontWeight="700"
+              color={themeColors.textPrimary}
+            >
+              {section.monthLabel}
+            </Text>
+            {section.monthlyTotal > 0 && (
+              <Text
+                fontSize={12}
+                fontWeight="500"
+                color={themeColors.textSecondary}
+              >
+                Your Total: ${section.monthlyTotal.toFixed(2)}
+              </Text>
+            )}
+          </XStack>
+        )}
+        renderItem={({ item, index, section }) => {
+          const prevItem = index > 0 ? section.data[index - 1] : null;
+          const showDayHeader = !prevItem || prevItem.dayKey !== item.dayKey;
+          
+          return (
+            <YStack paddingHorizontal="$4">
+              {showDayHeader && (
+                <XStack 
+                  paddingVertical="$2" 
+                  alignItems="center"
+                  borderBottomWidth={1}
+                  borderBottomColor={themeColors.border}
+                  marginTop={index === 0 ? 0 : '$2'}
+                >
+                  <Text
+                    fontSize={12}
+                    fontWeight="500"
+                    color={themeColors.textSecondary}
+                  >
+                    {item.dayLabel}
+                  </Text>
+                </XStack>
+              )}
+              <BillListItem
+                title={item.title}
+                category={item.category}
+                categoryIcon={categoryIcons[item.category]}
+                amount={item.total_amount}
+                yourShare={item.your_share ?? 0}
+                date={new Date(item.bill_date).toLocaleDateString()}
+                payerName={item.payer.full_name}
+                payerColorIndex={groupMembers.find(m => m.user_id === item.payer.id)?.color_index ?? 0}
+                participants={[]}
+                variant="compact"
+                isPayer={item.payer.id === user?.id}
+                isItemized={(item as any).item_count > 1 || item.is_itemized}
+                onPress={() => router.push(`/bill/${item.id}` as any)}
+              />
+            </YStack>
+          );
+        }}
+        ListEmptyComponent={
+          <YStack alignItems="center" paddingVertical="$8" paddingHorizontal="$4" gap="$4">
+            <Text fontSize={16} color={themeColors.textSecondary}>
+              No bills yet
+            </Text>
+            <Button
+              variant="primary"
+              icon={<Plus size={18} color="white" />}
+              onPress={() => router.push('/bill/create' as any)}
+            >
+              Create First Bill
+            </Button>
+          </YStack>
+        }
+      />
+    );
+  }
+
+  // Balances tab with ScrollView
   return (
     <ScrollView
       refreshControl={
@@ -169,285 +469,28 @@ export function GroupDetailContent({
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
-        <XStack justifyContent={showBackButton ? "space-between" : "flex-end"} alignItems="center" marginBottom="$4">
-          {showBackButton && (
-            <Pressable onPress={() => router.back()}>
-              <ArrowLeft size={24} color={themeColors.textPrimary} />
-            </Pressable>
-          )}
-          <Pressable onPress={() => router.push(`/group/settings?id=${groupId}` as any)}>
-            <Settings size={24} color={themeColors.textPrimary} />
-          </Pressable>
-        </XStack>
-
-        {/* Group Info */}
-        <YStack alignItems="center" gap="$2" marginBottom="$4">
-          <Stack
-            width={80}
-            height={80}
-            borderRadius={20}
-            backgroundColor={themeColors.surfaceElevated}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text fontSize={40}>{group.emoji}</Text>
-          </Stack>
-          <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
-            {group.name}
-          </Text>
-          <Text fontSize={14} color={themeColors.textSecondary}>
-            {group.member_count} members • {group.currency}
-          </Text>
-        </YStack>
-
-        {/* Balance Card with Settle Up */}
-        <Card variant="elevated" marginBottom="$4">
-          <YStack alignItems="center" gap="$2">
-            <Text fontSize={14} color={themeColors.textSecondary}>
-              Your Balance
-            </Text>
-            <BalanceBadge amount={group.your_balance ?? 0} size="lg" />
-            {(group.your_balance ?? 0) !== 0 && (
-              <Button
-                variant={group.your_balance! < 0 ? 'primary' : 'outlined'}
-                size="sm"
-                icon={<SendHorizontal size={16} color={group.your_balance! < 0 ? 'white' : themeColors.primary} />}
-                onPress={() => {
-                  // TODO: Navigate to settle up flow
-                  router.push(`/group/settings?id=${groupId}` as any);
-                }}
-              >
-                Settle Up
-              </Button>
-            )}
-          </YStack>
-        </Card>
-
-        {/* Members */}
-        <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-          <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-            Members
-          </Text>
-          <Pressable onPress={() => router.push(`/group/invite?id=${groupId}` as any)}>
-            <XStack alignItems="center" gap="$1">
-              <UserPlus size={18} color={themeColors.primary} />
-              <Text fontSize={14} color={themeColors.primary}>Invite</Text>
-            </XStack>
-          </Pressable>
-        </XStack>
-
-        <XStack gap="$3" marginBottom="$6">
-          {groupMembers.slice(0, 5).map((member: GroupMember) => (
-            <YStack key={member.id} alignItems="center" gap="$1">
+      <HeaderContent />
+      <YStack paddingHorizontal="$4" paddingBottom="$8">
+        {groupMembers.map((member: GroupMember) => (
+          <Card key={member.id} variant="surface">
+            <XStack alignItems="center" gap="$3">
               <Avatar
                 name={member.user.full_name}
                 colorIndex={member.color_index}
-                size="lg"
+                size="md"
               />
-              <Text 
-                fontSize={12} 
-                color={themeColors.textSecondary}
-                numberOfLines={1}
-              >
-                {member.user.full_name.split(' ')[0]}
-              </Text>
-            </YStack>
-          ))}
-          {groupMembers.length > 5 && (
-            <YStack alignItems="center" gap="$1">
-              <Stack
-                width={48}
-                height={48}
-                borderRadius={24}
-                backgroundColor={themeColors.border}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <Text fontSize={14} color={themeColors.textSecondary}>
-                  +{groupMembers.length - 5}
+              <YStack flex={1}>
+                <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
+                  {member.user.full_name}
                 </Text>
-              </Stack>
-            </YStack>
-          )}
-        </XStack>
-
-        {/* Tabs */}
-        <XStack 
-          backgroundColor={themeColors.surfaceElevated}
-          borderRadius={12}
-          padding="$1"
-          marginBottom="$4"
-        >
-          <Pressable 
-            style={{ flex: 1 }}
-            onPress={() => setActiveTab('bills')}
-          >
-            <Stack
-              paddingVertical="$2"
-              borderRadius={10}
-              backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
-              alignItems="center"
-            >
-              <Text 
-                fontWeight={activeTab === 'bills' ? '600' : '400'}
-                color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
-              >
-                Bills
-              </Text>
-            </Stack>
-          </Pressable>
-          <Pressable 
-            style={{ flex: 1 }}
-            onPress={() => setActiveTab('balances')}
-          >
-            <Stack
-              paddingVertical="$2"
-              borderRadius={10}
-              backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
-              alignItems="center"
-            >
-              <Text 
-                fontWeight={activeTab === 'balances' ? '600' : '400'}
-                color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
-              >
-                Balances
-              </Text>
-            </Stack>
-          </Pressable>
-        </XStack>
-
-            {/* My View Toggle - shows action, not current state */}
-        {activeTab === 'bills' && bills.length > 0 && (
-          <Pressable onPress={() => setMyViewOnly(!myViewOnly)}>
-            <XStack 
-              alignItems="center" 
-              justifyContent="flex-end"
-              gap="$2"
-              paddingVertical="$2"
-            >
-              {myViewOnly ? (
-                <EyeClosed size={16} color={themeColors.primary} />
-              ) : (
-                <Eye size={16} color={themeColors.primary} />
-              )}
-              <Text
-                fontSize={13}
-                fontWeight="500"
-                color={themeColors.primary}
-                minWidth={60}
-                textAlign="left"
-              >
-              {myViewOnly ? 'Your Bills' : 'All Bills'}
-              </Text>
-            </XStack>
-          </Pressable>
-        )}
-      </Stack>
-
-      {/* Content */}
-      <YStack paddingHorizontal="$4" paddingBottom="$8">
-        {activeTab === 'bills' ? (
-          filteredGroupedBills.length > 0 ? (
-            filteredGroupedBills.map((monthGroup) => (
-              <YStack key={monthGroup.monthKey} gap="$2">
-                {/* Month Header */}
-                <Text
-                  fontSize={13}
-                  fontWeight="600"
-                  color={themeColors.textMuted}
-                  marginTop="$4"
-                  marginBottom="$2"
-                >
-                  {monthGroup.monthLabel}
+                <Text fontSize={12} color={themeColors.textSecondary}>
+                  {member.role === 'admin' ? 'Admin' : 'Member'}
                 </Text>
-
-                  {monthGroup.days.map((dayGroup) => (
-                    <YStack key={dayGroup.dayKey}>
-                      {/* Day Header with Daily Total */}
-                      <XStack 
-                        paddingVertical="$2" 
-                        alignItems="center"
-                        justifyContent="space-between"
-                        borderBottomWidth={1}
-                        borderBottomColor={themeColors.border}
-                      >
-                        <Text
-                          fontSize={12}
-                          fontWeight="500"
-                          color={themeColors.textSecondary}
-                        >
-                          {dayGroup.dayLabel}
-                        </Text>
-                        {dayGroup.dailyTotal > 0 && (
-                          <Text
-                            fontSize={12}
-                            fontWeight="500"
-                            color={themeColors.textMuted}
-                          >
-                            Your share: ${dayGroup.dailyTotal.toFixed(2)}
-                          </Text>
-                        )}
-                      </XStack>
-
-                    {/* Bills for this day */}
-                    {dayGroup.bills.map((bill) => (
-                      <BillListItem
-                        key={bill.id}
-                        title={bill.title}
-                        category={bill.category}
-                        categoryIcon={categoryIcons[bill.category]}
-                        amount={bill.total_amount}
-                        yourShare={bill.your_share ?? 0}
-                        date={new Date(bill.bill_date).toLocaleDateString()}
-                        payerName={bill.payer.full_name}
-                        participants={[]}
-                        variant="compact"
-                        isPayer={bill.payer.id === user?.id}
-                        onPress={() => router.push(`/bill/${bill.id}` as any)}
-                      />
-                    ))}
-                  </YStack>
-                ))}
               </YStack>
-            ))
-          ) : (
-            <YStack alignItems="center" paddingVertical="$8" gap="$4">
-              <Text fontSize={16} color={themeColors.textSecondary}>
-                No bills yet
-              </Text>
-              <Button
-                variant="primary"
-                icon={<Plus size={18} color="white" />}
-                onPress={() => router.push('/bill/create' as any)}
-              >
-                Create First Bill
-              </Button>
-            </YStack>
-          )
-        ) : (
-          groupMembers.map((member: GroupMember) => (
-            <Card key={member.id} variant="surface">
-              <XStack alignItems="center" gap="$3">
-                <Avatar
-                  name={member.user.full_name}
-                  colorIndex={member.color_index}
-                  size="md"
-                />
-                <YStack flex={1}>
-                  <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
-                    {member.user.full_name}
-                  </Text>
-                  <Text fontSize={12} color={themeColors.textSecondary}>
-                    {member.role === 'admin' ? 'Admin' : 'Member'}
-                  </Text>
-                </YStack>
-                <BalanceBadge amount={0} size="sm" />
-              </XStack>
-            </Card>
-          ))
-        )}
+              <BalanceBadge amount={0} size="sm" />
+            </XStack>
+          </Card>
+        ))}
       </YStack>
     </ScrollView>
   );

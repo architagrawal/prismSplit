@@ -33,8 +33,11 @@
 
 - [x] **Compact Bill List:** High-density view grouped by date
 - [x] **Month/Day Headers:** Bills grouped by month then day (no repetitive dates)
-- [x] **Color-coded Balance:** Green (lent), Red (borrowed), Grey (not involved)
-- [x] **Daily Totals:** Show user's share per day in headers
+- [x] **Sticky Month Headers:** Using SectionList, month headers stick with monthly totals
+- [x] **Horizontal Hero Header:** Group info left, overlapping avatars right (compact layout)
+- [x] **Credit Card Payer Badge:** Payer shown as credit card icon with initials on category icon corner
+- [x] **Itemized Bill Indicator:** ClipboardList icon after title for bills with multiple items
+- [x] **Color-coded Balance:** Green (lent), Red (borrowed), Grey (not involved/paid) - emphasized over amount
 - [x] **My View Toggle:** Filter to show only items user is involved in
 - [x] **Settle Up Button:** Quick access when balance ≠ $0
 - [ ] Create new bill (Itemized or Quick)

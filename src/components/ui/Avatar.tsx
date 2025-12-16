@@ -18,12 +18,13 @@ interface AvatarProps {
   /** Color index (0-5) for consistent color per user in a group */
   colorIndex?: number;
   /** Size of the avatar */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   /** Show border (useful when overlapping) */
   bordered?: boolean;
 }
 
 const sizes = {
+  xs: { container: 18, fontSize: 8, borderWidth: 1 },
   sm: { container: 24, fontSize: 10, borderWidth: 1 },
   md: { container: 36, fontSize: 14, borderWidth: 2 },
   lg: { container: 48, fontSize: 18, borderWidth: 2 },
