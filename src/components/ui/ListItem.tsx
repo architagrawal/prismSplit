@@ -133,15 +133,31 @@ export function BillListItem({
   
   // Get balance text and color
   const getBalanceInfo = () => {
-    if (!isInvolved) {
+    // Not involved: user not payer AND share = 0
+    if (!isPayer && yourShare === 0) {
       return { text: 'not involved', color: themeColors.textMuted };
     }
-    if (isPayer && netAmount > 0) {
-      return { text: `you lent $${netAmount.toFixed(2)}`, color: themeColors.success };
+    
+    // User is payer
+    if (isPayer) {
+      if (netAmount > 0) {
+        // Lent money to others
+        return { text: `you lent $${netAmount.toFixed(2)}`, color: themeColors.success };
+      } else if (yourShare === amount) {
+        // Paid only for self (no one owes)
+        return { text: `your share: $${yourShare.toFixed(2)}`, color: themeColors.textSecondary };
+      } else {
+        // Edge case: paid but somehow share > amount (shouldn't happen)
+        return { text: `your share: $${yourShare.toFixed(2)}`, color: themeColors.textSecondary };
+      }
     }
-    if (!isPayer && yourShare > 0) {
+    
+    // User is not payer but has a share (borrowed)
+    if (yourShare > 0) {
       return { text: `you borrowed $${yourShare.toFixed(2)}`, color: themeColors.error };
     }
+    
+    // Fallback
     return { text: `your share: $${yourShare.toFixed(2)}`, color: themeColors.textSecondary };
   };
 

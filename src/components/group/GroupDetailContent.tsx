@@ -15,7 +15,7 @@ import {
   Plus,
   SendHorizontal,
   Eye,
-  EyeOff
+  EyeClosed
 } from 'lucide-react-native';
 
 import { 
@@ -318,7 +318,7 @@ export function GroupDetailContent({
           </Pressable>
         </XStack>
 
-        {/* My View Toggle */}
+            {/* My View Toggle - shows action, not current state */}
         {activeTab === 'bills' && bills.length > 0 && (
           <Pressable onPress={() => setMyViewOnly(!myViewOnly)}>
             <XStack 
@@ -328,16 +328,18 @@ export function GroupDetailContent({
               paddingVertical="$2"
             >
               {myViewOnly ? (
-                <Eye size={16} color={themeColors.primary} />
+                <EyeClosed size={16} color={themeColors.primary} />
               ) : (
-                <EyeOff size={16} color={themeColors.textMuted} />
+                <Eye size={16} color={themeColors.primary} />
               )}
               <Text
                 fontSize={13}
                 fontWeight="500"
-                color={myViewOnly ? themeColors.primary : themeColors.textMuted}
+                color={themeColors.primary}
+                minWidth={60}
+                textAlign="left"
               >
-                {myViewOnly ? 'My items only' : 'Show all'}
+              {myViewOnly ? 'Your Bills' : 'All Bills'}
               </Text>
             </XStack>
           </Pressable>

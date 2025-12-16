@@ -2,6 +2,7 @@
  * PrismSplit Demo Data
  * 
  * Mock data for development and testing.
+ * Diverse data to showcase all app features.
  */
 
 import type {
@@ -45,6 +46,20 @@ export const demoUsers: User[] = [
     avatar_url: null,
     created_at: '2024-02-10T16:45:00Z',
   },
+  {
+    id: 'user-5',
+    email: 'morgan@example.com',
+    full_name: 'Morgan Taylor',
+    avatar_url: null,
+    created_at: '2024-03-05T11:20:00Z',
+  },
+  {
+    id: 'user-6',
+    email: 'riley@example.com',
+    full_name: 'Riley Garcia',
+    avatar_url: null,
+    created_at: '2024-03-12T15:10:00Z',
+  },
 ];
 
 export const currentUser = demoUsers[0]; // Alex is the current user
@@ -62,7 +77,7 @@ export const demoGroups: GroupWithBalance[] = [
     created_at: '2024-01-15T10:00:00Z',
     member_count: 4,
     your_balance: 47.5,
-    last_activity_at: '2024-12-10T18:30:00Z',
+    last_activity_at: '2024-12-15T18:30:00Z',
   },
   {
     id: 'group-2',
@@ -73,8 +88,8 @@ export const demoGroups: GroupWithBalance[] = [
     created_by: 'user-2',
     created_at: '2024-06-01T12:00:00Z',
     member_count: 3,
-    your_balance: -25.0,
-    last_activity_at: '2024-12-08T14:20:00Z',
+    your_balance: -125.0,
+    last_activity_at: '2024-12-14T14:20:00Z',
   },
   {
     id: 'group-3',
@@ -85,8 +100,8 @@ export const demoGroups: GroupWithBalance[] = [
     created_by: 'user-1',
     created_at: '2024-09-15T08:00:00Z',
     member_count: 6,
-    your_balance: 12.75,
-    last_activity_at: '2024-12-09T12:45:00Z',
+    your_balance: 0,
+    last_activity_at: '2024-12-13T12:45:00Z',
   },
 ];
 
@@ -104,61 +119,470 @@ export const demoGroupMembers: Record<string, GroupMember[]> = {
     { id: 'gm-6', user_id: 'user-2', user: demoUsers[1], role: 'admin', color_index: 1, joined_at: '2024-06-01T12:00:00Z' },
     { id: 'gm-7', user_id: 'user-3', user: demoUsers[2], role: 'member', color_index: 2, joined_at: '2024-06-02T10:00:00Z' },
   ],
+  'group-3': [
+    { id: 'gm-8', user_id: 'user-1', user: demoUsers[0], role: 'admin', color_index: 0, joined_at: '2024-09-15T08:00:00Z' },
+    { id: 'gm-9', user_id: 'user-2', user: demoUsers[1], role: 'member', color_index: 1, joined_at: '2024-09-15T08:30:00Z' },
+    { id: 'gm-10', user_id: 'user-3', user: demoUsers[2], role: 'member', color_index: 2, joined_at: '2024-09-15T09:00:00Z' },
+    { id: 'gm-11', user_id: 'user-4', user: demoUsers[3], role: 'member', color_index: 3, joined_at: '2024-09-16T10:00:00Z' },
+    { id: 'gm-12', user_id: 'user-5', user: demoUsers[4], role: 'member', color_index: 4, joined_at: '2024-09-17T11:00:00Z' },
+    { id: 'gm-13', user_id: 'user-6', user: demoUsers[5], role: 'member', color_index: 5, joined_at: '2024-09-18T12:00:00Z' },
+  ],
 };
 
-// === Demo Bills ===
+// === Demo Bills - Diverse data across multiple months and days ===
 
 export const demoBills: BillSummary[] = [
+  // ===== GROUP 1: Roommates =====
+  
+  // === EDGE CASE SCENARIOS ===
+  
+  // Edge Case 1: User paid, share = total (paid only for self)
+  {
+    id: 'bill-edge-1',
+    group_id: 'group-1',
+    title: 'Personal Amazon Order',
+    total_amount: 45.99,
+    tax_amount: 3.68,
+    tip_amount: 0,
+    paid_by: 'user-1', // Alex paid
+    payer: demoUsers[0],
+    category: 'shopping',
+    bill_date: '2024-12-15',
+    created_at: '2024-12-15T22:00:00Z',
+    item_count: 1,
+    your_share: 45.99, // Share = total (no one owes Alex)
+    participant_count: 1,
+    participant_avatars: ['user-1'],
+  },
+  
+  // Edge Case 2: User paid, share = 0 (paid entirely for others - gift/treat)
+  {
+    id: 'bill-edge-2',
+    group_id: 'group-1',
+    title: 'Birthday Gift for Jordan',
+    total_amount: 75.00,
+    tax_amount: 6.00,
+    tip_amount: 0,
+    paid_by: 'user-1', // Alex paid
+    payer: demoUsers[0],
+    category: 'other',
+    bill_date: '2024-12-15',
+    created_at: '2024-12-15T16:00:00Z',
+    item_count: 1,
+    your_share: 0, // Alex paid but gets nothing (lent full amount)
+    participant_count: 2,
+    participant_avatars: ['user-2', 'user-4'],
+  },
+  
+  // Edge Case 3: Small amount (cents only)
+  {
+    id: 'bill-edge-3',
+    group_id: 'group-1',
+    title: 'Coffee Tip Jar',
+    total_amount: 2.50,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-2', // Sam paid
+    payer: demoUsers[1],
+    category: 'dining',
+    bill_date: '2024-12-15',
+    created_at: '2024-12-15T09:00:00Z',
+    item_count: 1,
+    your_share: 0.63, // Very small amount
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  
+  // Edge Case 4: Large amount
+  {
+    id: 'bill-edge-4',
+    group_id: 'group-1',
+    title: 'New Couch for Living Room',
+    total_amount: 1299.99,
+    tax_amount: 104.00,
+    tip_amount: 0,
+    paid_by: 'user-1', // Alex paid
+    payer: demoUsers[0],
+    category: 'shopping',
+    bill_date: '2024-12-14',
+    created_at: '2024-12-14T15:00:00Z',
+    item_count: 1,
+    your_share: 325.00, // 1/4 of amount
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+
+  // === REGULAR SCENARIOS ===
+  
+  // December 2024 - Multiple days, multiple bills per day
   {
     id: 'bill-1',
     group_id: 'group-1',
-    title: 'Costco Grocery',
-    total_amount: 142.5,
-    tax_amount: 8.5,
+    title: 'Costco Grocery Run',
+    total_amount: 187.45,
+    tax_amount: 12.45,
     tip_amount: 0,
-    paid_by: 'user-1',
+    paid_by: 'user-1', // Alex paid (current user) - "you lent"
     payer: demoUsers[0],
     category: 'groceries',
-    bill_date: '2024-12-10',
-    created_at: '2024-12-10T18:30:00Z',
-    item_count: 8,
-    your_share: 35.5,
+    bill_date: '2024-12-15',
+    created_at: '2024-12-15T18:30:00Z',
+    item_count: 12,
+    your_share: 42.50, // Less than total, so Alex lent money
     participant_count: 4,
-    participant_avatars: ['user-1', 'user-2', 'user-3'],
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
   },
   {
     id: 'bill-2',
     group_id: 'group-1',
-    title: 'Utilities - December',
-    total_amount: 180.0,
-    tax_amount: 0,
-    tip_amount: 0,
-    paid_by: 'user-2',
+    title: 'Pizza Night',
+    total_amount: 68.50,
+    tax_amount: 5.50,
+    tip_amount: 10.00,
+    paid_by: 'user-2', // Sam paid - "you borrowed"
     payer: demoUsers[1],
-    category: 'utilities',
-    bill_date: '2024-12-05',
-    created_at: '2024-12-05T09:00:00Z',
-    item_count: 3,
-    your_share: 45.0,
+    category: 'dining',
+    bill_date: '2024-12-15',
+    created_at: '2024-12-15T21:00:00Z',
+    item_count: 4,
+    your_share: 17.13,
     participant_count: 4,
-    participant_avatars: ['user-1', 'user-2', 'user-3'],
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
   },
   {
     id: 'bill-3',
+    group_id: 'group-1',
+    title: 'Netflix Subscription',
+    total_amount: 22.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid - but Alex NOT involved
+    payer: demoUsers[2],
+    category: 'entertainment',
+    bill_date: '2024-12-15',
+    created_at: '2024-12-15T10:00:00Z',
+    item_count: 1,
+    your_share: 0, // Alex not involved - "not involved"
+    participant_count: 2,
+    participant_avatars: ['user-3', 'user-4'],
+  },
+  
+  // More "Not Involved" bills on same day as others
+  {
+    id: 'bill-not-1',
+    group_id: 'group-1',
+    title: 'Sam & Jordan Lunch',
+    total_amount: 34.50,
+    tax_amount: 2.76,
+    tip_amount: 5.18,
+    paid_by: 'user-2', // Sam paid - Alex NOT involved
+    payer: demoUsers[1],
+    category: 'dining',
+    bill_date: '2024-12-15',
+    created_at: '2024-12-15T12:30:00Z',
+    item_count: 2,
+    your_share: 0, // Not involved
+    participant_count: 2,
+    participant_avatars: ['user-2', 'user-3'],
+  },
+  {
+    id: 'bill-not-2',
+    group_id: 'group-1',
+    title: 'Casey Gym Membership',
+    total_amount: 49.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-4', // Casey paid - Alex NOT involved
+    payer: demoUsers[3],
+    category: 'other',
+    bill_date: '2024-12-14',
+    created_at: '2024-12-14T08:00:00Z',
+    item_count: 1,
+    your_share: 0, // Not involved
+    participant_count: 1,
+    participant_avatars: ['user-4'],
+  },
+  {
+    id: 'bill-not-3',
+    group_id: 'group-1',
+    title: 'Jordan & Casey Movie',
+    total_amount: 28.00,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid - Alex NOT involved
+    payer: demoUsers[2],
+    category: 'entertainment',
+    bill_date: '2024-12-12',
+    created_at: '2024-12-12T19:00:00Z',
+    item_count: 2,
+    your_share: 0, // Not involved
+    participant_count: 2,
+    participant_avatars: ['user-3', 'user-4'],
+  },
+  {
+    id: 'bill-4',
+    group_id: 'group-1',
+    title: 'Electric Bill - December',
+    total_amount: 145.00,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-1', // Alex paid (current user)
+    payer: demoUsers[0],
+    category: 'utilities',
+    bill_date: '2024-12-12',
+    created_at: '2024-12-12T09:00:00Z',
+    item_count: 1,
+    your_share: 36.25, // Equal split 4 ways
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-5',
+    group_id: 'group-1',
+    title: 'Target Household Items',
+    total_amount: 89.99,
+    tax_amount: 7.20,
+    tip_amount: 0,
+    paid_by: 'user-4', // Casey paid
+    payer: demoUsers[3],
+    category: 'shopping',
+    bill_date: '2024-12-10',
+    created_at: '2024-12-10T15:30:00Z',
+    item_count: 6,
+    your_share: 22.50,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-6',
+    group_id: 'group-1',
+    title: 'Spotify Family Plan',
+    total_amount: 16.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-2', // Sam paid - Alex NOT involved
+    payer: demoUsers[1],
+    category: 'entertainment',
+    bill_date: '2024-12-10',
+    created_at: '2024-12-10T11:00:00Z',
+    item_count: 1,
+    your_share: 0, // Not involved
+    participant_count: 2,
+    participant_avatars: ['user-2', 'user-3'],
+  },
+  
+  // November 2024
+  {
+    id: 'bill-7',
+    group_id: 'group-1',
+    title: 'Thanksgiving Dinner',
+    total_amount: 234.50,
+    tax_amount: 18.50,
+    tip_amount: 0,
+    paid_by: 'user-1', // Alex paid
+    payer: demoUsers[0],
+    category: 'groceries',
+    bill_date: '2024-11-28',
+    created_at: '2024-11-28T14:00:00Z',
+    item_count: 15,
+    your_share: 58.63,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-8',
+    group_id: 'group-1',
+    title: 'Internet Bill - November',
+    total_amount: 89.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid
+    payer: demoUsers[2],
+    category: 'utilities',
+    bill_date: '2024-11-15',
+    created_at: '2024-11-15T10:00:00Z',
+    item_count: 1,
+    your_share: 22.50,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-9',
+    group_id: 'group-1',
+    title: 'Game Night Snacks',
+    total_amount: 45.00,
+    tax_amount: 3.60,
+    tip_amount: 0,
+    paid_by: 'user-4', // Casey paid
+    payer: demoUsers[3],
+    category: 'dining',
+    bill_date: '2024-11-10',
+    created_at: '2024-11-10T20:00:00Z',
+    item_count: 5,
+    your_share: 11.25,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+
+  // October 2024
+  {
+    id: 'bill-10',
+    group_id: 'group-1',
+    title: 'Halloween Party',
+    total_amount: 156.00,
+    tax_amount: 12.00,
+    tip_amount: 0,
+    paid_by: 'user-2', // Sam paid
+    payer: demoUsers[1],
+    category: 'entertainment',
+    bill_date: '2024-10-31',
+    created_at: '2024-10-31T16:00:00Z',
+    item_count: 8,
+    your_share: 39.00,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+
+  // ===== GROUP 2: Trip Squad =====
+  
+  {
+    id: 'bill-11',
     group_id: 'group-2',
     title: 'Ski Trip Cabin',
-    total_amount: 450.0,
-    tax_amount: 35.0,
+    total_amount: 650.00,
+    tax_amount: 52.00,
     tip_amount: 0,
-    paid_by: 'user-2',
+    paid_by: 'user-2', // Sam paid
     payer: demoUsers[1],
     category: 'travel',
-    bill_date: '2024-12-08',
-    created_at: '2024-12-08T14:20:00Z',
+    bill_date: '2024-12-14',
+    created_at: '2024-12-14T14:20:00Z',
     item_count: 1,
-    your_share: 150.0,
+    your_share: 216.67,
     participant_count: 3,
     participant_avatars: ['user-1', 'user-2', 'user-3'],
+  },
+  {
+    id: 'bill-12',
+    group_id: 'group-2',
+    title: 'Ski Lift Passes',
+    total_amount: 375.00,
+    tax_amount: 30.00,
+    tip_amount: 0,
+    paid_by: 'user-1', // Alex paid
+    payer: demoUsers[0],
+    category: 'entertainment',
+    bill_date: '2024-12-14',
+    created_at: '2024-12-14T09:00:00Z',
+    item_count: 3,
+    your_share: 125.00,
+    participant_count: 3,
+    participant_avatars: ['user-1', 'user-2', 'user-3'],
+  },
+  {
+    id: 'bill-13',
+    group_id: 'group-2',
+    title: 'Mountain Restaurant',
+    total_amount: 127.50,
+    tax_amount: 10.20,
+    tip_amount: 19.13,
+    paid_by: 'user-3', // Jordan paid
+    payer: demoUsers[2],
+    category: 'dining',
+    bill_date: '2024-12-13',
+    created_at: '2024-12-13T13:00:00Z',
+    item_count: 6,
+    your_share: 42.50,
+    participant_count: 3,
+    participant_avatars: ['user-1', 'user-2', 'user-3'],
+  },
+  {
+    id: 'bill-14',
+    group_id: 'group-2',
+    title: 'Gas for Road Trip',
+    total_amount: 85.00,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-1', // Alex paid
+    payer: demoUsers[0],
+    category: 'transport',
+    bill_date: '2024-12-12',
+    created_at: '2024-12-12T08:00:00Z',
+    item_count: 1,
+    your_share: 28.33,
+    participant_count: 3,
+    participant_avatars: ['user-1', 'user-2', 'user-3'],
+  },
+
+  // ===== GROUP 3: Office Lunch =====
+  
+  {
+    id: 'bill-15',
+    group_id: 'group-3',
+    title: 'Friday Team Pizza',
+    total_amount: 95.00,
+    tax_amount: 7.60,
+    tip_amount: 19.00,
+    paid_by: 'user-5', // Morgan paid - but Alex not involved
+    payer: demoUsers[4],
+    category: 'dining',
+    bill_date: '2024-12-13',
+    created_at: '2024-12-13T12:45:00Z',
+    item_count: 5,
+    your_share: 0, // Not involved
+    participant_count: 4,
+    participant_avatars: ['user-2', 'user-4', 'user-5', 'user-6'],
+  },
+  {
+    id: 'bill-16',
+    group_id: 'group-3',
+    title: 'Coffee Run',
+    total_amount: 42.50,
+    tax_amount: 3.40,
+    tip_amount: 6.38,
+    paid_by: 'user-1', // Alex paid
+    payer: demoUsers[0],
+    category: 'dining',
+    bill_date: '2024-12-12',
+    created_at: '2024-12-12T10:30:00Z',
+    item_count: 6,
+    your_share: 8.50,
+    participant_count: 5,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'],
+  },
+  {
+    id: 'bill-17',
+    group_id: 'group-3',
+    title: 'Sushi Lunch',
+    total_amount: 156.00,
+    tax_amount: 12.48,
+    tip_amount: 23.40,
+    paid_by: 'user-6', // Riley paid
+    payer: demoUsers[5],
+    category: 'dining',
+    bill_date: '2024-12-11',
+    created_at: '2024-12-11T13:00:00Z',
+    item_count: 8,
+    your_share: 32.00,
+    participant_count: 6,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'user-6'],
+  },
+  {
+    id: 'bill-18',
+    group_id: 'group-3',
+    title: 'Birthday Cake for Sam',
+    total_amount: 45.00,
+    tax_amount: 3.60,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid - Alex not involved
+    payer: demoUsers[2],
+    category: 'other',
+    bill_date: '2024-12-10',
+    created_at: '2024-12-10T16:00:00Z',
+    item_count: 1,
+    your_share: 0, // Not involved (it's for Sam)
+    participant_count: 5,
+    participant_avatars: ['user-3', 'user-4', 'user-5', 'user-6'],
   },
 ];
 
@@ -218,6 +642,38 @@ export const demoBillItems: BillItemWithSplits[] = [
     total_claimed: 0,
     unclaimed: 22.0, // Unclaimed!
   },
+  {
+    id: 'item-5',
+    bill_id: 'bill-1',
+    name: 'Frozen Pizza 4-pack',
+    price: 24.99,
+    quantity: 1,
+    sort_order: 4,
+    splits: [
+      { id: 's7', item_id: 'item-5', user_id: 'user-1', user: demoUsers[0], split_type: 'equal', amount: 6.25, percentage: null, color_index: 0 },
+      { id: 's8', item_id: 'item-5', user_id: 'user-2', user: demoUsers[1], split_type: 'equal', amount: 6.25, percentage: null, color_index: 1 },
+      { id: 's9', item_id: 'item-5', user_id: 'user-3', user: demoUsers[2], split_type: 'equal', amount: 6.25, percentage: null, color_index: 2 },
+      { id: 's10', item_id: 'item-5', user_id: 'user-4', user: demoUsers[3], split_type: 'equal', amount: 6.24, percentage: null, color_index: 3 },
+    ],
+    total_claimed: 24.99,
+    unclaimed: 0,
+  },
+  {
+    id: 'item-6',
+    bill_id: 'bill-1',
+    name: 'Laundry Detergent',
+    price: 19.99,
+    quantity: 1,
+    sort_order: 5,
+    splits: [
+      { id: 's11', item_id: 'item-6', user_id: 'user-1', user: demoUsers[0], split_type: 'equal', amount: 5.00, percentage: null, color_index: 0 },
+      { id: 's12', item_id: 'item-6', user_id: 'user-2', user: demoUsers[1], split_type: 'equal', amount: 5.00, percentage: null, color_index: 1 },
+      { id: 's13', item_id: 'item-6', user_id: 'user-3', user: demoUsers[2], split_type: 'equal', amount: 5.00, percentage: null, color_index: 2 },
+      { id: 's14', item_id: 'item-6', user_id: 'user-4', user: demoUsers[3], split_type: 'equal', amount: 4.99, percentage: null, color_index: 3 },
+    ],
+    total_claimed: 19.99,
+    unclaimed: 0,
+  },
 ];
 
 // === Demo Activity ===
@@ -232,11 +688,35 @@ export const demoActivities: Activity[] = [
     type: 'bill_created',
     entity_type: 'bill',
     entity_id: 'bill-1',
-    metadata: { title: 'Costco Grocery', amount: 142.5 },
-    created_at: '2024-12-10T18:30:00Z',
+    metadata: { title: 'Costco Grocery Run', amount: 187.45 },
+    created_at: '2024-12-15T18:30:00Z',
   },
   {
     id: 'act-2',
+    group_id: 'group-1',
+    group: { id: 'group-1', name: 'Roommates', emoji: '🏠' },
+    user_id: 'user-2',
+    user: demoUsers[1],
+    type: 'bill_created',
+    entity_type: 'bill',
+    entity_id: 'bill-2',
+    metadata: { title: 'Pizza Night', amount: 68.50 },
+    created_at: '2024-12-15T21:00:00Z',
+  },
+  {
+    id: 'act-3',
+    group_id: 'group-2',
+    group: { id: 'group-2', name: 'Trip Squad', emoji: '✈️' },
+    user_id: 'user-2',
+    user: demoUsers[1],
+    type: 'bill_created',
+    entity_type: 'bill',
+    entity_id: 'bill-11',
+    metadata: { title: 'Ski Trip Cabin', amount: 650.00 },
+    created_at: '2024-12-14T14:20:00Z',
+  },
+  {
+    id: 'act-4',
     group_id: 'group-1',
     group: { id: 'group-1', name: 'Roommates', emoji: '🏠' },
     user_id: 'user-2',
@@ -245,10 +725,10 @@ export const demoActivities: Activity[] = [
     entity_type: 'bill',
     entity_id: 'bill-1',
     metadata: { item_name: 'Organic Milk 2-pack' },
-    created_at: '2024-12-10T18:45:00Z',
+    created_at: '2024-12-15T18:45:00Z',
   },
   {
-    id: 'act-3',
+    id: 'act-5',
     group_id: 'group-1',
     group: { id: 'group-1', name: 'Roommates', emoji: '🏠' },
     user_id: 'user-3',
@@ -257,14 +737,52 @@ export const demoActivities: Activity[] = [
     entity_type: 'settlement',
     entity_id: 'settle-1',
     metadata: { amount: 25.0, to_user: 'Alex Johnson' },
-    created_at: '2024-12-09T14:00:00Z',
+    created_at: '2024-12-14T14:00:00Z',
+  },
+  {
+    id: 'act-6',
+    group_id: 'group-3',
+    group: { id: 'group-3', name: 'Office Lunch', emoji: '🍕' },
+    user_id: 'user-6',
+    user: demoUsers[5],
+    type: 'bill_created',
+    entity_type: 'bill',
+    entity_id: 'bill-17',
+    metadata: { title: 'Sushi Lunch', amount: 156.00 },
+    created_at: '2024-12-11T13:00:00Z',
+  },
+  {
+    id: 'act-7',
+    group_id: 'group-2',
+    group: { id: 'group-2', name: 'Trip Squad', emoji: '✈️' },
+    user_id: 'user-1',
+    user: demoUsers[0],
+    type: 'bill_created',
+    entity_type: 'bill',
+    entity_id: 'bill-12',
+    metadata: { title: 'Ski Lift Passes', amount: 375.00 },
+    created_at: '2024-12-14T09:00:00Z',
+  },
+  {
+    id: 'act-8',
+    group_id: 'group-1',
+    group: { id: 'group-1', name: 'Roommates', emoji: '🏠' },
+    user_id: 'user-4',
+    user: demoUsers[3],
+    type: 'member_joined',
+    entity_type: 'group',
+    entity_id: 'group-1',
+    metadata: {},
+    created_at: '2024-12-10T16:45:00Z',
   },
 ];
 
 // === Demo Balances ===
 
 export const demoBalances: MemberBalance[] = [
-  { user_id: 'user-2', user: demoUsers[1], balance: -15.5, color_index: 1 }, // You owe them
-  { user_id: 'user-3', user: demoUsers[2], balance: 32.0, color_index: 2 },  // They owe you
-  { user_id: 'user-4', user: demoUsers[3], balance: 31.0, color_index: 3 },  // They owe you
+  { user_id: 'user-2', user: demoUsers[1], balance: -85.67, color_index: 1 }, // You owe Sam
+  { user_id: 'user-3', user: demoUsers[2], balance: 52.25, color_index: 2 },  // Jordan owes you
+  { user_id: 'user-4', user: demoUsers[3], balance: 31.00, color_index: 3 },  // Casey owes you
+  { user_id: 'user-5', user: demoUsers[4], balance: -12.50, color_index: 4 }, // You owe Morgan
+  { user_id: 'user-6', user: demoUsers[5], balance: 18.00, color_index: 5 },  // Riley owes you
 ];
