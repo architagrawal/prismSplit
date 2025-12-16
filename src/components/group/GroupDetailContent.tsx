@@ -191,6 +191,52 @@ export function GroupDetailContent({
     );
   }
 
+  // Tab toggle UI - extracted to avoid type narrowing issues
+  const tabsUI = (
+    <XStack 
+      backgroundColor={themeColors.surfaceElevated}
+      borderRadius={10}
+      padding="$0.5"
+    >
+      <Pressable 
+        style={{ flex: 1 }}
+        onPress={() => setActiveTab('bills')}
+      >
+        <Stack
+          paddingVertical="$2"
+          borderRadius={10}
+          backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
+          alignItems="center"
+        >
+          <Text 
+            fontWeight={activeTab === 'bills' ? '600' : '400'}
+            color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
+          >
+            Bills
+          </Text>
+        </Stack>
+      </Pressable>
+      <Pressable 
+        style={{ flex: 1 }}
+        onPress={() => setActiveTab('balances')}
+      >
+        <Stack
+          paddingVertical="$2"
+          borderRadius={10}
+          backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
+          alignItems="center"
+        >
+          <Text 
+            fontWeight={activeTab === 'balances' ? '600' : '400'}
+            color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
+          >
+            Balances
+          </Text>
+        </Stack>
+      </Pressable>
+    </XStack>
+  );
+
   // Header content rendered for both tabs - using useMemo to prevent remounting
   const headerContent = (
     <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$2">
@@ -323,48 +369,7 @@ export function GroupDetailContent({
               </XStack>
 
               {/* Tabs - scrolls away */}
-              <XStack 
-                backgroundColor={themeColors.surfaceElevated}
-                borderRadius={10}
-                padding="$0.5"
-              >
-                <Pressable 
-                  style={{ flex: 1 }}
-                  onPress={() => setActiveTab('bills')}
-                >
-                  <Stack
-                    paddingVertical="$2"
-                    borderRadius={10}
-                    backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
-                    alignItems="center"
-                  >
-                    <Text 
-                      fontWeight={activeTab === 'bills' ? '600' : '400'}
-                      color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
-                    >
-                      Bills
-                    </Text>
-                  </Stack>
-                </Pressable>
-                <Pressable 
-                  style={{ flex: 1 }}
-                  onPress={() => setActiveTab('balances')}
-                >
-                  <Stack
-                    paddingVertical="$2"
-                    borderRadius={10}
-                    backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
-                    alignItems="center"
-                  >
-                    <Text 
-                      fontWeight={activeTab === 'balances' ? '600' : '400'}
-                      color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
-                    >
-                      Balances
-                    </Text>
-                  </Stack>
-                </Pressable>
-              </XStack>
+              {tabsUI}
 
               {/* Search and My View Toggle - scrolls away */}
               <XStack 
@@ -376,7 +381,7 @@ export function GroupDetailContent({
                 {isSearchExpanded ? (
                   <XStack 
                     flex={1}
-                    maxWidth="50%"
+                    maxWidth="70%"
                     backgroundColor={themeColors.surfaceElevated}
                     borderRadius={20}
                     paddingHorizontal="$3"

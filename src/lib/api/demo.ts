@@ -409,6 +409,74 @@ export const demoBills: BillSummary[] = [
   {
     id: 'bill-9',
     group_id: 'group-1',
+    title: 'Internet Bill - November',
+    total_amount: 89.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid
+    payer: demoUsers[2],
+    category: 'utilities',
+    bill_date: '2024-11-15',
+    created_at: '2024-11-15T10:00:00Z',
+    item_count: 1,
+    your_share: 22.50,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-10',
+    group_id: 'group-1',
+    title: 'Internet Bill - November',
+    total_amount: 89.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid
+    payer: demoUsers[2],
+    category: 'utilities',
+    bill_date: '2024-11-15',
+    created_at: '2024-11-15T10:00:00Z',
+    item_count: 1,
+    your_share: 22.50,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-11',
+    group_id: 'group-1',
+    title: 'Internet Bill - November',
+    total_amount: 89.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid
+    payer: demoUsers[2],
+    category: 'utilities',
+    bill_date: '2024-11-15',
+    created_at: '2024-11-15T10:00:00Z',
+    item_count: 1,
+    your_share: 22.50,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-12',
+    group_id: 'group-1',
+    title: 'Internet Bill - November',
+    total_amount: 89.99,
+    tax_amount: 0,
+    tip_amount: 0,
+    paid_by: 'user-3', // Jordan paid
+    payer: demoUsers[2],
+    category: 'utilities',
+    bill_date: '2024-11-15',
+    created_at: '2024-11-15T10:00:00Z',
+    item_count: 1,
+    your_share: 22.50,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-13',
+    group_id: 'group-1',
     title: 'Game Night Snacks',
     total_amount: 45.00,
     tax_amount: 3.60,
@@ -426,7 +494,41 @@ export const demoBills: BillSummary[] = [
 
   // October 2024
   {
-    id: 'bill-10',
+    id: 'bill-14',
+    group_id: 'group-1',
+    title: 'Halloween Party',
+    total_amount: 156.00,
+    tax_amount: 12.00,
+    tip_amount: 0,
+    paid_by: 'user-2', // Sam paid
+    payer: demoUsers[1],
+    category: 'entertainment',
+    bill_date: '2024-10-31',
+    created_at: '2024-10-31T16:00:00Z',
+    item_count: 8,
+    your_share: 39.00,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-15',
+    group_id: 'group-1',
+    title: 'Halloween Party',
+    total_amount: 156.00,
+    tax_amount: 12.00,
+    tip_amount: 0,
+    paid_by: 'user-2', // Sam paid
+    payer: demoUsers[1],
+    category: 'entertainment',
+    bill_date: '2024-10-31',
+    created_at: '2024-10-31T16:00:00Z',
+    item_count: 8,
+    your_share: 39.00,
+    participant_count: 4,
+    participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4'],
+  },
+  {
+    id: 'bill-16',
     group_id: 'group-1',
     title: 'Halloween Party',
     total_amount: 156.00,
@@ -446,7 +548,7 @@ export const demoBills: BillSummary[] = [
   // ===== GROUP 2: Trip Squad =====
   
   {
-    id: 'bill-11',
+    id: 'bill-17',
     group_id: 'group-2',
     title: 'Ski Trip Cabin',
     total_amount: 650.00,
@@ -463,7 +565,7 @@ export const demoBills: BillSummary[] = [
     participant_avatars: ['user-1', 'user-2', 'user-3'],
   },
   {
-    id: 'bill-12',
+    id: 'bill-18',
     group_id: 'group-2',
     title: 'Ski Lift Passes',
     total_amount: 375.00,
@@ -480,7 +582,7 @@ export const demoBills: BillSummary[] = [
     participant_avatars: ['user-1', 'user-2', 'user-3'],
   },
   {
-    id: 'bill-13',
+    id: 'bill-19',
     group_id: 'group-2',
     title: 'Mountain Restaurant',
     total_amount: 127.50,
@@ -497,7 +599,7 @@ export const demoBills: BillSummary[] = [
     participant_avatars: ['user-1', 'user-2', 'user-3'],
   },
   {
-    id: 'bill-14',
+    id: 'bill-20',
     group_id: 'group-2',
     title: 'Gas for Road Trip',
     total_amount: 85.00,
@@ -517,7 +619,7 @@ export const demoBills: BillSummary[] = [
   // ===== GROUP 3: Office Lunch =====
   
   {
-    id: 'bill-15',
+    id: 'bill-21',
     group_id: 'group-3',
     title: 'Friday Team Pizza',
     total_amount: 95.00,
@@ -534,7 +636,7 @@ export const demoBills: BillSummary[] = [
     participant_avatars: ['user-2', 'user-4', 'user-5', 'user-6'],
   },
   {
-    id: 'bill-16',
+    id: 'bill-22',
     group_id: 'group-3',
     title: 'Coffee Run',
     total_amount: 42.50,
@@ -551,7 +653,7 @@ export const demoBills: BillSummary[] = [
     participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'],
   },
   {
-    id: 'bill-17',
+    id: 'bill-23',
     group_id: 'group-3',
     title: 'Sushi Lunch',
     total_amount: 156.00,
@@ -568,7 +670,7 @@ export const demoBills: BillSummary[] = [
     participant_avatars: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'user-6'],
   },
   {
-    id: 'bill-18',
+    id: 'bill-24',
     group_id: 'group-3',
     title: 'Birthday Cake for Sam',
     total_amount: 45.00,
