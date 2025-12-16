@@ -6,7 +6,7 @@
 
 import { Stack, Text } from 'tamagui';
 import { Pressable } from 'react-native';
-import { ChevronRight, ClipboardList } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -107,7 +107,7 @@ interface BillListItemProps {
   onPress?: () => void;
   variant?: 'card' | 'compact';
   isPayer?: boolean; // True if current user is the payer
-  isItemized?: boolean; // True if bill has itemized splits
+  itemCount?: number; // Number of items in bill (for itemized bills)
 }
 
 export function BillListItem({
@@ -123,7 +123,7 @@ export function BillListItem({
   onPress,
   variant = 'card',
   isPayer = false,
-  isItemized = false,
+  itemCount = 0,
 }: BillListItemProps) {
   const themeColors = useThemeColors();
   
@@ -223,22 +223,21 @@ export function BillListItem({
             </Stack>
           </Stack>
           
-          {/* Title only */}
+          {/* Title and Item Count */}
           <Stack flex={1} gap={2}>
-            <Stack flexDirection="row" alignItems="center" gap="$1">
-              <Text
-                fontSize={15}
-                fontWeight="500"
-                color={themeColors.textPrimary}
-                numberOfLines={1}
-                flex={1}
-              >
-                {title}
+            <Text
+              fontSize={15}
+              fontWeight="500"
+              color={themeColors.textPrimary}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+            {itemCount > 1 && (
+              <Text fontSize={11} color={themeColors.textMuted}>
+                {itemCount} items
               </Text>
-              {isItemized && (
-                <ClipboardList size={14} color={themeColors.textMuted} />
-              )}
-            </Stack>
+            )}
           </Stack>
           
           {/* Amount and Balance */}

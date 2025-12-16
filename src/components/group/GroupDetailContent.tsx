@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { Pressable, RefreshControl, SectionList } from 'react-native';
+import { Pressable, RefreshControl, SectionList, TextInput } from 'react-native';
 import { 
   ArrowLeft, 
   Settings, 
@@ -15,7 +15,9 @@ import {
   Plus,
   SendHorizontal,
   Eye,
-  EyeClosed
+  EyeClosed,
+  Search,
+  X
 } from 'lucide-react-native';
 
 import { 
@@ -44,6 +46,8 @@ export function GroupDetailContent({
   const themeColors = useThemeColors();
   const [activeTab, setActiveTab] = useState<'bills' | 'balances'>('bills');
   const [myViewOnly, setMyViewOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   const { 
     currentGroup, 
@@ -117,18 +121,27 @@ export function GroupDetailContent({
     });
   }, [bills]);
 
-  // Filter grouped bills based on myViewOnly toggle
+  // Filter grouped bills based on myViewOnly toggle, search, and category
   const filteredGroupedBills = useMemo(() => {
-    if (!myViewOnly) return groupedBills;
-
     return groupedBills
       .map((monthGroup) => {
         const filteredDays = monthGroup.days
           .map((dayGroup) => {
             const filteredBills = dayGroup.bills.filter((bill) => {
-              const isPayer = bill.payer.id === user?.id;
-              const yourShare = bill.your_share ?? 0;
-              return yourShare > 0 || isPayer;
+              // My View filter
+              if (myViewOnly) {
+                const isPayer = bill.payer.id === user?.id;
+                const yourShare = bill.your_share ?? 0;
+                if (!(yourShare > 0 || isPayer)) return false;
+              }
+              
+              // Search filter
+              if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase().trim();
+                if (!bill.title.toLowerCase().includes(query)) return false;
+              }
+              
+              return true;
             });
             const dailyTotal = filteredBills.reduce((sum, bill) => sum + (bill.your_share ?? 0), 0);
             return {
@@ -149,7 +162,7 @@ export function GroupDetailContent({
         };
       })
       .filter((monthGroup) => monthGroup.days.length > 0);
-  }, [groupedBills, myViewOnly, user?.id]);
+  }, [groupedBills, myViewOnly, searchQuery, user?.id]);
 
   useEffect(() => {
     if (groupId) {
@@ -178,8 +191,8 @@ export function GroupDetailContent({
     );
   }
 
-  // Header content rendered for both tabs
-  const HeaderContent = () => (
+  // Header content rendered for both tabs - using useMemo to prevent remounting
+  const headerContent = (
     <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$2">
       {/* Top bar with back/settings */}
       <XStack justifyContent={showBackButton ? "space-between" : "flex-end"} alignItems="center" marginBottom="$2">
@@ -253,130 +266,184 @@ export function GroupDetailContent({
           )}
         </XStack>
       </XStack>
-
-      {/* Balance Row */}
-      <XStack 
-        backgroundColor={themeColors.surfaceElevated}
-        borderRadius={10}
-        padding="$2"
-        paddingHorizontal="$3"
-        marginBottom="$2"
-        alignItems="center"
-        justifyContent="space-between"
-      >
-        <XStack alignItems="center" gap="$2">
-          <Text fontSize={12} color={themeColors.textSecondary}>Balance:</Text>
-          <BalanceBadge amount={group.your_balance ?? 0} size="md" />
-        </XStack>
-        {(group.your_balance ?? 0) !== 0 && (
-          <Button
-            variant={group.your_balance! < 0 ? 'primary' : 'outlined'}
-            size="sm"
-            icon={<SendHorizontal size={14} color={group.your_balance! < 0 ? 'white' : themeColors.primary} />}
-            onPress={() => {
-              router.push(`/group/settings?id=${groupId}` as any);
-            }}
-          >
-            Settle Up
-          </Button>
-        )}
-      </XStack>
-
-      {/* Tabs */}
-      <XStack 
-        backgroundColor={themeColors.surfaceElevated}
-        borderRadius={10}
-        padding="$0.5"
-        marginBottom="$2"
-      >
-        <Pressable 
-          style={{ flex: 1 }}
-          onPress={() => setActiveTab('bills')}
-        >
-          <Stack
-            paddingVertical="$2"
-            borderRadius={10}
-            backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
-            alignItems="center"
-          >
-            <Text 
-              fontWeight={activeTab === 'bills' ? '600' : '400'}
-              color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
-            >
-              Bills
-            </Text>
-          </Stack>
-        </Pressable>
-        <Pressable 
-          style={{ flex: 1 }}
-          onPress={() => setActiveTab('balances')}
-        >
-          <Stack
-            paddingVertical="$2"
-            borderRadius={10}
-            backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
-            alignItems="center"
-          >
-            <Text 
-              fontWeight={activeTab === 'balances' ? '600' : '400'}
-              color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
-            >
-              Balances
-            </Text>
-          </Stack>
-        </Pressable>
-      </XStack>
-
-      {/* My View Toggle - only for bills tab */}
-      {activeTab === 'bills' && bills.length > 0 && (
-        <Pressable onPress={() => setMyViewOnly(!myViewOnly)}>
-          <XStack 
-            alignItems="center" 
-            justifyContent="flex-end"
-            gap="$2"
-            paddingVertical="$2"
-          >
-            {myViewOnly ? (
-              <EyeClosed size={16} color={themeColors.primary} />
-            ) : (
-              <Eye size={16} color={themeColors.primary} />
-            )}
-            <Text
-              fontSize={13}
-              fontWeight="500"
-              color={themeColors.primary}
-              minWidth={60}
-              textAlign="left"
-            >
-            {myViewOnly ? 'Your Bills' : 'All Bills'}
-            </Text>
-          </XStack>
-        </Pressable>
-      )}
     </Stack>
   );
 
-  // Bills tab with SectionList
+  // Bills tab with fixed header and scrollable SectionList
   if (activeTab === 'bills') {
     return (
-      <SectionList
-        sections={filteredGroupedBills.map((monthGroup) => ({
-          key: monthGroup.monthKey,
-          monthLabel: monthGroup.monthLabel,
-          monthlyTotal: monthGroup.monthlyTotal,
-          data: monthGroup.days.flatMap((dayGroup) => 
-            dayGroup.bills.map((bill) => ({ ...bill, dayLabel: dayGroup.dayLabel, dayKey: dayGroup.dayKey }))
-          ),
-        }))}
-        keyExtractor={(item) => item.id}
-        stickySectionHeadersEnabled={true}
-        refreshControl={
-          <RefreshControl refreshing={isLoading || billsLoading} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
-        ListHeaderComponent={<HeaderContent />}
-        renderSectionHeader={({ section }) => (
+      <Stack flex={1}>
+        {/* Fixed Header */}
+        {headerContent}
+        
+        {/* Scrollable Bills List */}
+        <SectionList
+          sections={filteredGroupedBills.map((monthGroup) => ({
+            key: monthGroup.monthKey,
+            monthLabel: monthGroup.monthLabel,
+            monthlyTotal: monthGroup.monthlyTotal,
+            data: monthGroup.days.flatMap((dayGroup) => 
+              dayGroup.bills.map((bill) => ({ ...bill, dayLabel: dayGroup.dayLabel, dayKey: dayGroup.dayKey }))
+            ),
+          }))}
+          keyExtractor={(item) => item.id}
+          stickySectionHeadersEnabled={true}
+          refreshControl={
+            <RefreshControl refreshing={isLoading || billsLoading} onRefresh={onRefresh} />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 32 }}
+          ListHeaderComponent={
+            <Stack paddingHorizontal="$4" gap="$2" paddingBottom="$2">
+              {/* Balance Row - scrolls away */}
+              <XStack 
+                backgroundColor={themeColors.surfaceElevated}
+                borderRadius={10}
+                padding="$2"
+                paddingHorizontal="$3"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <XStack alignItems="center" gap="$2">
+                  <Text fontSize={12} color={themeColors.textSecondary}>Balance:</Text>
+                  <BalanceBadge amount={group.your_balance ?? 0} size="md" />
+                </XStack>
+                {(group.your_balance ?? 0) !== 0 && (
+                  <Button
+                    variant={group.your_balance! < 0 ? 'primary' : 'outlined'}
+                    size="sm"
+                    icon={<SendHorizontal size={14} color={group.your_balance! < 0 ? 'white' : themeColors.primary} />}
+                    onPress={() => {
+                      router.push(`/group/settings?id=${groupId}` as any);
+                    }}
+                  >
+                    Settle Up
+                  </Button>
+                )}
+              </XStack>
+
+              {/* Tabs - scrolls away */}
+              <XStack 
+                backgroundColor={themeColors.surfaceElevated}
+                borderRadius={10}
+                padding="$0.5"
+              >
+                <Pressable 
+                  style={{ flex: 1 }}
+                  onPress={() => setActiveTab('bills')}
+                >
+                  <Stack
+                    paddingVertical="$2"
+                    borderRadius={10}
+                    backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
+                    alignItems="center"
+                  >
+                    <Text 
+                      fontWeight={activeTab === 'bills' ? '600' : '400'}
+                      color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
+                    >
+                      Bills
+                    </Text>
+                  </Stack>
+                </Pressable>
+                <Pressable 
+                  style={{ flex: 1 }}
+                  onPress={() => setActiveTab('balances')}
+                >
+                  <Stack
+                    paddingVertical="$2"
+                    borderRadius={10}
+                    backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
+                    alignItems="center"
+                  >
+                    <Text 
+                      fontWeight={activeTab === 'balances' ? '600' : '400'}
+                      color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
+                    >
+                      Balances
+                    </Text>
+                  </Stack>
+                </Pressable>
+              </XStack>
+
+              {/* Search and My View Toggle - scrolls away */}
+              <XStack 
+                alignItems="center" 
+                justifyContent="space-between"
+                paddingTop="$2"
+              >
+                {/* Search Icon / Expanded Search */}
+                {isSearchExpanded ? (
+                  <XStack 
+                    flex={1}
+                    maxWidth="50%"
+                    backgroundColor={themeColors.surfaceElevated}
+                    borderRadius={20}
+                    paddingHorizontal="$3"
+                    paddingVertical="$1.5"
+                    alignItems="center"
+                    gap="$2"
+                  >
+                    <Search size={16} color={themeColors.textMuted} />
+                    <TextInput
+                      placeholder="Search..."
+                      placeholderTextColor={themeColors.textMuted}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      autoFocus
+                      style={{
+                        flex: 1,
+                        fontSize: 14,
+                        color: themeColors.textPrimary,
+                        paddingVertical: 2,
+                      }}
+                    />
+                    <Pressable onPress={() => {
+                      setSearchQuery('');
+                      setIsSearchExpanded(false);
+                    }}>
+                      <X size={16} color={themeColors.textMuted} />
+                    </Pressable>
+                  </XStack>
+                ) : (
+                  <Pressable onPress={() => setIsSearchExpanded(true)}>
+                    <Stack
+                      width={36}
+                      height={36}
+                      borderRadius={18}
+                      backgroundColor={themeColors.surfaceElevated}
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      <Search size={18} color={themeColors.textSecondary} />
+                    </Stack>
+                  </Pressable>
+                )}
+
+                {/* My View Toggle */}
+                <Pressable onPress={() => setMyViewOnly(!myViewOnly)}>
+                  <XStack 
+                    alignItems="center" 
+                    gap="$2"
+                  >
+                    {myViewOnly ? (
+                      <EyeClosed size={16} color={themeColors.primary} />
+                    ) : (
+                      <Eye size={16} color={themeColors.primary} />
+                    )}
+                    <Text
+                      fontSize={13}
+                      fontWeight="500"
+                      color={themeColors.primary}
+                    >
+                      {myViewOnly ? 'Your Bills' : 'All Bills'}
+                    </Text>
+                  </XStack>
+                </Pressable>
+              </XStack>
+            </Stack>
+          }
+          renderSectionHeader={({ section }) => (
           <XStack
             justifyContent="space-between"
             alignItems="center"
@@ -437,7 +504,7 @@ export function GroupDetailContent({
                 participants={[]}
                 variant="compact"
                 isPayer={item.payer.id === user?.id}
-                isItemized={(item as any).item_count > 1 || item.is_itemized}
+                itemCount={(item as any).item_count ?? 0}
                 onPress={() => router.push(`/bill/${item.id}` as any)}
               />
             </YStack>
@@ -458,6 +525,7 @@ export function GroupDetailContent({
           </YStack>
         }
       />
+      </Stack>
     );
   }
 
@@ -469,7 +537,7 @@ export function GroupDetailContent({
       }
       showsVerticalScrollIndicator={false}
     >
-      <HeaderContent />
+      {headerContent}
       <YStack paddingHorizontal="$4" paddingBottom="$8">
         {groupMembers.map((member: GroupMember) => (
           <Card key={member.id} variant="surface">
