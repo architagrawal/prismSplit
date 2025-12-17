@@ -100,7 +100,6 @@ export default function GroupsScreen() {
                 <AnimatedSearchBar
                   placeholder="Search..."
                   onSearchChange={setSearchQuery}
-                  expandedWidth={80}
                 />
               )}
               

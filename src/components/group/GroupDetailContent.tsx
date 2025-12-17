@@ -351,11 +351,9 @@ export function GroupDetailContent({
       paddingTop="$2"
       paddingBottom="$2"
     >
-      {/* Animated Search Bar */}
       <AnimatedSearchBar
         placeholder="Search..."
         onSearchChange={setSearchQuery}
-        expandedWidth={120}
         iconSize={22}
       />
 
