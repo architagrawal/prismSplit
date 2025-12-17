@@ -4,14 +4,14 @@
  * Uses activityStore for state management.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { RefreshControl, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Receipt, CheckCircle, UserPlus, MousePointer } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Card, Avatar, GroupImage } from '@/components/ui';
+import { Screen, Card, Avatar, GroupImage, AnimatedSearchBar } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useActivityStore } from '@/lib/store';
 import type { ActivityType } from '@/types/models';
@@ -29,22 +29,23 @@ export default function ActivityScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const { activities, isLoading, fetchActivities, markAsRead } = useActivityStore();
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Activity icons - use themeColors
   const getActivityIcon = (type: ActivityType) => {
     switch (type) {
       case 'bill_created':
-        return <Receipt size={18} color={themeColors.primary} />;
       case 'bill_shared':
-        return <Receipt size={18} color={themeColors.secondary} />;
       case 'bill_finalized':
-        return <CheckCircle size={18} color={themeColors.success} />;
-      case 'item_selected':
-        return <MousePointer size={18} color={themeColors.primary} />;
+        return <Receipt size={18} color={themeColors.primary} />;
       case 'settlement_created':
         return <CheckCircle size={18} color={themeColors.success} />;
       case 'member_joined':
         return <UserPlus size={18} color={themeColors.info} />;
+      case 'item_selected':
+        return <MousePointer size={18} color={themeColors.warning} />;
       default:
         return null;
     }
@@ -58,15 +59,15 @@ export default function ActivityScreen() {
     fetchActivities();
   };
 
-  const handleActivityPress = (activity: any) => {
+  const handleActivityPress = (activity: typeof activities[0]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     markAsRead(activity.id);
-    // Navigate to bill detail if it's a bill-related activity
-    if (activity.bill_id) {
-      router.push(`/bill/${activity.bill_id}` as any);
-    } else {
-      // Navigate to group if no specific bill
-      router.push(`/(tabs)/group/${activity.group.id}` as any);
+    
+    // Navigate based on activity type
+    if (activity.entity_type === 'bill') {
+      router.push(`/bill/${activity.entity_id}`);
+    } else if (activity.entity_type === 'group') {
+      router.push(`/group/${activity.group.id}`);
     }
   };
 
@@ -84,6 +85,18 @@ export default function ActivityScreen() {
     
     return `${month} ${day}, ${hours}:${minutes} ${ampm}`;
   };
+  
+  // Filter activities based on search query
+  const filteredActivities = searchQuery.trim() === '' 
+    ? activities 
+    : activities.filter(activity => {
+        const query = searchQuery.toLowerCase();
+        return (
+          activity.user.full_name.toLowerCase().includes(query) ||
+          activity.group.name.toLowerCase().includes(query) ||
+          activityLabels[activity.type].toLowerCase().includes(query)
+        );
+      });
 
   return (
     <Screen padded={false}>
@@ -92,29 +105,45 @@ export default function ActivityScreen() {
           <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        stickyHeaderIndices={[0]}
       >
         {/* Header */}
-        <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
-          <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
-            Activity
-          </Text>
+        <Stack 
+          paddingHorizontal="$4" 
+          paddingTop="$2" 
+          paddingBottom="$4"
+          backgroundColor={themeColors.background}
+          zIndex={10}
+        >
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
+              Activity
+            </Text>
+            
+            {/* Animated Search Bar Component */}
+            <AnimatedSearchBar
+              placeholder="Search..."
+              onSearchChange={setSearchQuery}
+            />
+          </XStack>
         </Stack>
 
         {/* Activity List */}
         <YStack paddingHorizontal="$4" paddingBottom="$8">
-          {activities.length === 0 && !isLoading ? (
+          {filteredActivities.length === 0 && !isLoading ? (
             <YStack alignItems="center" paddingVertical="$12" gap="$2">
               <Text fontSize={16} color={themeColors.textSecondary}>
-                No activity yet
+                {searchQuery.trim() !== '' ? 'No matching activities' : 'No activity yet'}
               </Text>
             </YStack>
           ) : (
             (() => {
               // Group activities by month
-              const groupedByMonth: { [key: string]: typeof activities } = {};
+              const groupedByMonth: { [key: string]: typeof filteredActivities } = {};
               const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
               
-              activities.forEach(activity => {
+              filteredActivities.forEach(activity => {
                 const date = new Date(activity.created_at);
                 const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
                 if (!groupedByMonth[monthKey]) {
@@ -175,22 +204,24 @@ export default function ActivityScreen() {
                               alignItems="center"
                             >
                               <Stack
-                                width={28}
-                                height={28}
-                                borderRadius={14}
+                                width={32}
+                                height={32}
+                                borderRadius={16}
                                 backgroundColor={themeColors.surface}
                                 justifyContent="center"
                                 alignItems="center"
                                 shadowColor="#000"
-                                shadowOffset={{ width: 0, height: 1 }}
-                                shadowOpacity={0.2}
-                                shadowRadius={2}
+                                shadowOffset={{ width: 0, height: 2 }}
+                                shadowOpacity={0.35}
+                                shadowRadius={4}
+                                borderWidth={2}
+                                borderColor={themeColors.background}
                               >
                                 {getActivityIcon(activity.type)}
                               </Stack>
                             </Stack>
                           </Stack>
-                          <Text fontSize={11} color={themeColors.textMuted} numberOfLines={1}>
+                          <Text fontSize={13} color={themeColors.textMuted} numberOfLines={1}>
                             {activity.group.name}
                           </Text>
                         </YStack>
@@ -228,7 +259,7 @@ export default function ActivityScreen() {
                           // For bill activities, you typically owe
                           // For settlement, it depends on direction
                           return (
-                            <YStack alignItems="flex-end">
+                            <YStack alignItems="flex-end" justifyContent="center">
                               <Text fontSize={11} color={themeColors.textMuted}>
                                 {isPositive ? 'you get' : 'you give'}
                               </Text>

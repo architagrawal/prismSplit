@@ -29,3 +29,6 @@ export { GroupImage } from './GroupImage';
 export { CustomSplitModal } from './CustomSplitModal';
 export { AddItemModal } from './AddItemModal';
 export { ConfirmDialog } from './ConfirmDialog';
+
+// Search
+export { AnimatedSearchBar } from './AnimatedSearchBar';

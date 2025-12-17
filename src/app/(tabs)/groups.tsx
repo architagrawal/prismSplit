@@ -8,9 +8,9 @@ import { useEffect, useState, useMemo } from 'react';
 import { Stack, Text, YStack, XStack } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { RefreshControl, ScrollView, Pressable } from 'react-native';
-import { Search, Sparkles, Plus } from 'lucide-react-native';
+import { Sparkles, Plus } from 'lucide-react-native';
 
-import { Screen, AvatarGroup, GroupImage, Input, BalanceBadge, Button } from '@/components/ui';
+import { Screen, AvatarGroup, GroupImage, Button, AnimatedSearchBar } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
 import { demoGroupMembers } from '@/lib/api/demo';
@@ -84,8 +84,6 @@ export default function GroupsScreen() {
     </Pressable>
   );
 
-  const showSearch = groups.length >= 5;
-
   return (
     <Screen padded={false}>
       <YStack flex={1} backgroundColor={themeColors.background}>
@@ -96,34 +94,33 @@ export default function GroupsScreen() {
               Groups
             </Text>
             
-            {/* Join Button */}
-            <Pressable onPress={() => router.push('/group/join' as any)}>
-              <XStack 
-                alignItems="center" 
-                gap="$2"
-                backgroundColor={themeColors.surfaceElevated}
-                paddingHorizontal="$3"
-                paddingVertical="$2"
-                borderRadius={20}
-              >
-                <Text fontSize={13} fontWeight="600" color={themeColors.primary}>
-                  Join
-                </Text>
-              </XStack>
-            </Pressable>
+            <XStack alignItems="center" gap="$3">
+              {/* Animated Search */}
+              {groups.length >= 5 && (
+                <AnimatedSearchBar
+                  placeholder="Search..."
+                  onSearchChange={setSearchQuery}
+                  expandedWidth={80}
+                />
+              )}
+              
+              {/* Join Button */}
+              <Pressable onPress={() => router.push('/group/join' as any)}>
+                <XStack 
+                  alignItems="center" 
+                  gap="$2"
+                  backgroundColor={themeColors.surfaceElevated}
+                  paddingHorizontal="$3"
+                  paddingVertical="$2"
+                  borderRadius={20}
+                >
+                  <Text fontSize={13} fontWeight="600" color={themeColors.primary}>
+                    Join
+                  </Text>
+                </XStack>
+              </Pressable>
+            </XStack>
           </XStack>
-
-          {/* Search - only when 5+ groups */}
-          {showSearch && (
-            <Stack marginBottom="$3">
-              <Input
-                placeholder="Search groups..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                leftIcon={<Search size={18} color={themeColors.textMuted} />}
-              />
-            </Stack>
-          )}
 
           {/* Filter Chips */}
           {groups.length > 0 && (
@@ -230,7 +227,30 @@ export default function GroupsScreen() {
                     </YStack>
                     
                     {/* Balance */}
-                    <BalanceBadge amount={group.your_balance || 0} size="sm" />
+                    <YStack alignItems="flex-end" justifyContent="center">
+                      {(group.your_balance || 0) !== 0 ? (
+                        <>
+                          <Text fontSize={11} color={themeColors.textMuted}>
+                            {(group.your_balance || 0) > 0 ? 'you get' : 'you give'}
+                          </Text>
+                          <Text 
+                            fontSize={16} 
+                            fontWeight="700" 
+                            color={(group.your_balance || 0) > 0 ? themeColors.success : themeColors.error}
+                          >
+                            ${Math.abs(group.your_balance || 0).toFixed(2)}
+                          </Text>
+                        </>
+                      ) : (
+                        <Text 
+                          fontSize={14} 
+                          fontWeight="500" 
+                          color={themeColors.textMuted}
+                        >
+                          Settled
+                        </Text>
+                      )}
+                    </YStack>
                   </XStack>
                 </Pressable>
               );

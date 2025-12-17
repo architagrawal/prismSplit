@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { Pressable, RefreshControl, SectionList, TextInput } from 'react-native';
+import { Pressable, RefreshControl, SectionList } from 'react-native';
 import { 
   ArrowLeft, 
   Settings, 
@@ -15,9 +15,7 @@ import {
   Plus,
   SendHorizontal,
   Eye,
-  EyeClosed,
-  Search,
-  X
+  EyeClosed
 } from 'lucide-react-native';
 
 import { 
@@ -26,7 +24,8 @@ import {
   BillListItem,
   BalanceBadge,
   Button,
-  GroupImage
+  GroupImage,
+  AnimatedSearchBar
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useBillsStore, useAuthStore } from '@/lib/store';
@@ -48,7 +47,6 @@ export function GroupDetailContent({
   const [activeTab, setActiveTab] = useState<'bills' | 'balances'>('bills');
   const [myViewOnly, setMyViewOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   const { 
     currentGroup, 
@@ -330,6 +328,7 @@ export function GroupDetailContent({
             <RefreshControl refreshing={isLoading || billsLoading} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 32 }}
           ListHeaderComponent={
             <Stack paddingHorizontal="$4" gap="$2" paddingBottom="$2">
@@ -369,53 +368,13 @@ export function GroupDetailContent({
                 justifyContent="space-between"
                 paddingTop="$2"
               >
-                {/* Search Icon / Expanded Search */}
-                {isSearchExpanded ? (
-                  <XStack 
-                    flex={1}
-                    maxWidth="70%"
-                    backgroundColor={themeColors.surfaceElevated}
-                    borderRadius={20}
-                    paddingHorizontal="$3"
-                    paddingVertical="$1.5"
-                    alignItems="center"
-                    gap="$2"
-                  >
-                    <Search size={16} color={themeColors.textMuted} />
-                    <TextInput
-                      placeholder="Search..."
-                      placeholderTextColor={themeColors.textMuted}
-                      value={searchQuery}
-                      onChangeText={setSearchQuery}
-                      autoFocus
-                      style={{
-                        flex: 1,
-                        fontSize: 14,
-                        color: themeColors.textPrimary,
-                        paddingVertical: 2,
-                      }}
-                    />
-                    <Pressable onPress={() => {
-                      setSearchQuery('');
-                      setIsSearchExpanded(false);
-                    }}>
-                      <X size={16} color={themeColors.textMuted} />
-                    </Pressable>
-                  </XStack>
-                ) : (
-                  <Pressable onPress={() => setIsSearchExpanded(true)}>
-                    <Stack
-                      width={36}
-                      height={36}
-                      borderRadius={18}
-                      backgroundColor={themeColors.surfaceElevated}
-                      justifyContent="center"
-                      alignItems="center"
-                    >
-                      <Search size={18} color={themeColors.textSecondary} />
-                    </Stack>
-                  </Pressable>
-                )}
+                {/* Animated Search Bar */}
+                <AnimatedSearchBar
+                  placeholder="Search..."
+                  onSearchChange={setSearchQuery}
+                  expandedWidth={120}
+                  iconSize={22}
+                />
 
                 {/* My View Toggle */}
                 <Pressable onPress={() => setMyViewOnly(!myViewOnly)}>
@@ -424,12 +383,12 @@ export function GroupDetailContent({
                     gap="$2"
                   >
                     {myViewOnly ? (
-                      <EyeClosed size={16} color={themeColors.primary} />
+                      <EyeClosed size={17} color={themeColors.primary} />
                     ) : (
-                      <Eye size={16} color={themeColors.primary} />
+                      <Eye size={17} color={themeColors.primary} />
                     )}
                     <Text
-                      fontSize={13}
+                      fontSize={14}
                       fontWeight="500"
                       color={themeColors.primary}
                     >

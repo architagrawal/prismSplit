@@ -100,7 +100,30 @@ export function GroupListItem({
         </Stack>
         
         {/* Balance */}
-        <BalanceBadge amount={balance} size="sm" />
+        <Stack alignItems="flex-end" justifyContent="center">
+          {balance !== 0 ? (
+            <>
+              <Text fontSize={11} color={themeColors.textMuted}>
+                {balance > 0 ? 'you get' : 'you give'}
+              </Text>
+              <Text 
+                fontSize={16} 
+                fontWeight="700" 
+                color={balance > 0 ? themeColors.success : themeColors.error}
+              >
+                ${Math.abs(balance).toFixed(2)}
+              </Text>
+            </>
+          ) : (
+            <Text 
+              fontSize={14} 
+              fontWeight="500" 
+              color={themeColors.textMuted}
+            >
+              Settled
+            </Text>
+          )}
+        </Stack>
       </Stack>
     </Pressable>
   );
@@ -194,7 +217,7 @@ export function BillListItem({
           opacity: isInvolved ? 1 : 0.5,
         }}
       >
-        <Stack flexDirection="row" alignItems="center" gap="$3">
+        <Stack flexDirection="row" alignItems="flex-start" gap="$3">
           {/* Category Icon with Credit Card Payer Badge */}
           <Stack position="relative">
             <Stack
