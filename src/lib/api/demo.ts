@@ -23,6 +23,7 @@ export const demoUsers: User[] = [
     email: 'alex@example.com',
     full_name: 'Alex Johnson',
     avatar_url: null,
+    color_index: 0,
     created_at: '2024-01-15T10:00:00Z',
   },
   {
@@ -30,6 +31,7 @@ export const demoUsers: User[] = [
     email: 'sam@example.com',
     full_name: 'Sam Wilson',
     avatar_url: null,
+    color_index: 1,
     created_at: '2024-01-20T14:30:00Z',
   },
   {
@@ -37,6 +39,7 @@ export const demoUsers: User[] = [
     email: 'jordan@example.com',
     full_name: 'Jordan Lee',
     avatar_url: null,
+    color_index: 2,
     created_at: '2024-02-01T09:15:00Z',
   },
   {
@@ -44,6 +47,7 @@ export const demoUsers: User[] = [
     email: 'casey@example.com',
     full_name: 'Casey Chen',
     avatar_url: null,
+    color_index: 3,
     created_at: '2024-02-10T16:45:00Z',
   },
   {
@@ -51,6 +55,7 @@ export const demoUsers: User[] = [
     email: 'morgan@example.com',
     full_name: 'Morgan Taylor',
     avatar_url: null,
+    color_index: 4,
     created_at: '2024-03-05T11:20:00Z',
   },
   {
@@ -58,6 +63,7 @@ export const demoUsers: User[] = [
     email: 'riley@example.com',
     full_name: 'Riley Garcia',
     avatar_url: null,
+    color_index: 5,
     created_at: '2024-03-12T15:10:00Z',
   },
   {
@@ -65,6 +71,7 @@ export const demoUsers: User[] = [
     email: 'taylor@example.com',
     full_name: 'Taylor Brown',
     avatar_url: null,
+    color_index: 0, // Cycles back
     created_at: '2024-04-01T10:00:00Z',
   },
   {
@@ -72,6 +79,7 @@ export const demoUsers: User[] = [
     email: 'avery@example.com',
     full_name: 'Avery Smith',
     avatar_url: null,
+    color_index: 1, // Cycles back
     created_at: '2024-04-15T14:30:00Z',
   },
 ];

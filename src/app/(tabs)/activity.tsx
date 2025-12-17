@@ -6,9 +6,10 @@
 
 import { useEffect } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
-import { RefreshControl } from 'react-native';
+import { RefreshControl, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Receipt, CheckCircle, UserPlus, MousePointer } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Avatar, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -33,17 +34,17 @@ export default function ActivityScreen() {
   const getActivityIcon = (type: ActivityType) => {
     switch (type) {
       case 'bill_created':
-        return <Receipt size={16} color={themeColors.primary} />;
+        return <Receipt size={18} color={themeColors.primary} />;
       case 'bill_shared':
-        return <Receipt size={16} color={themeColors.secondary} />;
+        return <Receipt size={18} color={themeColors.secondary} />;
       case 'bill_finalized':
-        return <CheckCircle size={16} color={themeColors.success} />;
+        return <CheckCircle size={18} color={themeColors.success} />;
       case 'item_selected':
-        return <MousePointer size={16} color={themeColors.primary} />;
+        return <MousePointer size={18} color={themeColors.primary} />;
       case 'settlement_created':
-        return <CheckCircle size={16} color={themeColors.success} />;
+        return <CheckCircle size={18} color={themeColors.success} />;
       case 'member_joined':
-        return <UserPlus size={16} color={themeColors.info} />;
+        return <UserPlus size={18} color={themeColors.info} />;
       default:
         return null;
     }
@@ -57,19 +58,31 @@ export default function ActivityScreen() {
     fetchActivities();
   };
 
+  const handleActivityPress = (activity: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    markAsRead(activity.id);
+    // Navigate to bill detail if it's a bill-related activity
+    if (activity.bill_id) {
+      router.push(`/bill/${activity.bill_id}` as any);
+    } else {
+      // Navigate to group if no specific bill
+      router.push(`/(tabs)/group/${activity.group.id}` as any);
+    }
+  };
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[date.getMonth()];
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 becomes 12
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${hours}:${minutes} ${ampm}`;
   };
 
   return (
@@ -88,7 +101,7 @@ export default function ActivityScreen() {
         </Stack>
 
         {/* Activity List */}
-        <YStack paddingHorizontal="$4" gap="$3" paddingBottom="$8">
+        <YStack paddingHorizontal="$4" paddingBottom="$8">
           {activities.length === 0 && !isLoading ? (
             <YStack alignItems="center" paddingVertical="$12" gap="$2">
               <Text fontSize={16} color={themeColors.textSecondary}>
@@ -96,49 +109,145 @@ export default function ActivityScreen() {
               </Text>
             </YStack>
           ) : (
-            activities.map((activity) => (
-              <Card 
-                key={activity.id} 
-                variant="surface" 
-                pressable
-                onPress={() => markAsRead(activity.id)}
-              >
-                <XStack alignItems="flex-start" gap="$3">
-                  <Avatar
-                    name={activity.user.full_name}
-                    colorIndex={0}
-                    size="md"
-                  />
-                  <YStack flex={1} gap="$1">
-                    <XStack alignItems="center" gap="$2" flexWrap="wrap">
-                      <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
-                        {activity.user.full_name}
-                      </Text>
-                      <Text fontSize={14} color={themeColors.textSecondary}>
-                        {activityLabels[activity.type]}
-                      </Text>
-                    </XStack>
-                    
-                    <XStack alignItems="center" gap="$2">
-                      <GroupImage groupId={activity.group.id} size="sm" />
-                      <Text fontSize={13} color={themeColors.textMuted}>
-                        {activity.group.name}
-                      </Text>
-                      <Text fontSize={13} color={themeColors.textMuted}>
-                        •
-                      </Text>
-                      <Text fontSize={13} color={themeColors.textMuted}>
-                        {formatTime(activity.created_at)}
-                      </Text>
-                    </XStack>
-                  </YStack>
+            (() => {
+              // Group activities by month
+              const groupedByMonth: { [key: string]: typeof activities } = {};
+              const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+              
+              activities.forEach(activity => {
+                const date = new Date(activity.created_at);
+                const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+                if (!groupedByMonth[monthKey]) {
+                  groupedByMonth[monthKey] = [];
+                }
+                groupedByMonth[monthKey].push(activity);
+              });
+              
+              // Sort months in reverse chronological order
+              const sortedMonths = Object.keys(groupedByMonth).sort((a, b) => {
+                const [monthA, yearA] = a.split(' ');
+                const [monthB, yearB] = b.split(' ');
+                const dateA = new Date(`${monthA} 1, ${yearA}`);
+                const dateB = new Date(`${monthB} 1, ${yearB}`);
+                return dateB.getTime() - dateA.getTime();
+              });
+              
+              return sortedMonths.map((monthKey) => (
+                <YStack key={monthKey}>
+                  {/* Month Header */}
+                  <Text 
+                    fontSize={12} 
+                    fontWeight="700" 
+                    color={themeColors.textSecondary}
+                    marginTop="$4"
+                    marginBottom="$2"
+                    textTransform="uppercase"
+                    letterSpacing={1}
+                  >
+                    {monthKey}
+                  </Text>
                   
-                  <Stack padding="$2">
-                    {getActivityIcon(activity.type)}
-                  </Stack>
-                </XStack>
-              </Card>
-            ))
+                  {/* Activities in this month */}
+                  {groupedByMonth[monthKey].map((activity, index) => (
+                    <Pressable 
+                      key={activity.id}
+                      onPress={() => handleActivityPress(activity)}
+                    >
+                      <XStack 
+                        alignItems="center" 
+                        gap="$3"
+                        paddingVertical="$3"
+                        borderBottomWidth={index === groupedByMonth[monthKey].length - 1 ? 0 : 1}
+                        borderBottomColor={themeColors.border}
+                      >
+                        {/* Left: Group Image with Activity Icon Badge */}
+                        <YStack alignItems="center" gap="$1">
+                          <Stack position="relative">
+                            <GroupImage groupId={activity.group.id} size="md" />
+                            {/* Activity Icon Badge - centered on group image */}
+                            <Stack
+                              position="absolute"
+                              top={0}
+                              left={0}
+                              right={0}
+                              bottom={0}
+                              justifyContent="center"
+                              alignItems="center"
+                            >
+                              <Stack
+                                width={28}
+                                height={28}
+                                borderRadius={14}
+                                backgroundColor={themeColors.surface}
+                                justifyContent="center"
+                                alignItems="center"
+                                shadowColor="#000"
+                                shadowOffset={{ width: 0, height: 1 }}
+                                shadowOpacity={0.2}
+                                shadowRadius={2}
+                              >
+                                {getActivityIcon(activity.type)}
+                              </Stack>
+                            </Stack>
+                          </Stack>
+                          <Text fontSize={11} color={themeColors.textMuted} numberOfLines={1}>
+                            {activity.group.name}
+                          </Text>
+                        </YStack>
+                        
+                        {/* Center: Activity Details - Action as main point */}
+                        <YStack flex={1} gap="$1">
+                          <Text fontSize={15} fontWeight="600" color={themeColors.textPrimary}>
+                            {activityLabels[activity.type].charAt(0).toUpperCase() + activityLabels[activity.type].slice(1)}
+                          </Text>
+                          <XStack alignItems="center" gap="$2">
+                            <Avatar
+                              name={activity.user.full_name}
+                              imageUrl={activity.user.avatar_url}
+                              colorIndex={activity.user.color_index ?? 0}
+                              size="xs"
+                            />
+                            <Text fontSize={13} color={themeColors.textSecondary}>
+                              {activity.user.full_name}
+                            </Text>
+                          </XStack>
+                          <Text fontSize={12} color={themeColors.textMuted}>
+                            {formatTime(activity.created_at)}
+                          </Text>
+                        </YStack>
+                        
+                        {/* Right: Share Amount */}
+                        {(() => {
+                          // Get share amount from activity metadata
+                          const amount = (activity.metadata?.your_share as number) || 
+                                        (activity.metadata?.amount as number) || 
+                                        (Math.random() * 50 + 5); // Mock for demo
+                          const isPositive = activity.type === 'settlement_created' || 
+                                            (activity.metadata?.direction === 'receive');
+                          
+                          // For bill activities, you typically owe
+                          // For settlement, it depends on direction
+                          return (
+                            <YStack alignItems="flex-end">
+                              <Text fontSize={11} color={themeColors.textMuted}>
+                                {isPositive ? 'you get' : 'you give'}
+                              </Text>
+                              <Text 
+                                fontSize={16} 
+                                fontWeight="700" 
+                                color={isPositive ? themeColors.success : themeColors.error}
+                              >
+                                ${amount.toFixed(2)}
+                              </Text>
+                            </YStack>
+                          );
+                        })()}
+                      </XStack>
+                    </Pressable>
+                  ))}
+                </YStack>
+              ));
+            })()
           )}
         </YStack>
       </ScrollView>

@@ -12,15 +12,18 @@ import {
   TrendingUp, 
   TrendingDown, 
   ArrowRight,
-  Plus 
+  Plus,
+  Receipt,
+  CheckCircle,
+  MousePointer
 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 import { 
   Screen, 
-  Card, 
+  Card,
   BalanceCard, 
   Avatar, 
-  GroupListItem,
   BalanceBadge,
   Button,
   GroupImage
@@ -57,6 +60,11 @@ export default function HomeScreen() {
   };
 
   const firstName = user?.full_name?.split(' ')[0] || 'there';
+
+  const handleGroupPress = (groupId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/(tabs)/group/${groupId}` as any);
+  };
 
   return (
     <Screen scroll padded={false}>
@@ -169,42 +177,53 @@ export default function HomeScreen() {
             <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               Your Groups
             </Text>
-            <XStack 
-              alignItems="center" 
-              gap="$1"
-              onPress={() => router.push('/(tabs)/groups' as any)}
-            >
-              <Text fontSize={14} color={themeColors.primary}>See all</Text>
-              <ArrowRight size={16} color={themeColors.primary} />
-            </XStack>
+            <Pressable onPress={() => router.push('/(tabs)/groups' as any)}>
+              <XStack alignItems="center" gap="$1">
+                <Text fontSize={14} color={themeColors.primary}>See all</Text>
+                <ArrowRight size={16} color={themeColors.primary} />
+              </XStack>
+            </Pressable>
           </XStack>
           
-          <YStack gap="$3">
-            {groups.slice(0, 3).map((group) => (
-              <GroupListItem
+          <YStack>
+            {groups.slice(0, 3).map((group, index) => (
+              <Pressable 
                 key={group.id}
-                name={group.name}
-                groupId={group.id}
-                memberCount={group.member_count}
-                balance={group.your_balance}
-                onPress={() => router.push(`/(tabs)/group/${group.id}` as any)}
-              />
+                onPress={() => handleGroupPress(group.id)}
+              >
+                <XStack 
+                  alignItems="center" 
+                  gap="$3"
+                  paddingVertical="$3"
+                  borderBottomWidth={index === Math.min(groups.length, 3) - 1 ? 0 : 1}
+                  borderBottomColor={themeColors.border}
+                >
+                  <GroupImage groupId={group.id} size="md" />
+                  <YStack flex={1}>
+                    <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+                      {group.name}
+                    </Text>
+                    <Text fontSize={13} color={themeColors.textMuted}>
+                      {group.member_count} members
+                    </Text>
+                  </YStack>
+                  <BalanceBadge amount={group.your_balance || 0} size="sm" />
+                </XStack>
+              </Pressable>
             ))}
             {groups.length === 0 && !groupsLoading && (
-              <Card variant="surface">
-                <YStack alignItems="center" paddingVertical="$4" gap="$2">
-                  <Text fontSize={16} color={themeColors.textSecondary}>
-                    No groups yet
-                  </Text>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onPress={() => router.push('/group/create' as any)}
-                  >
-                    Create Group
-                  </Button>
-                </YStack>
-              </Card>
+              <YStack alignItems="center" paddingVertical="$6" gap="$3">
+                <Text fontSize={16} color={themeColors.textSecondary}>
+                  No groups yet
+                </Text>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onPress={() => router.push('/group/create' as any)}
+                >
+                  Create Group
+                </Button>
+              </YStack>
             )}
           </YStack>
         </Stack>
@@ -215,41 +234,92 @@ export default function HomeScreen() {
             <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               Recent Activity
             </Text>
-            <XStack 
-              alignItems="center" 
-              gap="$1"
-              onPress={() => router.push('/(tabs)/activity' as any)}
-            >
-              <Text fontSize={14} color={themeColors.primary}>See all</Text>
-              <ArrowRight size={16} color={themeColors.primary} />
-            </XStack>
+            <Pressable onPress={() => router.push('/(tabs)/activity' as any)}>
+              <XStack alignItems="center" gap="$1">
+                <Text fontSize={14} color={themeColors.primary}>See all</Text>
+                <ArrowRight size={16} color={themeColors.primary} />
+              </XStack>
+            </Pressable>
           </XStack>
           
-          <YStack gap="$3">
-            {activities.slice(0, 3).map((activity) => (
-              <Card key={activity.id} variant="surface">
-                <XStack alignItems="center" gap="$3">
+          <YStack>
+            {activities.slice(0, 3).map((activity, index) => {
+              // Get activity icon
+              const getIcon = () => {
+                switch (activity.type) {
+                  case 'bill_created':
+                    return <Receipt size={16} color={themeColors.primary} />;
+                  case 'item_selected':
+                    return <MousePointer size={16} color={themeColors.primary} />;
+                  case 'settlement_created':
+                    return <CheckCircle size={16} color={themeColors.success} />;
+                  default:
+                    return <Receipt size={16} color={themeColors.primary} />;
+                }
+              };
+              
+              return (
+                <XStack 
+                  key={activity.id} 
+                  alignItems="center" 
+                  gap="$3"
+                  paddingVertical="$3"
+                  borderBottomWidth={index === Math.min(activities.length, 3) - 1 ? 0 : 1}
+                  borderBottomColor={themeColors.border}
+                >
                   <Avatar 
                     name={activity.user.full_name}
-                    colorIndex={0}
+                    imageUrl={activity.user.avatar_url}
+                    colorIndex={activity.user.color_index ?? 0}
                     size="md"
                   />
                   <YStack flex={1}>
                     <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
                       {activity.user.full_name}
                     </Text>
-                    <XStack alignItems="center" gap="$2">
-                      <Text fontSize={12} color={themeColors.textSecondary}>
-                        {activity.type === 'bill_created' && 'Created a bill'}
-                        {activity.type === 'item_selected' && 'Selected items'}
-                        {activity.type === 'settlement_created' && 'Settled up'}
-                      </Text>
-                    </XStack>
+                    <Text fontSize={12} color={themeColors.textSecondary}>
+                      {activity.type === 'bill_created' && 'Created a bill'}
+                      {activity.type === 'item_selected' && 'Selected items'}
+                      {activity.type === 'settlement_created' && 'Settled up'}
+                    </Text>
                   </YStack>
-                  <GroupImage groupId={activity.group.id} size="sm" />
+                  
+                  {/* Group Image with Icon Badge */}
+                  <YStack alignItems="center" gap="$1">
+                    <Stack position="relative">
+                      <GroupImage groupId={activity.group.id} size="sm" />
+                      <Stack
+                        position="absolute"
+                        top={0}
+                        left={0}
+                        right={0}
+                        bottom={0}
+                        justifyContent="center"
+                        alignItems="center"
+                      >
+                        <Stack
+                          width={24}
+                          height={24}
+                          borderRadius={12}
+                          backgroundColor={themeColors.surface}
+                          justifyContent="center"
+                          alignItems="center"
+                          shadowColor="#000"
+                          shadowOffset={{ width: 0, height: 1 }}
+                          shadowOpacity={0.2}
+                          shadowRadius={2}
+                        >
+                          {getIcon()}
+                        </Stack>
+                      </Stack>
+                    </Stack>
+                    <Text fontSize={10} color={themeColors.textMuted} numberOfLines={1}>
+                      {activity.group.name}
+                    </Text>
+                  </YStack>
                 </XStack>
-              </Card>
-            ))}
+              );
+            })}
           </YStack>
         </Stack>
       </ScrollView>

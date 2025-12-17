@@ -24,7 +24,7 @@ import {
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useAuthStore, useUIStore } from '@/lib/store';
-import { demoBillItems, currentUser, demoGroupMembers } from '@/lib/api/demo';
+import { demoBillItems, currentUser, demoGroupMembers, demoUsers } from '@/lib/api/demo';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import type { BillItemWithSplits } from '@/types/models';
 
@@ -429,7 +429,17 @@ export default function BillDetailScreen() {
             
             <XStack justifyContent="space-between" alignItems="center">
               <XStack alignItems="center" gap="$2">
-                <Avatar name={bill.payer.full_name} colorIndex={0} size="sm" />
+                {(() => {
+                  const payerUser = demoUsers.find(u => u.id === bill.payer.id);
+                  return (
+                    <Avatar 
+                      name={bill.payer.full_name} 
+                      imageUrl={payerUser?.avatar_url}
+                      colorIndex={payerUser?.color_index ?? 0} 
+                      size="sm" 
+                    />
+                  );
+                })()}
                 <Text fontSize={14} color={themeColors.textSecondary}>
                   Paid by {bill.payer.full_name}
                 </Text>

@@ -150,85 +150,89 @@ export default function FriendsScreen() {
             </Text>
           </YStack>
         ) : (
-          <YStack gap="$2">
+          <YStack>
             {/* Owed to you section */}
-            {filteredBalances.filter(b => b.balance > 0).length > 0 && (
-              <>
-                <Text 
-                  fontSize={14} 
-                  fontWeight="600" 
-                  color={themeColors.textSecondary}
-                  marginTop="$2"
-                  marginBottom="$1"
-                >
-                  OWED TO YOU
-                </Text>
-                {filteredBalances
-                  .filter(b => b.balance > 0)
-                  .sort((a, b) => b.balance - a.balance)
-                  .map((friend) => (
-                    <FriendCard
+            {(() => {
+              const owedToYou = filteredBalances.filter(b => b.balance > 0).sort((a, b) => b.balance - a.balance);
+              if (owedToYou.length === 0) return null;
+              return (
+                <>
+                  <Text 
+                    fontSize={14} 
+                    fontWeight="600" 
+                    color={themeColors.textSecondary}
+                    marginTop="$2"
+                    marginBottom="$1"
+                  >
+                    OWED TO YOU
+                  </Text>
+                  {owedToYou.map((friend, index) => (
+                    <FriendRow
                       key={friend.user_id}
                       friend={friend}
                       onPress={() => handleFriendPress(friend.user_id)}
                       onRemind={() => handleRemindPress(friend.user_id, friend.user.full_name)}
                       showRemind
+                      isLast={index === owedToYou.length - 1}
                     />
-                  ))
-                }
-              </>
-            )}
+                  ))}
+                </>
+              );
+            })()}
 
             {/* You owe section */}
-            {filteredBalances.filter(b => b.balance < 0).length > 0 && (
-              <>
-                <Text 
-                  fontSize={14} 
-                  fontWeight="600" 
-                  color={themeColors.textSecondary}
-                  marginTop="$4"
-                  marginBottom="$1"
-                >
-                  YOU OWE
-                </Text>
-                {filteredBalances
-                  .filter(b => b.balance < 0)
-                  .sort((a, b) => a.balance - b.balance)
-                  .map((friend) => (
-                    <FriendCard
+            {(() => {
+              const youOwe = filteredBalances.filter(b => b.balance < 0).sort((a, b) => a.balance - b.balance);
+              if (youOwe.length === 0) return null;
+              return (
+                <>
+                  <Text 
+                    fontSize={14} 
+                    fontWeight="600" 
+                    color={themeColors.textSecondary}
+                    marginTop="$4"
+                    marginBottom="$1"
+                  >
+                    YOU OWE
+                  </Text>
+                  {youOwe.map((friend, index) => (
+                    <FriendRow
                       key={friend.user_id}
                       friend={friend}
                       onPress={() => handleFriendPress(friend.user_id)}
+                      isLast={index === youOwe.length - 1}
                     />
-                  ))
-                }
-              </>
-            )}
+                  ))}
+                </>
+              );
+            })()}
 
             {/* Settled section */}
-            {filteredBalances.filter(b => b.balance === 0).length > 0 && (
-              <>
-                <Text 
-                  fontSize={14} 
-                  fontWeight="600" 
-                  color={themeColors.textSecondary}
-                  marginTop="$4"
-                  marginBottom="$1"
-                >
-                  ALL SETTLED
-                </Text>
-                {filteredBalances
-                  .filter(b => b.balance === 0)
-                  .map((friend) => (
-                    <FriendCard
+            {(() => {
+              const settled = filteredBalances.filter(b => b.balance === 0);
+              if (settled.length === 0) return null;
+              return (
+                <>
+                  <Text 
+                    fontSize={14} 
+                    fontWeight="600" 
+                    color={themeColors.textSecondary}
+                    marginTop="$4"
+                    marginBottom="$1"
+                  >
+                    ALL SETTLED
+                  </Text>
+                  {settled.map((friend, index) => (
+                    <FriendRow
                       key={friend.user_id}
                       friend={friend}
                       onPress={() => handleFriendPress(friend.user_id)}
+                      isLast={index === settled.length - 1}
                     />
-                  ))
-                }
-              </>
-            )}
+                  ))}
+                </>
+              );
+            })()}
           </YStack>
         )}
 
@@ -238,59 +242,70 @@ export default function FriendsScreen() {
   );
 }
 
-// Friend card component
-interface FriendCardProps {
+// Friend row component (list style)
+interface FriendRowProps {
   friend: MemberBalance;
   onPress: () => void;
   onRemind?: () => void;
   showRemind?: boolean;
+  isLast?: boolean;
 }
 
-function FriendCard({ friend, onPress, onRemind, showRemind }: FriendCardProps) {
+function FriendRow({ friend, onPress, onRemind, showRemind, isLast }: FriendRowProps) {
   const themeColors = useThemeColors();
   
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+  
   return (
-    <Pressable onPress={onPress}>
-      <Card variant="surface">
-        <XStack alignItems="center" gap="$3">
-          <Avatar
-            name={friend.user.full_name}
-            colorIndex={friend.color_index}
-            size="lg"
-          />
-          
-          <YStack flex={1}>
-            <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-              {friend.user.full_name}
-            </Text>
-            <Text fontSize={14} color={themeColors.textSecondary}>
-              {friend.balance > 0 
-                ? 'owes you' 
-                : friend.balance < 0 
-                  ? 'you owe'
-                  : 'settled up'
-              }
-            </Text>
-          </YStack>
+    <Pressable onPress={handlePress}>
+      <XStack 
+        alignItems="center" 
+        gap="$3"
+        paddingVertical="$3"
+        borderBottomWidth={isLast ? 0 : 1}
+        borderBottomColor={themeColors.border}
+      >
+        <Avatar
+          name={friend.user.full_name}
+          colorIndex={friend.color_index}
+          size="lg"
+        />
+        
+        <YStack flex={1}>
+          <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+            {friend.user.full_name}
+          </Text>
+          <Text fontSize={14} color={themeColors.textSecondary}>
+            {friend.balance > 0 
+              ? 'owes you' 
+              : friend.balance < 0 
+                ? 'you owe'
+                : 'settled up'
+            }
+          </Text>
+        </YStack>
 
-          <YStack alignItems="flex-end" gap="$1">
-            <BalanceBadge amount={friend.balance} size="md" />
-            
-            {showRemind && friend.balance > 0 && (
-              <Pressable 
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onRemind?.();
-                }}
-              >
-                <Text fontSize={12} color={themeColors.primary}>
-                  Remind
-                </Text>
-              </Pressable>
-            )}
-          </YStack>
-        </XStack>
-      </Card>
+        <YStack alignItems="flex-end" gap="$1">
+          <BalanceBadge amount={friend.balance} size="md" />
+          
+          {showRemind && friend.balance > 0 && (
+            <Pressable 
+              onPress={(e) => {
+                e.stopPropagation();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onRemind?.();
+              }}
+            >
+              <Text fontSize={12} color={themeColors.primary}>
+                Remind
+              </Text>
+            </Pressable>
+          )}
+        </YStack>
+      </XStack>
     </Pressable>
   );
 }
