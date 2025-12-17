@@ -10,7 +10,7 @@ import { RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Receipt, CheckCircle, UserPlus, MousePointer } from 'lucide-react-native';
 
-import { Screen, Card, Avatar } from '@/components/ui';
+import { Screen, Card, Avatar, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useActivityStore } from '@/lib/store';
 import type { ActivityType } from '@/types/models';
@@ -120,7 +120,7 @@ export default function ActivityScreen() {
                     </XStack>
                     
                     <XStack alignItems="center" gap="$2">
-                      <Text fontSize={16}>{activity.group.emoji}</Text>
+                      <GroupImage groupId={activity.group.id} size="sm" />
                       <Text fontSize={13} color={themeColors.textMuted}>
                         {activity.group.name}
                       </Text>

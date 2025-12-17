@@ -11,7 +11,7 @@ import { Pressable, Share } from 'react-native';
 import { ArrowLeft, Copy, Share2, QrCode, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Button, Card } from '@/components/ui';
+import { Screen, Button, Card, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { demoGroups } from '@/lib/api/demo';
 
@@ -58,16 +58,8 @@ export default function GroupInviteScreen() {
 
       {/* Group Info */}
       <YStack alignItems="center" marginBottom="$6">
-        <Stack
-          width={80}
-          height={80}
-          borderRadius={20}
-          backgroundColor={themeColors.surfaceElevated}
-          justifyContent="center"
-          alignItems="center"
-          marginBottom="$3"
-        >
-          <Text fontSize={40}>{group.emoji}</Text>
+        <Stack marginBottom="$3">
+          <GroupImage groupId={group.id} size="xl" />
         </Stack>
         <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
           {group.name}

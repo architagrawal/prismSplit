@@ -78,6 +78,11 @@ function CenterFAB() {
     closeMenu(() => router.push('/bill/create' as any));
   };
 
+  const handleCreateGroup = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    closeMenu(() => router.push('/group/create' as any));
+  };
+
   const rotation = animation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '45deg'],
@@ -141,6 +146,42 @@ function CenterFAB() {
           ]}
           pointerEvents={isOpen ? 'auto' : 'none'}
         >
+          {/* Create Group Option */}
+          <Pressable onPress={handleCreateGroup} style={styles.menuItem}>
+            <Stack
+              flexDirection="row"
+              alignItems="center"
+              gap="$3"
+              backgroundColor={themeColors.surface}
+              paddingHorizontal="$4"
+              paddingVertical="$3"
+              borderRadius={16}
+              shadowColor="black"
+              shadowOffset={{ width: 0, height: 2 }}
+              shadowOpacity={0.1}
+              shadowRadius={8}
+            >
+              <Stack
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor={themeColors.tertiaryLight || themeColors.tertiary}
+                justifyContent="center"
+                alignItems="center"
+              >
+                <Users size={20} color={themeColors.tertiary || themeColors.primary} />
+              </Stack>
+              <YStack>
+                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+                  Create Group
+                </Text>
+                <Text fontSize={12} color={themeColors.textSecondary}>
+                  Start a new expense group
+                </Text>
+              </YStack>
+            </Stack>
+          </Pressable>
+
           {/* Quick Bill Option */}
           <Pressable onPress={handleQuickBill} style={styles.menuItem}>
             <Stack

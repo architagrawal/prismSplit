@@ -14,13 +14,21 @@ import { getAvatarColor } from '@/theme/tokens';
 import { Avatar, AvatarGroup } from './Avatar';
 import { BalanceBadge, StatusBadge, CategoryBadge } from './Badge';
 import { SplitBar } from './SplitBar';
+import { GroupImage } from './GroupImage';
 
 // === Group List Item ===
 
+interface GroupMemberPreview {
+  name: string;
+  imageUrl?: string | null;
+  colorIndex: number;
+}
+
 interface GroupListItemProps {
   name: string;
-  emoji: string;
+  groupId: string; // Used for GroupImage
   memberCount: number;
+  members?: GroupMemberPreview[];
   balance?: number;
   lastActivity?: string;
   onPress?: () => void;
@@ -28,8 +36,9 @@ interface GroupListItemProps {
 
 export function GroupListItem({
   name,
-  emoji,
+  groupId,
   memberCount,
+  members,
   balance = 0,
   lastActivity,
   onPress,
@@ -46,51 +55,57 @@ export function GroupListItem({
       onPress={handlePress} 
       style={{
         backgroundColor: themeColors.surface,
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: 16,
+        padding: 14,
         borderWidth: 1,
         borderColor: themeColors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        elevation: 1,
       }}
     >
       <Stack flexDirection="row" alignItems="center" gap="$3">
-        {/* Emoji Avatar */}
-        <Stack
-          width={48}
-          height={48}
-          borderRadius={12}
-          backgroundColor={themeColors.surfaceElevated}
-          justifyContent="center"
-          alignItems="center"
-        >
-          <Text fontSize={24}>{emoji}</Text>
-        </Stack>
+        {/* Group Image */}
+        <GroupImage groupId={groupId} size="md" />
         
         {/* Content */}
-        <Stack flex={1} gap="$1">
+        <Stack flex={1} gap={4}>
           <Text
-            fontSize={16}
+            fontSize={17}
             fontWeight="600"
             color={themeColors.textPrimary}
           >
             {name}
           </Text>
-          <Text
-            fontSize={14}
-            color={themeColors.textSecondary}
-          >
-            {memberCount} members{lastActivity ? ` • ${lastActivity}` : ''}
-          </Text>
+          {/* Show member avatars if available, otherwise show text count */}
+          {members && members.length > 0 ? (
+            <Stack flexDirection="row" alignItems="center" gap="$2">
+              <AvatarGroup users={members} size="sm" max={4} />
+              {lastActivity && (
+                <Text fontSize={12} color={themeColors.textMuted}>
+                  • {lastActivity}
+                </Text>
+              )}
+            </Stack>
+          ) : (
+            <Text
+              fontSize={13}
+              color={themeColors.textMuted}
+            >
+              {memberCount} members{lastActivity ? ` • ${lastActivity}` : ''}
+            </Text>
+          )}
         </Stack>
         
         {/* Balance */}
-        <Stack alignItems="flex-end" gap="$1">
-          <BalanceBadge amount={balance} size="sm" />
-          <ChevronRight size={20} color={themeColors.textMuted} />
-        </Stack>
+        <BalanceBadge amount={balance} size="sm" />
       </Stack>
     </Pressable>
   );
 }
+
 
 // === Bill List Item ===
 

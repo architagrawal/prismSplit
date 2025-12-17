@@ -22,7 +22,8 @@ import {
   Avatar, 
   GroupListItem,
   BalanceBadge,
-  Button
+  Button,
+  GroupImage
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useGroupsStore, useActivityStore } from '@/lib/store';
@@ -75,7 +76,7 @@ export default function HomeScreen() {
               <Text fontSize={14} color={themeColors.textSecondary}>
                 Welcome back,
               </Text>
-              <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
+              <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
                 {firstName}
               </Text>
             </YStack>
@@ -183,7 +184,7 @@ export default function HomeScreen() {
               <GroupListItem
                 key={group.id}
                 name={group.name}
-                emoji={group.emoji}
+                groupId={group.id}
                 memberCount={group.member_count}
                 balance={group.your_balance}
                 onPress={() => router.push(`/(tabs)/group/${group.id}` as any)}
@@ -237,14 +238,15 @@ export default function HomeScreen() {
                     <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
                       {activity.user.full_name}
                     </Text>
-                    <Text fontSize={12} color={themeColors.textSecondary}>
-                      {activity.type === 'bill_created' && 'Created a bill'}
-                      {activity.type === 'item_selected' && 'Selected items'}
-                      {activity.type === 'settlement_created' && 'Settled up'}
-                      {' • '}
-                      {activity.group.emoji} {activity.group.name}
-                    </Text>
+                    <XStack alignItems="center" gap="$2">
+                      <Text fontSize={12} color={themeColors.textSecondary}>
+                        {activity.type === 'bill_created' && 'Created a bill'}
+                        {activity.type === 'item_selected' && 'Selected items'}
+                        {activity.type === 'settlement_created' && 'Settled up'}
+                      </Text>
+                    </XStack>
                   </YStack>
+                  <GroupImage groupId={activity.group.id} size="sm" />
                 </XStack>
               </Card>
             ))}

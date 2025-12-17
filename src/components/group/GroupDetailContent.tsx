@@ -25,7 +25,8 @@ import {
   Avatar, 
   BillListItem,
   BalanceBadge,
-  Button
+  Button,
+  GroupImage
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useBillsStore, useAuthStore } from '@/lib/store';
@@ -254,18 +255,9 @@ export function GroupDetailContent({
 
       {/* Hero Row: Group Info + Members */}
       <XStack alignItems="center" justifyContent="space-between" marginBottom="$3">
-        {/* Left: Group emoji + name */}
+        {/* Left: Group image + name */}
         <XStack alignItems="center" gap="$3" flex={1}>
-          <Stack
-            width={48}
-            height={48}
-            borderRadius={12}
-            backgroundColor={themeColors.surfaceElevated}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text fontSize={24}>{group.emoji}</Text>
-          </Stack>
+          <GroupImage groupId={groupId} size="md" />
           <YStack flex={1}>
             <Text fontSize={18} fontWeight="700" color={themeColors.textPrimary} numberOfLines={1}>
               {group.name}

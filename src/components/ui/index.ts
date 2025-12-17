@@ -23,6 +23,7 @@ export { Screen, ScreenHeader } from './Screen';
 
 // List components
 export { GroupListItem, BillListItem, ItemRow } from './ListItem';
+export { GroupImage } from './GroupImage';
 
 // Modals
 export { CustomSplitModal } from './CustomSplitModal';

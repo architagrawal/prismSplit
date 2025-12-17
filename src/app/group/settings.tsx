@@ -17,7 +17,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Card, Avatar, Button } from '@/components/ui';
+import { Screen, Card, Avatar, Button, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { demoGroups, demoGroupMembers, currentUser } from '@/lib/api/demo';
 
@@ -119,16 +119,7 @@ export default function GroupSettingsScreen() {
       {/* Group Info */}
       <Card variant="elevated" marginBottom="$6">
         <YStack alignItems="center" gap="$3">
-          <Stack
-            width={80}
-            height={80}
-            borderRadius={20}
-            backgroundColor={themeColors.surfaceElevated}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text fontSize={40}>{group.emoji}</Text>
-          </Stack>
+          <GroupImage groupId={group.id} size="xl" />
           <YStack alignItems="center">
             <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
               {group.name}

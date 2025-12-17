@@ -1,7 +1,8 @@
 /**
  * PrismSplit Edit Group Screen
  * 
- * Allows editing group name, emoji, and currency.
+ * Allows editing group name and currency.
+ * Emoji removed - uses auto-generated group images.
  */
 
 import { useState } from 'react';
@@ -11,12 +12,11 @@ import { Pressable } from 'react-native';
 import { ArrowLeft, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Card, Button, Input, ConfirmDialog } from '@/components/ui';
+import { Screen, Card, Button, Input, ConfirmDialog, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
 import { demoGroups } from '@/lib/api/demo';
 
-const EMOJIS = ['🏠', '✈️', '🍕', '🎉', '🏢', '👨‍👩‍👧‍👦', '🎓', '💼', '🏖️', '🎮', '⚽', '🎬', '🍔', '🚗', '💒'];
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
 export default function EditGroupScreen() {
@@ -28,7 +28,6 @@ export default function EditGroupScreen() {
   const group = demoGroups.find(g => g.id === id) || demoGroups[0];
   
   const [name, setName] = useState(group.name);
-  const [selectedEmoji, setSelectedEmoji] = useState(group.emoji);
   const [selectedCurrency, setSelectedCurrency] = useState(group.currency);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -72,6 +71,21 @@ export default function EditGroupScreen() {
         <Stack width={24} />
       </XStack>
 
+      {/* Preview */}
+      <Card variant="elevated" marginBottom="$6">
+        <YStack alignItems="center" gap="$3">
+          <GroupImage groupId={group.id} size="xl" />
+          <YStack alignItems="center">
+            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
+              {name || 'Group Name'}
+            </Text>
+            <Text fontSize={14} color={themeColors.textSecondary}>
+              Currency: {selectedCurrency}
+            </Text>
+          </YStack>
+        </YStack>
+      </Card>
+
       {/* Group Name */}
       <YStack marginBottom="$6">
         <Input
@@ -80,42 +94,6 @@ export default function EditGroupScreen() {
           value={name}
           onChangeText={(val) => { setName(val); setHasChanges(true); }}
         />
-      </YStack>
-
-      {/* Emoji Selector */}
-      <YStack marginBottom="$6">
-        <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
-          Group Icon
-        </Text>
-        <Card variant="surface">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <XStack gap="$2" paddingVertical="$2">
-              {EMOJIS.map((emoji) => (
-                <Pressable 
-                  key={emoji} 
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedEmoji(emoji);
-                    setHasChanges(true);
-                  }}
-                >
-                  <Stack
-                    width={48}
-                    height={48}
-                    borderRadius={12}
-                    backgroundColor={selectedEmoji === emoji ? themeColors.primaryLight : themeColors.surfaceElevated}
-                    borderWidth={selectedEmoji === emoji ? 2 : 0}
-                    borderColor={themeColors.primary}
-                    justifyContent="center"
-                    alignItems="center"
-                  >
-                    <Text fontSize={24}>{emoji}</Text>
-                  </Stack>
-                </Pressable>
-              ))}
-            </XStack>
-          </ScrollView>
-        </Card>
       </YStack>
 
       {/* Currency Selector */}
@@ -153,33 +131,6 @@ export default function EditGroupScreen() {
           </XStack>
         </Card>
       </YStack>
-
-      {/* Preview */}
-      <Card variant="elevated" marginBottom="$6">
-        <YStack alignItems="center" gap="$2">
-          <Text fontSize={14} color={themeColors.textSecondary}>Preview</Text>
-          <XStack alignItems="center" gap="$3">
-            <Stack
-              width={56}
-              height={56}
-              borderRadius={14}
-              backgroundColor={themeColors.surfaceElevated}
-              justifyContent="center"
-              alignItems="center"
-            >
-              <Text fontSize={28}>{selectedEmoji}</Text>
-            </Stack>
-            <YStack>
-              <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
-                {name || 'Group Name'}
-              </Text>
-              <Text fontSize={14} color={themeColors.textSecondary}>
-                Currency: {selectedCurrency}
-              </Text>
-            </YStack>
-          </XStack>
-        </YStack>
-      </Card>
 
       {/* Save Button */}
       <Stack flex={1} />

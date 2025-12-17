@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, UserPlus } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Card, Avatar, BalanceBadge, Button } from '@/components/ui';
+import { Screen, Card, Avatar, BalanceBadge, Button, Input } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useGroupsStore, useUIStore } from '@/lib/store';
 import { demoBalances } from '@/lib/api/demo';
@@ -123,27 +123,12 @@ export default function FriendsScreen() {
         </XStack>
 
         {/* Search */}
-        <XStack 
-          alignItems="center" 
-          gap="$2"
-          backgroundColor={themeColors.surfaceElevated}
-          borderRadius={12}
-          paddingHorizontal="$3"
-          paddingVertical="$2"
-        >
-          <Search size={18} color={themeColors.textMuted} />
-          <TextInput
-            placeholder="Search friends..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={{ 
-              flex: 1, 
-              fontSize: 16,
-              color: themeColors.textPrimary,
-            }}
-            placeholderTextColor={themeColors.textMuted}
-          />
-        </XStack>
+        <Input
+          placeholder="Search friends..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          leftIcon={<Search size={18} color={themeColors.textMuted} />}
+        />
       </YStack>
 
       {/* Friends List */}

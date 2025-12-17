@@ -12,7 +12,7 @@ import { Pressable, ScrollView, TextInput } from 'react-native';
 import { X, ChevronDown, Check, Users, User } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Button, Input, Card, Avatar } from '@/components/ui';
+import { Screen, Button, Input, Card, Avatar, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 import { categoryIcons, type Category } from '@/types/models';
@@ -186,7 +186,7 @@ export default function QuickBillScreen() {
             <Card variant="surface">
               <XStack justifyContent="space-between" alignItems="center">
                 <XStack alignItems="center" gap="$2">
-                  <Text fontSize={20}>{selectedGroup?.emoji || '👥'}</Text>
+                  {selectedGroup && <GroupImage groupId={selectedGroup.id} size="sm" />}
                   <Text fontSize={16} color={themeColors.textPrimary}>
                     {selectedGroup?.name || 'Select Group'}
                   </Text>
@@ -214,7 +214,7 @@ export default function QuickBillScreen() {
                     borderTopWidth={index > 0 ? 1 : 0}
                     borderTopColor={themeColors.border}
                   >
-                    <Text fontSize={20}>{group.emoji}</Text>
+                    <GroupImage groupId={group.id} size="sm" />
                     <Text fontSize={16} color={themeColors.textPrimary} flex={1}>
                       {group.name}
                     </Text>

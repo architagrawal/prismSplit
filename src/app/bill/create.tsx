@@ -16,7 +16,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Button, Card, Input, CurrencyInput } from '@/components/ui';
+import { Screen, Button, Card, Input, CurrencyInput, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 
@@ -150,7 +150,7 @@ export default function CreateBillScreen() {
                 <Card variant="surface">
                   <XStack justifyContent="space-between" alignItems="center">
                     <XStack alignItems="center" gap="$2">
-                      <Text fontSize={20}>{selectedGroup?.emoji}</Text>
+                      {selectedGroup && <GroupImage groupId={selectedGroup.id} size="sm" />}
                       <Text fontSize={16} color={themeColors.textPrimary}>
                         {selectedGroup?.name}
                       </Text>

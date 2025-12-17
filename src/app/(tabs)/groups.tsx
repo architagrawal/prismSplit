@@ -1,49 +1,102 @@
 /**
  * PrismSplit Groups Tab
  * 
- * Uses groupsStore for state management.
+ * Clean design with filter pills, search, balance display, and group images.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Stack, Text, YStack, XStack } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { RefreshControl, ScrollView, Pressable } from 'react-native';
-import { useState } from 'react';
-import { Plus, Users, Search, QrCode, UserPlus } from 'lucide-react-native';
+import { Search, Sparkles, Plus } from 'lucide-react-native';
 
-import { Screen, GroupListItem, Button, Input } from '@/components/ui';
+import { Screen, AvatarGroup, GroupImage, Input, BalanceBadge, Button } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
+import { demoGroupMembers } from '@/lib/api/demo';
+
+type FilterOption = 'all' | 'owe' | 'owed';
 
 export default function GroupsScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const { groups, isLoading, fetchGroups } = useGroupsStore();
   const { searchQuery, setSearchQuery, clearSearch } = useUIStore();
+  
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
 
-  // Fetch on mount
   useEffect(() => {
     fetchGroups();
     return () => clearSearch();
   }, []);
 
-  const filteredGroups = searchQuery
-    ? groups.filter(g => 
+  // Filter and sort groups
+  const processedGroups = useMemo(() => {
+    let result = [...groups];
+    
+    if (searchQuery) {
+      result = result.filter(g => 
         g.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : groups;
+      );
+    }
+    
+    if (filterBy === 'owe') {
+      result = result.filter(g => (g.your_balance || 0) < 0);
+    } else if (filterBy === 'owed') {
+      result = result.filter(g => (g.your_balance || 0) > 0);
+    }
+    
+    return result;
+  }, [groups, searchQuery, filterBy]);
 
   const onRefresh = () => {
     fetchGroups();
   };
 
+  const getMemberPreviews = (groupId: string) => {
+    const members = demoGroupMembers[groupId] || [];
+    return members.map(m => ({
+      name: m.user.full_name,
+      imageUrl: m.user.avatar_url,
+      colorIndex: m.color_index,
+    }));
+  };
+
+  // Filter chip component
+  const FilterChip = ({ label, value, isActive }: { label: string; value: FilterOption; isActive: boolean }) => (
+    <Pressable onPress={() => setFilterBy(value)}>
+      <Stack
+        paddingHorizontal="$4"
+        paddingVertical={10}
+        borderRadius={24}
+        backgroundColor={isActive ? themeColors.primary : 'transparent'}
+        borderWidth={1}
+        borderColor={isActive ? themeColors.primary : themeColors.border}
+      >
+        <Text
+          fontSize={13}
+          fontWeight={isActive ? '600' : '500'}
+          color={isActive ? 'white' : themeColors.textSecondary}
+        >
+          {label}
+        </Text>
+      </Stack>
+    </Pressable>
+  );
+
+  const showSearch = groups.length >= 5;
+
   return (
     <Screen padded={false}>
-      <YStack flex={1}>
+      <YStack flex={1} backgroundColor={themeColors.background}>
         {/* Header */}
-        <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
-          <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
-            {/* Join Button - Left side */}
+        <YStack paddingHorizontal="$4" paddingTop="$3" paddingBottom="$2">
+          <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+            <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
+              Groups
+            </Text>
+            
+            {/* Join Button */}
             <Pressable onPress={() => router.push('/group/join' as any)}>
               <XStack 
                 alignItems="center" 
@@ -53,101 +106,198 @@ export default function GroupsScreen() {
                 paddingVertical="$2"
                 borderRadius={20}
               >
-                <UserPlus size={18} color={themeColors.primary} />
-                <Text fontSize={14} fontWeight="500" color={themeColors.primary}>
+                <Text fontSize={13} fontWeight="600" color={themeColors.primary}>
                   Join
-                </Text>
-              </XStack>
-            </Pressable>
-            
-            {/* Title - Center */}
-            <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
-              Groups
-            </Text>
-            
-            {/* Create Button - Right side */}
-            <Pressable onPress={() => router.push('/group/create' as any)}>
-              <XStack 
-                alignItems="center" 
-                gap="$2"
-                backgroundColor={themeColors.primary}
-                paddingHorizontal="$3"
-                paddingVertical="$2"
-                borderRadius={20}
-              >
-                <Plus size={18} color="white" />
-                <Text fontSize={14} fontWeight="500" color="white">
-                  New
                 </Text>
               </XStack>
             </Pressable>
           </XStack>
 
-          {/* Search */}
-          <Input
-            placeholder="Search groups..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            leftIcon={<Search size={20} color={themeColors.textMuted} />}
-          />
-        </Stack>
+          {/* Search - only when 5+ groups */}
+          {showSearch && (
+            <Stack marginBottom="$3">
+              <Input
+                placeholder="Search groups..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                leftIcon={<Search size={18} color={themeColors.textMuted} />}
+              />
+            </Stack>
+          )}
+
+          {/* Filter Chips */}
+          {groups.length > 0 && (
+            <XStack gap="$2">
+              <FilterChip label="All" value="all" isActive={filterBy === 'all'} />
+              <FilterChip label="You owe" value="owe" isActive={filterBy === 'owe'} />
+              <FilterChip label="Owed to you" value="owed" isActive={filterBy === 'owed'} />
+            </XStack>
+          )}
+        </YStack>
 
         {/* Groups List */}
         <ScrollView
           refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
+            <RefreshControl 
+              refreshing={isLoading} 
+              onRefresh={onRefresh}
+              tintColor={themeColors.primary}
+              colors={[themeColors.primary]}
+            />
           }
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
-          <YStack gap="$3">
-            {filteredGroups.length === 0 ? (
-              <YStack flex={1} justifyContent="center" alignItems="center" gap="$4" paddingTop="$12">
+          {/* Promotional Prompt - always show when groups exist */}
+          {groups.length > 0 && (
+            <Pressable onPress={() => router.push('/group/create' as any)}>
+              <XStack 
+                marginHorizontal="$4"
+                marginTop="$3"
+                backgroundColor={themeColors.surfaceElevated}
+                borderRadius={16}
+                padding="$3"
+                alignItems="center"
+                gap="$3"
+                borderWidth={1}
+                borderColor={themeColors.border}
+              >
                 <Stack
-                  width={80}
-                  height={80}
-                  borderRadius={40}
-                  backgroundColor={themeColors.surfaceElevated}
+                  width={40}
+                  height={40}
+                  borderRadius={12}
+                  backgroundColor={themeColors.primary + '15'}
                   justifyContent="center"
                   alignItems="center"
                 >
-                  <Users size={40} color={themeColors.textMuted} />
+                  <Sparkles size={20} color={themeColors.primary} />
                 </Stack>
-                <Text fontSize={16} color={themeColors.textSecondary}>
-                  {searchQuery ? 'No groups found' : 'No groups yet'}
-                </Text>
-                {!searchQuery && (
-                  <YStack gap="$3" alignItems="center">
+                <YStack flex={1}>
+                  <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
+                    Create a new group
+                  </Text>
+                  <Text fontSize={12} color={themeColors.textMuted}>
+                    Track expenses with friends
+                  </Text>
+                </YStack>
+                <Stack
+                  width={28}
+                  height={28}
+                  borderRadius={14}
+                  backgroundColor={themeColors.primary}
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <Plus size={16} color="white" />
+                </Stack>
+              </XStack>
+            </Pressable>
+          )}
+
+          {/* Group List */}
+          <YStack paddingTop="$3">
+            {processedGroups.map((group) => {
+              const members = getMemberPreviews(group.id);
+              
+              return (
+                <Pressable 
+                  key={group.id}
+                  onPress={() => router.push(`/(tabs)/group/${group.id}` as any)}
+                >
+                  <XStack
+                    paddingHorizontal="$4"
+                    paddingVertical="$3"
+                    alignItems="center"
+                    gap="$3"
+                    borderBottomWidth={1}
+                    borderBottomColor={themeColors.border}
+                  >
+                    {/* Group Image */}
+                    <GroupImage groupId={group.id} size="lg" />
+                    
+                    {/* Content */}
+                    <YStack flex={1} gap={4}>
+                      <Text 
+                        fontSize={16} 
+                        fontWeight="600" 
+                        color={themeColors.textPrimary}
+                      >
+                        {group.name}
+                      </Text>
+                      
+                      {/* Member Avatars */}
+                      <AvatarGroup users={members} size="sm" max={4} />
+                    </YStack>
+                    
+                    {/* Balance */}
+                    <BalanceBadge amount={group.your_balance || 0} size="sm" />
+                  </XStack>
+                </Pressable>
+              );
+            })}
+          </YStack>
+          
+          {/* Empty State */}
+          {processedGroups.length === 0 && (
+            <YStack 
+              flex={1} 
+              justifyContent="center" 
+              alignItems="center" 
+              paddingTop="$16"
+              paddingHorizontal="$4"
+              gap="$4"
+            >
+              {groups.length === 0 && !isLoading ? (
+                <>
+                  <Stack
+                    width={88}
+                    height={88}
+                    borderRadius={44}
+                    backgroundColor={themeColors.surfaceElevated}
+                    justifyContent="center"
+                    alignItems="center"
+                  >
+                    <Text fontSize={40}>👥</Text>
+                  </Stack>
+                  <YStack alignItems="center" gap="$2">
+                    <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
+                      No groups yet
+                    </Text>
+                    <Text fontSize={15} color={themeColors.textSecondary} textAlign="center">
+                      Create a group to start splitting{'\n'}expenses with friends
+                    </Text>
+                  </YStack>
+                  <YStack gap="$3" width="100%">
                     <Button
                       variant="primary"
+                      size="lg"
+                      fullWidth
                       onPress={() => router.push('/group/create' as any)}
                       icon={<Plus size={18} color="white" />}
                     >
-                      Create a group
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onPress={() => router.push('/group/join' as any)}
-                      icon={<UserPlus size={18} color={themeColors.primary} />}
-                    >
-                      Join with code
+                      Create Group
                     </Button>
                   </YStack>
-                )}
-              </YStack>
-            ) : (
-              filteredGroups.map((group) => (
-                <GroupListItem
-                  key={group.id}
-                  name={group.name}
-                  emoji={group.emoji}
-                  memberCount={group.member_count}
-                  balance={group.your_balance}
-                  onPress={() => router.push(`/(tabs)/group/${group.id}` as any)}
-                />
-              ))
-            )}
-          </YStack>
+                </>
+              ) : (
+                <>
+                  <Text fontSize={15} color={themeColors.textSecondary}>
+                    No groups match this filter
+                  </Text>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onPress={() => {
+                      setFilterBy('all');
+                      clearSearch();
+                    }}
+                  >
+                    Show all groups
+                  </Button>
+                </>
+              )}
+            </YStack>
+          )}
         </ScrollView>
       </YStack>
     </Screen>
