@@ -926,7 +926,7 @@ export const demoActivities: Activity[] = [
     type: 'item_selected',
     entity_type: 'bill',
     entity_id: 'bill-1',
-    metadata: { item_name: 'Organic Milk 2-pack' },
+    metadata: { item_name: 'Organic Milk 2-pack', bill_title: 'Costco Grocery Run' },
     created_at: '2024-12-15T18:45:00Z',
   },
   {

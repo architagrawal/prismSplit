@@ -14,15 +14,29 @@ import * as Haptics from 'expo-haptics';
 import { Screen, Card, Avatar, GroupImage, AnimatedSearchBar } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useActivityStore } from '@/lib/store';
-import type { ActivityType } from '@/types/models';
+import type { Activity, ActivityType } from '@/types/models';
 
-const activityLabels: Record<ActivityType, string> = {
-  bill_created: 'created a bill',
-  bill_shared: 'shared a bill',
-  bill_finalized: 'finalized a bill',
-  item_selected: 'selected items',
-  settlement_created: 'settled up',
-  member_joined: 'joined the group',
+// Helper to get dynamic description
+const getActivityDescription = (activity: Activity) => {
+  const meta = activity.metadata || {};
+  
+  switch (activity.type) {
+    case 'bill_created':
+      return meta.title ? `Created a bill "${meta.title}"` : 'Created a bill';
+    case 'bill_shared':
+      return meta.title ? `Shared a bill "${meta.title}"` : 'Shared a bill';
+    case 'bill_finalized':
+      return meta.title ? `Finalized bill "${meta.title}"` : 'Finalized a bill';
+    case 'item_selected':
+      const billTitle = meta.bill_title ? ` in "${meta.bill_title}"` : '';
+      return meta.item_name ? `Selected "${meta.item_name}"${billTitle}` : 'Selected items';
+    case 'settlement_created':
+      return meta.to_user ? `Settled up with ${meta.to_user}` : 'Settled up';
+    case 'member_joined':
+      return 'Joined the group';
+    default:
+      return 'New activity';
+  }
 };
 
 export default function ActivityScreen() {
@@ -94,7 +108,7 @@ export default function ActivityScreen() {
         return (
           activity.user.full_name.toLowerCase().includes(query) ||
           activity.group.name.toLowerCase().includes(query) ||
-          activityLabels[activity.type].toLowerCase().includes(query)
+          getActivityDescription(activity).toLowerCase().includes(query)
         );
       });
 
@@ -229,7 +243,7 @@ export default function ActivityScreen() {
                         {/* Center: Activity Details - Action as main point */}
                         <YStack flex={1} gap="$1">
                           <Text fontSize={15} fontWeight="600" color={themeColors.textPrimary}>
-                            {activityLabels[activity.type].charAt(0).toUpperCase() + activityLabels[activity.type].slice(1)}
+                            {getActivityDescription(activity)}
                           </Text>
                           <XStack alignItems="center" gap="$2">
                             <Avatar
