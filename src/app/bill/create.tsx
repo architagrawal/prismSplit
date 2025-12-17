@@ -189,6 +189,7 @@ export default function CreateBillScreen() {
                       value={item.name}
                       onChangeText={(v) => updateItem(item.id, 'name', v)}
                       returnKeyType="next"
+                      scrollEnabled={false}
                       onSubmitEditing={() => priceRefs.current[index]?.focus()}
                       style={{
                         fontSize: 16,
@@ -209,6 +210,7 @@ export default function CreateBillScreen() {
                         onChangeText={(v) => updateItem(item.id, 'price', v)}
                         keyboardType="decimal-pad"
                         returnKeyType={index === items.length - 1 ? 'done' : 'next'}
+                        scrollEnabled={false}
                         onSubmitEditing={() => {
                           if (index === items.length - 1) {
                             addNewRow();
@@ -232,6 +234,7 @@ export default function CreateBillScreen() {
                       value={item.quantity}
                       onChangeText={(v) => updateItem(item.id, 'quantity', v)}
                       keyboardType="number-pad"
+                      scrollEnabled={false}
                       style={{
                         fontSize: 16,
                         color: themeColors.textSecondary,

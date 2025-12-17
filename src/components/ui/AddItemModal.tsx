@@ -94,6 +94,7 @@ export function AddItemModal({ visible, onClose, onAdd }: AddItemModalProps) {
                   }
                 ]}
                 autoFocus
+                scrollEnabled={false}
               />
             </YStack>
 
@@ -109,6 +110,7 @@ export function AddItemModal({ visible, onClose, onAdd }: AddItemModalProps) {
                   value={price}
                   onChangeText={setPrice}
                   keyboardType="decimal-pad"
+                  scrollEnabled={false}
                   style={[
                     styles.input, 
                     { 

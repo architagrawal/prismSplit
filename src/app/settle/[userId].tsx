@@ -12,7 +12,7 @@ export default function SettleScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
 
   return (
-    <Screen>
+    <Screen scroll keyboardAvoiding>
       <SettleContent userId={userId || ''} showBackButton={true} />
     </Screen>
   );

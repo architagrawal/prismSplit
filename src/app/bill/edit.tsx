@@ -285,6 +285,7 @@ export default function BillEditScreen() {
                       placeholder="Item name"
                       value={item.name}
                       onChangeText={(val) => handleItemChange(index, 'name', val)}
+                      scrollEnabled={false}
                       style={{
                         fontSize: 16,
                         color: themeColors.textPrimary,
@@ -300,6 +301,7 @@ export default function BillEditScreen() {
                           value={item.price > 0 ? item.price.toString() : ''}
                           onChangeText={(val) => handleItemChange(index, 'price', val)}
                           keyboardType="decimal-pad"
+                          scrollEnabled={false}
                           style={{
                             flex: 1,
                             fontSize: 14,
@@ -315,6 +317,7 @@ export default function BillEditScreen() {
                           value={item.quantity.toString()}
                           onChangeText={(val) => handleItemChange(index, 'quantity', val)}
                           keyboardType="number-pad"
+                          scrollEnabled={false}
                           style={{
                             width: 40,
                             fontSize: 14,
@@ -358,6 +361,7 @@ export default function BillEditScreen() {
                     value={tax}
                     onChangeText={(val) => { setTax(val); setHasChanges(true); }}
                     keyboardType="decimal-pad"
+                    scrollEnabled={false}
                     style={{
                       width: 60,
                       fontSize: 16,
@@ -378,6 +382,7 @@ export default function BillEditScreen() {
                     value={tip}
                     onChangeText={(val) => { setTip(val); setHasChanges(true); }}
                     keyboardType="decimal-pad"
+                    scrollEnabled={false}
                     style={{
                       width: 60,
                       fontSize: 16,

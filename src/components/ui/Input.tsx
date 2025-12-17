@@ -94,12 +94,14 @@ export function Input({
           numberOfLines={numberOfLines}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          scrollEnabled={multiline}
           style={[
             {
               flex: 1,
               fontSize: 16,
               color: themeColors.textPrimary,
               paddingVertical: 12,
+              textAlignVertical: multiline ? 'top' : 'center',
             },
             multiline && { minHeight: numberOfLines * 24 },
           ]}
@@ -199,11 +201,15 @@ export function CurrencyInput({
           autoFocus={autoFocus}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          scrollEnabled={false}
+          multiline={false}
           style={{
             flex: 1,
             fontSize: 28,
             fontWeight: '600',
             color: themeColors.textPrimary,
+            textAlignVertical: 'center',
+            padding: 0,
           }}
         />
       </Stack>

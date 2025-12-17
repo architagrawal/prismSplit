@@ -172,6 +172,7 @@ export default function QuickBillScreen() {
                   marginLeft: 4,
                 }}
                 placeholderTextColor={themeColors.textMuted}
+                scrollEnabled={false}
               />
             </XStack>
           </Stack>
