@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 
-import type { Bill, BillItem, ItemSplit, Category } from '@/types/models';
+import type { Bill, BillItem, ItemSplit, Category, BillItemWithSplits } from '@/types/models';
 import { demoBills, demoBillItems } from '@/lib/api/demo';
 
 interface BillDraft {
@@ -102,9 +102,78 @@ export const useBillsStore = create<BillsState>((set, get) => ({
   // Fetch bill items
   fetchBillItems: async (billId: string) => {
     try {
+      console.log('Fetching bill items for:', billId);
       await new Promise(resolve => setTimeout(resolve, 300));
+      
+      let rawItems = demoBillItems.filter(i => i.bill_id === billId);
+      console.log('Raw items found:', rawItems.length);
+      
+      // FALLBACK: If no items found for this bill (e.g. demo bills other than bill-1),
+      // reuse demoBillItems but assign them to this billId so the UI isn't empty.
+      if (rawItems.length === 0 && billId.startsWith('bill-')) {
+         console.log('Using fallback demo items for:', billId);
+         rawItems = demoBillItems.map(item => ({
+             ...item,
+             bill_id: billId,
+             id: `${billId}-${item.id}` // Ensure unique IDs
+         }));
+      }
+      
+      // Explode items with quantity > 1
+      const explodedItems: BillItemWithSplits[] = [];
+      
+      rawItems.forEach(item => {
+        if (item.quantity <= 1) {
+          explodedItems.push(item);
+        } else {
+          // Explode!
+          let remainingSplits = [...item.splits].map(s => ({...s})); // Deep copy splits to track remaining amounts
+          
+          for (let i = 0; i < item.quantity; i++) {
+            const newItemId = `${item.id}_${i}`;
+            const newItemPrice = item.price; // Unit price
+            
+            // Distribute splits to this unit
+            const newItemSplits: ItemSplit[] = [];
+            let currentUnitFilled = 0;
+            
+            // Greedily fill this unit with available splits
+            for (let sIndex = 0; sIndex < remainingSplits.length; sIndex++) {
+              const split = remainingSplits[sIndex];
+              if (split.amount <= 0.001) continue; // Skip exhausted splits
+              
+              const roomInUnit = newItemPrice - currentUnitFilled;
+              if (roomInUnit <= 0.001) break; // Unit full
+              
+              const allocateAmount = Math.min(split.amount, roomInUnit);
+              
+              newItemSplits.push({
+                ...split,
+                id: `${split.id}_${i}`, // Unique split ID
+                item_id: newItemId,
+                amount: allocateAmount,
+                percentage: (allocateAmount / newItemPrice) * 100,
+              });
+              
+              // Apply allocation
+              remainingSplits[sIndex].amount -= allocateAmount;
+              currentUnitFilled += allocateAmount;
+            }
+            
+            explodedItems.push({
+              ...item,
+              id: newItemId,
+              name: `${item.name} (${i + 1}/${item.quantity})`,
+              quantity: 1, // Force quantity to 1 for exploded items
+              splits: newItemSplits,
+            } as BillItemWithSplits);
+          }
+        }
+      });
+
+      console.log('Exploded items count:', explodedItems.length);
       set(state => ({
-        billItems: { ...state.billItems, [billId]: demoBillItems }
+        billItems: { ...state.billItems, [billId]: explodedItems }
       }));
     } catch (error) {
       console.error('Failed to fetch bill items:', error);

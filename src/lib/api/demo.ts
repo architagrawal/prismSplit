@@ -796,7 +796,7 @@ export const demoBillItems: BillItemWithSplits[] = [
     bill_id: 'bill-1',
     name: 'Organic Milk 2-pack',
     price: 8.99,
-    quantity: 1,
+    quantity: 2,
     sort_order: 0,
     splits: [
       { id: 's1', item_id: 'item-1', user_id: 'user-1', user: demoUsers[0], split_type: 'equal', amount: 4.5, percentage: null, color_index: 0 },

@@ -29,14 +29,17 @@ import type { BillItemWithSplits } from '@/types/models';
 
 export default function BillDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: rawId } = useLocalSearchParams<{ id: string }>();
+  const id = Array.isArray(rawId) ? rawId[0] : rawId; // Start with rawId
   const themeColors = useThemeColors();
   
   const { 
     currentBill, 
+    billItems,
     selectedItems, 
     isLoading,
     fetchBillById, 
+    fetchBillItems,
     toggleItemSelection, 
     confirmSelections,
     clearSelections
@@ -52,7 +55,6 @@ export default function BillDetailScreen() {
   const [selectedItem, setSelectedItem] = useState<BillItemWithSplits | null>(null);
   
   // Local storage for custom split overrides (until backend is connected)
-  // Key: itemId, Value: array of split participants with their amounts
   const [customSplits, setCustomSplits] = useState<Map<string, Array<{
     userId: string;
     colorIndex: number;
@@ -64,15 +66,18 @@ export default function BillDetailScreen() {
   const [customBillItems, setCustomBillItems] = useState<BillItemWithSplits[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Synced from store
+  const storeItems = id ? billItems[id] : undefined;
+  
   // Use custom items for rendering
-  const displayItems = customBillItems.length > 0 ? customBillItems : demoBillItems;
+  const displayItems = (customBillItems.length > 0 ? customBillItems : (storeItems || [])) as BillItemWithSplits[];
 
-  // Initialize custom items with demo data on load
+  // Initialize custom items with store data on load
   useEffect(() => {
-    if (demoBillItems.length > 0 && customBillItems.length === 0) {
-      setCustomBillItems([...demoBillItems]);
+    if (storeItems && storeItems.length > 0 && customBillItems.length === 0) {
+      setCustomBillItems([...storeItems as BillItemWithSplits[]]);
     }
-  }, []);
+  }, [storeItems]);
 
   const handleLocalAddItem = (name: string, price: number) => {
     const newItem: BillItemWithSplits = {
@@ -123,6 +128,7 @@ export default function BillDetailScreen() {
   useEffect(() => {
     if (id) {
       fetchBillById(id);
+      fetchBillItems(id);
     }
     // Clear selections when leaving screen
     return () => {
@@ -297,7 +303,9 @@ export default function BillDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     const isCurrentlySelected = selectedItems.has(itemId);
-    const item = demoBillItems.find(i => i.id === itemId);
+    
+    // Look up in displayItems (which includes exploded/fallback items)
+    const item = displayItems.find(i => i.id === itemId);
     
     if (!item) return;
     

@@ -13,7 +13,7 @@ export default function GroupDetailScreen() {
 
   return (
     <Screen padded={false} safeBottom={false}>
-      <GroupDetailContent groupId={id || ''} showBackButton={false} />
+      <GroupDetailContent groupId={id || ''} showBackButton={true} />
     </Screen>
   );
 }
