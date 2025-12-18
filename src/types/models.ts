@@ -64,6 +64,8 @@ export interface Bill {
   total_amount: number;
   tax_amount: number;
   tip_amount: number;
+  tax_split_mode?: 'equal' | 'proportional';
+  tip_split_mode?: 'equal' | 'proportional'; // Defaults to equal if undefined
   paid_by?: string;
   payer: { id: string; full_name: string }; // Partial user for display
   category: Category;

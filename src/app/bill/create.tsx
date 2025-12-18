@@ -44,6 +44,8 @@ export default function CreateBillScreen() {
   ]);
   const [tax, setTax] = useState('');
   const [tip, setTip] = useState('');
+  const [taxSplitMode, setTaxSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
+  const [tipSplitMode, setTipSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
 
   const nameRefs = useRef<(TextInput | null)[]>([]);
   const priceRefs = useRef<(TextInput | null)[]>([]);
@@ -83,6 +85,7 @@ export default function CreateBillScreen() {
   }, 0);
   const taxAmount = parseFloat(tax) || 0;
   const tipAmount = parseFloat(tip) || 0;
+  // In custom mode, tax/tip will become items, so valid total logic remains same
   const total = subtotal + taxAmount + tipAmount;
 
   const handleShare = async () => {
@@ -92,18 +95,51 @@ export default function CreateBillScreen() {
     }
 
     try {
+      let finalItems = items.map(i => ({
+        id: i.id,
+        name: i.name,
+        price: parseFloat(i.price) || 0,
+        quantity: parseInt(i.quantity) || 1,
+      }));
+      let finalTax = taxAmount;
+      let finalTip = tipAmount;
+      
+      let finalTaxSplitMode: 'equal' | 'proportional' | undefined = taxSplitMode === 'custom' ? undefined : taxSplitMode;
+      let finalTipSplitMode: 'equal' | 'proportional' | undefined = tipSplitMode === 'custom' ? undefined : tipSplitMode;
+
+      // Handle Custom Split Mode for Tax
+      if (taxSplitMode === 'custom' && taxAmount > 0) {
+        finalItems.push({
+          id: `tax-${Date.now()}`,
+          name: 'Tax',
+          price: taxAmount,
+          quantity: 1
+        });
+        finalTax = 0;
+        finalTaxSplitMode = undefined;
+      }
+
+      // Handle Custom Split Mode for Tip
+      if (tipSplitMode === 'custom' && tipAmount > 0) {
+        finalItems.push({
+          id: `tip-${Date.now()}`,
+          name: 'Tip',
+          price: tipAmount,
+          quantity: 1
+        });
+        finalTip = 0;
+        finalTipSplitMode = undefined;
+      }
+
       await createBill({
         title: billName,
         groupId: selectedGroup?.id || '',
         category: 'groceries',
-        items: items.map(i => ({
-          id: i.id,
-          name: i.name,
-          price: parseFloat(i.price) || 0,
-          quantity: parseInt(i.quantity) || 1,
-        })),
-        tax: taxAmount,
-        tip: tipAmount,
+        items: finalItems,
+        tax: finalTax,
+        tip: finalTip,
+        tax_split_mode: finalTaxSplitMode,
+        tip_split_mode: finalTipSplitMode,
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -269,69 +305,158 @@ export default function CreateBillScreen() {
             </Pressable>
           </YStack>
 
-          {/* Tax & Tip */}
-          <XStack gap="$3" marginBottom="$6">
-            <Stack flex={1}>
-              <CurrencyInput
-                label="Tax"
-                value={tax}
-                onChangeText={setTax}
-              />
-            </Stack>
-            <Stack flex={1}>
-              <CurrencyInput
-                label="Tip"
-                value={tip}
-                onChangeText={setTip}
-              />
-            </Stack>
-          </XStack>
-
-          {/* Totals */}
-          <Card variant="elevated" marginBottom="$6">
-            <YStack gap="$2">
-              <XStack justifyContent="space-between">
-                <Text color={themeColors.textSecondary}>Subtotal</Text>
-                <Text color={themeColors.textPrimary}>${subtotal.toFixed(2)}</Text>
-              </XStack>
-              {taxAmount > 0 && (
-                <XStack justifyContent="space-between">
-                  <Text color={themeColors.textSecondary}>Tax</Text>
-                  <Text color={themeColors.textPrimary}>${taxAmount.toFixed(2)}</Text>
-                </XStack>
-              )}
-              {tipAmount > 0 && (
-                <XStack justifyContent="space-between">
-                  <Text color={themeColors.textSecondary}>Tip</Text>
-                  <Text color={themeColors.textPrimary}>${tipAmount.toFixed(2)}</Text>
-                </XStack>
-              )}
-              <Stack height={1} backgroundColor={themeColors.border} marginVertical="$2" />
-              <XStack justifyContent="space-between">
-                <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
-                  Total
+          {/* Tax & Tip & Split Selector */}
+          <Card variant="surface" marginBottom="$4">
+            <YStack gap="$3">
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize={14} color={themeColors.textSecondary}>Subtotal</Text>
+                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+                  ${subtotal.toFixed(2)}
                 </Text>
-                <Text fontSize={18} fontWeight="700" color={themeColors.primary}>
+              </XStack>
+              
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize={14} color={themeColors.textSecondary}>Tax</Text>
+                <XStack alignItems="center" gap="$1">
+                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
+                  <TextInput
+                    placeholder="0.00"
+                    value={tax}
+                    onChangeText={setTax}
+                    keyboardType="decimal-pad"
+                    scrollEnabled={false}
+                    style={{
+                      minWidth: 60,
+                      fontSize: 16,
+                      color: themeColors.textPrimary,
+                      textAlign: 'right',
+                      padding: 0,
+                    }}
+                    placeholderTextColor={themeColors.textMuted}
+                  />
+                </XStack>
+              </XStack>
+              
+              {/* Tax Split Selector */}
+              {parseFloat(tax) > 0 && (
+                <XStack 
+                  backgroundColor={themeColors.surfaceElevated} 
+                  padding="$1" 
+                  borderRadius={8}
+                >
+                  {(['equal', 'proportional', 'custom'] as const).map((mode) => (
+                    <Pressable 
+                      key={`tax-${mode}`}
+                      style={{ flex: 1 }}
+                      onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setTaxSplitMode(mode);
+                      }}
+                    >
+                      <Stack 
+                        paddingVertical="$2" 
+                        alignItems="center"
+                        borderRadius={6}
+                        backgroundColor={taxSplitMode === mode ? themeColors.primary : 'transparent'}
+                      >
+                          <Text 
+                            fontSize={11} 
+                            fontWeight={taxSplitMode === mode ? '600' : '400'}
+                            color={taxSplitMode === mode ? 'white' : themeColors.textSecondary}
+                            textTransform="capitalize"
+                          >
+                            {mode}
+                          </Text>
+                      </Stack>
+                    </Pressable>
+                  ))}
+                </XStack>
+              )}
+
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize={14} color={themeColors.textSecondary}>Tip</Text>
+                <XStack alignItems="center" gap="$1">
+                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
+                  <TextInput
+                    placeholder="0.00"
+                    value={tip}
+                    onChangeText={setTip}
+                    keyboardType="decimal-pad"
+                    scrollEnabled={false}
+                    style={{
+                      minWidth: 60,
+                      fontSize: 16,
+                      color: themeColors.textPrimary,
+                      textAlign: 'right',
+                      padding: 0,
+                    }}
+                    placeholderTextColor={themeColors.textMuted}
+                  />
+                </XStack>
+              </XStack>
+
+              {/* Tip Split Selector */}
+              {parseFloat(tip) > 0 && (
+                <XStack 
+                  backgroundColor={themeColors.surfaceElevated} 
+                  padding="$1" 
+                  borderRadius={8}
+                >
+                  {(['equal', 'proportional', 'custom'] as const).map((mode) => (
+                    <Pressable 
+                      key={`tip-${mode}`}
+                      style={{ flex: 1 }}
+                      onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setTipSplitMode(mode);
+                      }}
+                    >
+                      <Stack 
+                        paddingVertical="$2" 
+                        alignItems="center"
+                        borderRadius={6}
+                        backgroundColor={tipSplitMode === mode ? themeColors.primary : 'transparent'}
+                      >
+                          <Text 
+                            fontSize={11} 
+                            fontWeight={tipSplitMode === mode ? '600' : '400'}
+                            color={tipSplitMode === mode ? 'white' : themeColors.textSecondary}
+                            textTransform="capitalize"
+                          >
+                            {mode}
+                          </Text>
+                      </Stack>
+                    </Pressable>
+                  ))}
+                </XStack>
+              )}
+
+              {(taxSplitMode === 'custom' || tipSplitMode === 'custom') && (
+                 <Text fontSize={11} color={themeColors.info} marginTop="$1" fontStyle="italic">
+                   *Custom splitting will convert amounts to bill items.
+                 </Text>
+              )}
+
+              <Stack height={1} backgroundColor={themeColors.border} marginVertical="$2" />
+
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>Total</Text>
+                <Text fontSize={20} fontWeight="700" color={themeColors.primary}>
                   ${total.toFixed(2)}
                 </Text>
               </XStack>
             </YStack>
           </Card>
-        </ScrollView>
 
-        {/* Footer */}
-        <Stack paddingVertical="$4">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            loading={isLoading}
+          <Button 
             onPress={handleShare}
-            disabled={!billName || items.every(i => !i.name || !i.price)}
+            disabled={isLoading}
+            size="lg"
           >
-            Share Bill
+            {isLoading ? 'Creating...' : 'Create & Share'}
           </Button>
-        </Stack>
+          <Stack height={24} />
+        </ScrollView>
       </YStack>
     </Screen>
   );

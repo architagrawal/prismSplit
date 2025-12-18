@@ -21,6 +21,8 @@ interface BillDraft {
   }>;
   tax: number;
   tip: number;
+  tax_split_mode?: 'equal' | 'proportional';
+  tip_split_mode?: 'equal' | 'proportional';
 }
 
 interface BillsState {
@@ -127,6 +129,8 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         total_amount: total,
         tax_amount: draft.tax,
         tip_amount: draft.tip,
+        tax_split_mode: draft.tax_split_mode || 'proportional', // Default to 'proportional' if not provided
+        tip_split_mode: draft.tip_split_mode || 'proportional', // Default to 'proportional' if not provided
         your_share: 0,
         bill_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
@@ -190,6 +194,8 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         items: [{ id: '1', name: '', price: 0, quantity: 1 }],
         tax: 0,
         tip: 0,
+        tax_split_mode: 'proportional',
+        tip_split_mode: 'proportional',
       },
     });
   },

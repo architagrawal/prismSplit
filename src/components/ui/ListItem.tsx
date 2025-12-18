@@ -390,74 +390,99 @@ export function ItemRow({
   };
 
   const totalPrice = price * quantity;
-  const unclaimed = participants.length === 0 ? 100 : 0;
+  const unclaimed = participants.length === 0 && !isSelected ? 100 : 0;
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable onPress={handlePress} onLongPress={onExpand} delayLongPress={400}>
       <Stack
-        backgroundColor={isSelected ? themeColors.surfaceElevated : themeColors.surface}
-        borderWidth={isSelected ? 2 : 1}
-        borderColor={isSelected ? themeColors.primary : themeColors.border}
-        borderRadius={12}
-        padding="$3"
-        gap="$2"
+        backgroundColor={isSelected ? themeColors.surfaceElevated : 'transparent'}
+        borderBottomWidth={1}
+        borderBottomColor={themeColors.border}
+        paddingHorizontal="$2"
+        paddingVertical="$2.5"
       >
-        {/* Top row */}
-        <Stack flexDirection="row" justifyContent="space-between" alignItems="center">
-          <Stack flex={1}>
-            <Text
-              fontSize={16}
-              fontWeight="500"
-              color={themeColors.textPrimary}
-            >
-              {name}
-            </Text>
-            {quantity > 1 && (
-              <Text
-                fontSize={12}
-                color={themeColors.textSecondary}
-              >
-                Qty: {quantity}
-              </Text>
-            )}
-          </Stack>
-          
-          <Text
-            fontSize={16}
-            fontWeight="600"
-            color={themeColors.primary}
+        <Stack flexDirection="row" alignItems="center" gap="$3">
+          {/* Selection Checkbox / Indicator */}
+          <Stack
+            width={22}
+            height={22}
+            borderRadius={11}
+            borderWidth={isSelected ? 0 : 2}
+            borderColor={themeColors.border}
+            backgroundColor={isSelected ? themeColors.primary : 'transparent'}
+            justifyContent="center"
+            alignItems="center"
           >
-            ${totalPrice.toFixed(2)}
-          </Text>
+            {isSelected && <Text fontSize={12} color="white">✓</Text>}
+          </Stack>
+
+          <Stack flex={1} gap="$1.5">
+            {/* Top Row: Name and Price */}
+            <Stack flexDirection="row" justifyContent="space-between" alignItems="baseline">
+              <Stack flexDirection="row" alignItems="baseline" gap="$2" flex={1}>
+                <Text
+                  fontSize={15}
+                  fontWeight="500"
+                  color={themeColors.textPrimary}
+                  numberOfLines={1}
+                >
+                  {name}
+                </Text>
+                {quantity > 1 && (
+                  <Text
+                    fontSize={12}
+                    color={themeColors.textSecondary}
+                  >
+                    x{quantity}
+                  </Text>
+                )}
+              </Stack>
+              
+              <Text
+                fontSize={15}
+                fontWeight="600"
+                color={isSelected ? themeColors.primary : themeColors.textPrimary}
+              >
+                ${totalPrice.toFixed(2)}
+              </Text>
+            </Stack>
+
+            {/* Bottom Row: Compact details */}
+            <Stack flexDirection="row" alignItems="center" justifyContent="space-between" gap="$3">
+               {/* Left: Avatars */}
+               <Stack flexDirection="row" alignItems="center" gap="$2">
+                  {participants.length > 0 ? (
+                    <AvatarGroup 
+                      users={participants.map(p => ({ name: p.name, colorIndex: p.colorIndex }))} 
+                      size="xs"
+                      max={3}
+                    />
+                  ) : (
+                     <Text
+                       fontSize={11}
+                       color={isSelected ? themeColors.textMuted : themeColors.warning}
+                       fontStyle="italic"
+                     >
+                       {isSelected ? 'Select to add' : 'Tap to select'}
+                     </Text>
+                  )}
+               </Stack>
+
+               {/* Right: Split bar (Flex) */}
+               <Stack flex={1} maxWidth={120}>
+                 <SplitBar
+                    segments={participants.map(p => ({
+                      userId: p.userId,
+                      colorIndex: p.colorIndex,
+                      percentage: p.percentage,
+                    }))}
+                    height={4}
+                    unclaimed={unclaimed}
+                  />
+               </Stack>
+            </Stack>
+          </Stack>
         </Stack>
-        
-        {/* Avatars */}
-        <Stack flexDirection="row" alignItems="center" gap="$2">
-          {participants.length > 0 ? (
-            <AvatarGroup 
-              users={participants.map(p => ({ name: p.name, colorIndex: p.colorIndex }))} 
-              size="sm" 
-            />
-          ) : (
-            <Text
-              fontSize={12}
-              color={themeColors.warning}
-            >
-              ⚠️ No one yet
-            </Text>
-          )}
-        </Stack>
-        
-        {/* Split bar */}
-        <SplitBar
-          segments={participants.map(p => ({
-            userId: p.userId,
-            colorIndex: p.colorIndex,
-            percentage: p.percentage,
-          }))}
-          height={4}
-          unclaimed={unclaimed}
-        />
       </Stack>
     </Pressable>
   );

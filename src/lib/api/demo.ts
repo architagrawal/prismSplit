@@ -243,7 +243,7 @@ export const demoBills: BillSummary[] = [
     title: 'Personal Amazon Order',
     total_amount: 45.99,
     tax_amount: 3.68,
-    tip_amount: 0,
+    tip_amount: 2.00,
     paid_by: 'user-1', // Alex paid
     payer: demoUsers[0],
     category: 'shopping',
@@ -262,7 +262,7 @@ export const demoBills: BillSummary[] = [
     title: 'Birthday Gift for Jordan',
     total_amount: 75.00,
     tax_amount: 6.00,
-    tip_amount: 0,
+    tip_amount: 2.00,
     paid_by: 'user-1', // Alex paid
     payer: demoUsers[0],
     category: 'other',
@@ -321,7 +321,7 @@ export const demoBills: BillSummary[] = [
     title: 'Costco Grocery Run',
     total_amount: 187.45,
     tax_amount: 12.45,
-    tip_amount: 0,
+    tip_amount: 1.00,
     paid_by: 'user-1', // Alex paid (current user) - "you lent"
     payer: demoUsers[0],
     category: 'groceries',

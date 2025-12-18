@@ -95,7 +95,7 @@ interface AvatarGroupProps {
     colorIndex: number;
   }>;
   max?: number;
-  size?: 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md';
 }
 
 export function AvatarGroup({ users, max = 3, size = 'sm' }: AvatarGroupProps) {
@@ -103,7 +103,9 @@ export function AvatarGroup({ users, max = 3, size = 'sm' }: AvatarGroupProps) {
   const displayed = users.slice(0, max);
   const overflow = users.length - max;
   const sizeStyle = sizes[size];
-  const overlap = size === 'sm' ? -8 : -12;
+  
+  // Calculate overlap based on size
+  const overlap = size === 'xs' ? -6 : size === 'sm' ? -8 : -12;
 
   return (
     <Stack flexDirection="row" alignItems="center">
@@ -131,7 +133,7 @@ export function AvatarGroup({ users, max = 3, size = 'sm' }: AvatarGroupProps) {
           backgroundColor={themeColors.border}
           justifyContent="center"
           alignItems="center"
-          borderWidth={size === 'sm' ? 1 : 2}
+          borderWidth={size === 'xs' ? 1 : size === 'sm' ? 1 : 2}
           borderColor={themeColors.background}
         >
           <Text

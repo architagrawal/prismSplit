@@ -8,19 +8,18 @@ import { useState, useEffect } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable, RefreshControl } from 'react-native';
-import { ArrowLeft, Share2, Check, Settings2, Plus, Pencil, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Share2, Settings2, Plus, Pencil, Trash2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { 
   Screen, 
   Card, 
   Avatar, 
-  AvatarGroup,
   BalanceBadge,
   Button,
-  SplitBar,
   CustomSplitModal,
-  AddItemModal
+  AddItemModal,
+  ItemRow
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useAuthStore, useUIStore } from '@/lib/store';
@@ -61,6 +60,65 @@ export default function BillDetailScreen() {
     percentage: number;
   }>>>(new Map());
 
+  // Handle add item locally
+  const [customBillItems, setCustomBillItems] = useState<BillItemWithSplits[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // Use custom items for rendering
+  const displayItems = customBillItems.length > 0 ? customBillItems : demoBillItems;
+
+  // Initialize custom items with demo data on load
+  useEffect(() => {
+    if (demoBillItems.length > 0 && customBillItems.length === 0) {
+      setCustomBillItems([...demoBillItems]);
+    }
+  }, []);
+
+  const handleLocalAddItem = (name: string, price: number) => {
+    const newItem: BillItemWithSplits = {
+      id: `new-${Date.now()}`,
+      bill_id: id || 'bill-1',
+      name,
+      price,
+      quantity: 1,
+      sort_order: customBillItems.length,
+      splits: [],
+      total_claimed: 0,
+      unclaimed: price,
+    };
+    setCustomBillItems(prev => [...prev, newItem]);
+    showToast({ type: 'success', message: 'Item added!' });
+  };
+
+  const handleLocalDeleteItem = (itemId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setCustomBillItems(prev => prev.filter(i => i.id !== itemId));
+    // Also remove from selections if present
+    if (selectedItems.has(itemId)) {
+      toggleItemSelection(itemId);
+    }
+    showToast({ type: 'success', message: 'Item deleted' });
+  };
+
+  const renderRightActions = (itemId: string) => {
+    return (
+      <Pressable 
+        style={{ 
+          backgroundColor: themeColors.error, 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          width: 80,
+          marginVertical: 4,
+          borderRadius: 12,
+          marginLeft: 8,
+        }}
+        onPress={() => handleLocalDeleteItem(itemId)}
+      >
+        <Trash2 size={24} color="white" />
+      </Pressable>
+    );
+  };
+
   // Fetch bill on mount
   useEffect(() => {
     if (id) {
@@ -100,35 +158,130 @@ export default function BillDetailScreen() {
 
   // Calculate user's share based on current selections and custom splits
   const calculateYourShare = () => {
-    let total = 0;
-    demoBillItems.forEach(item => {
-      // Check if we have custom splits for this item (from modal)
-      const customItemSplits = customSplits.get(item.id);
+    if (!bill) return { total: 0, items: 0, tax: 0, tip: 0 };
+    
+    let userItemShare = 0;
+    let totalBillItemCost = 0;
+    const billParticipants = new Set<string>();
+
+    displayItems.forEach(item => {
+      totalBillItemCost += item.price * item.quantity;
       
+      // Determine who is participating in this item
+      const customItemSplits = customSplits.get(item.id);
+      let itemParticipants: string[] = [];
+
       if (customItemSplits && customItemSplits.length > 0) {
-        // Use custom split amount from modal if available
+        itemParticipants = customItemSplits.map(s => s.userId);
+        
         const userSplit = customItemSplits.find(s => s.userId === (user?.id || 'current-user'));
         if (userSplit) {
-          total += userSplit.amount;
+          userItemShare += userSplit.amount;
         }
       } else if (selectedItems.has(item.id)) {
-        // Check if user has an existing split in demo data
-        const existingUserSplit = item.splits.find(s => s.user_id === user?.id);
+        // Current user is selected
+        // Check existing splits to finding other participants
+        const existingSplits = item.splits || [];
+        // All existing participants (excluding current user if they are already in there, to avoid double count logic below)
+        const otherParticipants = existingSplits.filter(s => s.user_id !== user?.id).map(s => s.user_id);
+        
+        // If user ID is in existing splits, they are already counted in 'existingSplits' length usually, 
+        // but here we are simulating the toggle.
+        // Simplified: Participants = Others + Self
+        itemParticipants = [...otherParticipants, (user?.id || 'current-user')];
+        
+        const existingUserSplit = existingSplits.find(s => s.user_id === user?.id);
         if (existingUserSplit) {
-          // Use the actual split amount from demo data
-          total += existingUserSplit.amount;
+          userItemShare += existingUserSplit.amount;
         } else {
-          // User just selected this item - calculate equal share
-          const otherParticipants = item.splits.filter(s => s.user_id !== user?.id).length;
-          const totalParticipants = otherParticipants + 1; // +1 for current user
-          total += item.price / Math.max(totalParticipants, 1);
+          // Equal split among all participants including self
+          userItemShare += (item.price * item.quantity) / Math.max(itemParticipants.length, 1);
+        }
+      } else {
+         // User not selected, check if others are
+         const existingSplits = item.splits || [];
+         itemParticipants = existingSplits.map(s => s.user_id);
+      }
+      
+      // Add to bill participants
+      itemParticipants.forEach(p => billParticipants.add(p));
+    });
+
+    // Add Tax and Tip independently
+    const taxAmount = bill.tax_amount || 0;
+    const tipAmount = bill.tip_amount || 0;
+    const taxMode = bill.tax_split_mode || 'proportional';
+    const tipMode = bill.tip_split_mode || 'proportional';
+    const participantCount = Math.max(billParticipants.size, 1);
+    const isUserParticipant = billParticipants.has(user?.id || 'current-user') || billParticipants.size === 0;
+
+    // Base share before tax/tip
+    const baseUserShare = userItemShare;
+
+    // Calculate Tax Share
+    if (taxAmount > 0 && isUserParticipant) {
+      if (taxMode === 'proportional') {
+         if (totalBillItemCost > 0) {
+           const userRatio = baseUserShare / totalBillItemCost;
+           userItemShare += taxAmount * userRatio;
+         }
+      } else {
+        // Equal Split
+        if (billParticipants.has(user?.id || 'current-user')) {
+           userItemShare += taxAmount / participantCount;
         }
       }
-    });
-    return total;
+    }
+
+    // Calculate Tip Share
+    if (tipAmount > 0 && isUserParticipant) {
+      if (tipMode === 'proportional') {
+         if (totalBillItemCost > 0) {
+           const userRatio = baseUserShare / totalBillItemCost;
+           userItemShare += tipAmount * userRatio; // This adds tip to the running total
+         }
+      } else {
+        // Equal Split
+         if (billParticipants.has(user?.id || 'current-user')) {
+           userItemShare += tipAmount / participantCount;
+        }
+      }
+    }
+
+    // Recalculate discrete parts for breakdown display
+    // Note: The above logic accumulated into userItemShare. To get clear breakdown, we should calculate parts separately.
+    
+    let finalItemShare = baseUserShare;
+    let finalTaxShare = 0;
+    let finalTipShare = 0;
+
+    // Redo Tax Calc for Breakdown
+    if (taxAmount > 0 && isUserParticipant) {
+        if (taxMode === 'proportional' && totalBillItemCost > 0) {
+            finalTaxShare = taxAmount * (baseUserShare / totalBillItemCost);
+        } else if (taxMode === 'equal' && billParticipants.has(user?.id || 'current-user')) {
+            finalTaxShare = taxAmount / participantCount;
+        }
+    }
+
+    // Redo Tip Calc for Breakdown
+    if (tipAmount > 0 && isUserParticipant) {
+        if (tipMode === 'proportional' && totalBillItemCost > 0) {
+            finalTipShare = tipAmount * (baseUserShare / totalBillItemCost);
+        } else if (tipMode === 'equal' && billParticipants.has(user?.id || 'current-user')) {
+             finalTipShare = tipAmount / participantCount;
+        }
+    }
+
+    return {
+        total: finalItemShare + finalTaxShare + finalTipShare,
+        items: finalItemShare,
+        tax: finalTaxShare,
+        tip: finalTipShare
+    };
   };
 
-  const yourShare = calculateYourShare();
+  const { total: yourShare, items: yourItemShare, tax: yourTaxShare, tip: yourTipShare } = calculateYourShare();
 
   // Helper to check if splits are equal (all same percentage)
   const areAllSplitsEqual = (splits: Array<{percentage: number}>) => {
@@ -137,7 +290,10 @@ export default function BillDetailScreen() {
     return splits.every(s => Math.abs(s.percentage - firstPercentage) < 1); // Allow 1% tolerance
   };
 
+  // ... (toggle logic remains same) ...
+
   const handleToggle = (itemId: string) => {
+    // ... existing handleToggle logic ...
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     const isCurrentlySelected = selectedItems.has(itemId);
@@ -311,65 +467,6 @@ export default function BillDetailScreen() {
     setTimeout(() => setRefreshing(false), 500);
   };
 
-  // Handle add item locally
-  const [customBillItems, setCustomBillItems] = useState<BillItemWithSplits[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-
-  // Initialize custom items with demo data on load
-  useEffect(() => {
-    if (demoBillItems.length > 0 && customBillItems.length === 0) {
-      setCustomBillItems([...demoBillItems]);
-    }
-  }, []);
-
-  const handleLocalAddItem = (name: string, price: number) => {
-    const newItem: BillItemWithSplits = {
-      id: `new-${Date.now()}`,
-      bill_id: id || 'bill-1',
-      name,
-      price,
-      quantity: 1,
-      sort_order: customBillItems.length,
-      splits: [],
-      total_claimed: 0,
-      unclaimed: price,
-    };
-    setCustomBillItems(prev => [...prev, newItem]);
-    showToast({ type: 'success', message: 'Item added!' });
-  };
-
-  const handleLocalDeleteItem = (itemId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setCustomBillItems(prev => prev.filter(i => i.id !== itemId));
-    // Also remove from selections if present
-    if (selectedItems.has(itemId)) {
-      toggleItemSelection(itemId);
-    }
-    showToast({ type: 'success', message: 'Item deleted' });
-  };
-
-  const renderRightActions = (itemId: string) => {
-    return (
-      <Pressable 
-        style={{ 
-          backgroundColor: themeColors.error, 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          width: 80,
-          marginVertical: 4,
-          borderRadius: 12,
-          marginLeft: 8,
-        }}
-        onPress={() => handleLocalDeleteItem(itemId)}
-      >
-        <Trash2 size={24} color="white" />
-      </Pressable>
-    );
-  };
-
-  // Use custom items for rendering
-  const displayItems = customBillItems.length > 0 ? customBillItems : demoBillItems;
-
   if (!bill) {
     return (
       <Screen>
@@ -392,9 +489,22 @@ export default function BillDetailScreen() {
             <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               {bill.title}
             </Text>
-            <Text fontSize={12} color={themeColors.textSecondary}>
-              Tap to join • Swipe to delete
-            </Text>
+            <XStack alignItems="center" gap="$2" marginTop="$1">
+               {(() => {
+                  const payerUser = demoUsers.find(u => u.id === bill.payer.id);
+                  return (
+                    <Avatar 
+                      name={bill.payer.full_name} 
+                      imageUrl={payerUser?.avatar_url}
+                      colorIndex={payerUser?.color_index ?? 0} 
+                      size="xs" 
+                    />
+                  );
+                })()}
+              <Text fontSize={12} color={themeColors.textSecondary}>
+                Paid by {bill.payer.full_name}
+              </Text>
+            </XStack>
           </YStack>
           <Pressable onPress={() => router.push(`/bill/edit?id=${id}`)}>
             <Pencil size={24} color={themeColors.textPrimary} />
@@ -418,33 +528,93 @@ export default function BillDetailScreen() {
                 <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
                   ${bill.total_amount.toFixed(2)}
                 </Text>
+                {(bill.tax_amount > 0 || bill.tip_amount > 0) && (
+                  <YStack marginTop="$1" paddingLeft={2}>
+                    {bill.tax_amount > 0 && (
+                      <XStack alignItems="center" gap={0} height={20}>
+                        <Stack width={20} height="100%" position="relative">
+                          {/* Vertical Line Part 1 (Top half) */}
+                          <Stack 
+                            width={1.0} 
+                            backgroundColor={themeColors.primary} 
+                            position="absolute" 
+                            left={5} 
+                            top={-2}
+                            bottom="50%"
+                          />
+                           {/* Vertical Line Part 2 (Bottom half - only if not last) */}
+                           {bill.tip_amount > 0 && (
+                             <Stack 
+                               width={1.0} 
+                               backgroundColor={themeColors.primary} 
+                               position="absolute" 
+                               left={5} 
+                               top="50%"
+                               bottom={0}
+                             />
+                           )}
+                          {/* Horizontal Line */}
+                          <Stack 
+                            height={1.0} 
+                            backgroundColor={themeColors.primary} 
+                            position="absolute" 
+                            left={5} 
+                            right={0} 
+                            top="50%"
+                          />
+                        </Stack>
+                        <XStack marginTop={-2} gap="$1" paddingLeft={4}>
+                          <XStack width={28} justifyContent="space-between">
+                            <Text fontSize={12} color={themeColors.textSecondary}>Tax</Text>
+                            <Text fontSize={12} color={themeColors.textSecondary}>:</Text>
+                          </XStack>
+                          <Text fontSize={12} color={themeColors.textSecondary}>${bill.tax_amount.toFixed(2)}</Text>
+                        </XStack>
+                      </XStack>
+                    )}
+                    {bill.tip_amount > 0 && (
+                      <XStack alignItems="center" gap={0} height={20}>
+                         <Stack width={20} height="100%" position="relative">
+                          {/* Vertical Line (Top to middle) */}
+                          <Stack 
+                            width={1.0} 
+                            backgroundColor={themeColors.primary} 
+                            position="absolute" 
+                            left={5} 
+                            top={-2} // Extend up to connect with previous sibling or parent
+                            bottom="50%"
+                          />
+                          {/* Horizontal Line */}
+                          <Stack 
+                            height={1.0} 
+                            backgroundColor={themeColors.primary} 
+                            position="absolute" 
+                            left={5} 
+                            right={0} 
+                            top="50%"
+                          />
+                        </Stack>
+                        <XStack marginTop={-2} gap="$1" paddingLeft={4}>
+                          <XStack width={28} justifyContent="space-between">
+                            <Text fontSize={12} color={themeColors.textSecondary}>Tip</Text>
+                            <Text fontSize={12} color={themeColors.textSecondary}>:</Text>
+                          </XStack>
+                          <Text fontSize={12} color={themeColors.textSecondary}>${bill.tip_amount.toFixed(2)}</Text>
+                        </XStack>
+                      </XStack>
+                    )}
+                  </YStack>
+                )}
               </YStack>
               <YStack alignItems="flex-end">
-                <Text fontSize={14} color={themeColors.textSecondary}>Your Share</Text>
-                <BalanceBadge amount={-yourShare} size="md" />
+                <Text fontSize={12} color={themeColors.textSecondary}>Your share</Text>
+                <Text fontSize={20} fontWeight="700" color={themeColors.primary}>
+                  ${yourShare.toFixed(2)}
+                </Text>
               </YStack>
             </XStack>
             
-            <Stack height={1} backgroundColor={themeColors.border} marginVertical="$3" />
-            
-            <XStack justifyContent="space-between" alignItems="center">
-              <XStack alignItems="center" gap="$2">
-                {(() => {
-                  const payerUser = demoUsers.find(u => u.id === bill.payer.id);
-                  return (
-                    <Avatar 
-                      name={bill.payer.full_name} 
-                      imageUrl={payerUser?.avatar_url}
-                      colorIndex={payerUser?.color_index ?? 0} 
-                      size="sm" 
-                    />
-                  );
-                })()}
-                <Text fontSize={14} color={themeColors.textSecondary}>
-                  Paid by {bill.payer.full_name}
-                </Text>
-              </XStack>
-            </XStack>
+
           </Card>
         </Stack>
         
@@ -528,76 +698,22 @@ export default function BillDetailScreen() {
                 renderRightActions={() => renderRightActions(item.id)}
                 overshootRight={false}
               >
-                <Pressable 
-                  onPress={() => handleToggle(item.id)}
-                  onLongPress={() => handleLongPress(item)}
-                  delayLongPress={400}
-                >
-                  <Card
-                    variant={isSelected ? 'elevated' : 'surface'}
-                    padding="$3"
-                    borderWidth={isSelected ? 2 : 1}
-                    borderColor={isSelected ? themeColors.primary : themeColors.border}
-                  >
-                    <XStack alignItems="center" gap="$3">
-                      <Stack
-                        width={24}
-                        height={24}
-                        borderRadius={12}
-                        backgroundColor={isSelected ? themeColors.primary : themeColors.border}
-                        justifyContent="center"
-                        alignItems="center"
-                      >
-                        {isSelected && <Check size={14} color="white" />}
-                      </Stack>
-                      
-                      <YStack flex={1} gap="$1">
-                        <XStack justifyContent="space-between" alignItems="center">
-                          <Text 
-                            fontSize={16} 
-                            fontWeight="500" 
-                            color={themeColors.textPrimary}
-                          >
-                            {item.name}
-                          </Text>
-                          <Text 
-                            fontSize={16} 
-                            fontWeight="600" 
-                            color={isSelected ? themeColors.primary : themeColors.textPrimary}
-                          >
-                            ${item.price.toFixed(2)}
-                          </Text>
-                        </XStack>
-                        
-                        <XStack alignItems="center" gap="$2">
-                          {segments.length > 0 ? (
-                            <AvatarGroup
-                              users={segments.map(s => ({
-                                name: s.userId === (user?.id || 'current-user') 
-                                  ? (user?.full_name || 'You')
-                                  : `User`, // In real app, would look up user name
-                                colorIndex: s.colorIndex,
-                              }))}
-                              size="sm"
-                            />
-                          ) : (
-                            <Text fontSize={12} color={themeColors.warning}>
-                              ⚠️ No one yet
-                            </Text>
-                          )}
-                        </XStack>
-                        
-                        <Stack marginTop="$1">
-                          <SplitBar
-                            segments={segments}
-                            height={4}
-                            unclaimed={!hasOtherParticipants && !isSelected ? 100 : 0}
-                          />
-                        </Stack>
-                      </YStack>
-                    </XStack>
-                  </Card>
-                </Pressable>
+                  <ItemRow
+                    name={item.name}
+                    price={item.price}
+                    quantity={item.quantity}
+                    participants={segments.map(s => ({
+                      userId: s.userId,
+                      name: s.userId === (user?.id || 'current-user') 
+                        ? (user?.full_name || 'You')
+                        : `User`, // In real app, would look up user name
+                      colorIndex: s.colorIndex,
+                      percentage: s.percentage,
+                    }))}
+                    isSelected={isSelected}
+                    onPress={() => handleToggle(item.id)}
+                    onExpand={() => handleLongPress(item)}
+                  />
               </Swipeable>
             );
           })}
@@ -616,11 +732,29 @@ export default function BillDetailScreen() {
           <Text fontSize={14} color={themeColors.textSecondary}>
             {selectedItems.size} items selected
           </Text>
-          <YStack alignItems="flex-end">
-            <Text fontSize={12} color={themeColors.textSecondary}>Your share</Text>
-            <Text fontSize={20} fontWeight="700" color={themeColors.primary}>
-              ${yourShare.toFixed(2)}
-            </Text>
+          <YStack alignItems="flex-start" gap="$1">
+            <XStack gap="$3" alignItems="flex-end">
+              <XStack width={40} justifyContent="space-between">
+                <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>Items</Text>
+              </XStack>
+              <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>${yourItemShare.toFixed(2)}</Text>
+            </XStack>
+            {yourTaxShare > 0 && (
+              <XStack gap="$3" alignItems="flex-end">
+                <XStack width={40} justifyContent="space-between">
+                  <Text fontSize={12} color={themeColors.textPrimary}>+ Tax</Text>
+                </XStack>
+                <Text fontSize={12} color={themeColors.textPrimary}>${yourTaxShare.toFixed(2)}</Text>
+              </XStack>
+            )}
+            {yourTipShare > 0 && (
+              <XStack gap="$3" alignItems="flex-end">
+                <XStack width={40} justifyContent="space-between">
+                  <Text fontSize={12} color={themeColors.textPrimary}>+ Tip</Text>
+                </XStack>
+                <Text fontSize={12} color={themeColors.textPrimary}>${yourTipShare.toFixed(2)}</Text>
+              </XStack>
+            )}
           </YStack>
         </XStack>
         
@@ -634,6 +768,8 @@ export default function BillDetailScreen() {
           Confirm Selections
         </Button>
       </Stack>
+
+
       
       {/* Custom Split Modal */}
       {selectedItem && (

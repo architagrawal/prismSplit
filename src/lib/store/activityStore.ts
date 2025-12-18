@@ -22,6 +22,7 @@ interface ActivityState {
   markAsRead: (activityId: string) => void;
   markAllAsRead: () => void;
   clearActivities: () => void;
+  addActivity: (activity: Activity) => void;
 }
 
 export const useActivityStore = create<ActivityState>((set, get) => ({
@@ -84,5 +85,13 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
   // Clear all activities
   clearActivities: () => {
     set({ activities: [], unreadCount: 0 });
+  },
+
+  // Add new activity (local only)
+  addActivity: (activity: Activity) => {
+    set(state => ({
+      activities: [activity, ...state.activities],
+      unreadCount: state.unreadCount + 1,
+    }));
   },
 }));
