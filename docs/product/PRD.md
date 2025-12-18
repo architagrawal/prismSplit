@@ -11,22 +11,24 @@
 
 **PrismSplit** is a modern expense-sharing application designed to replace Splitwise with a focus on **granular item-level splitting** and a clean, intuitive user experience. 
 
-### v1.0 Focus: Finance (Splitwise Replacement)
+### v1.0 Focus: Finance + "The Prism Core" Experience
 
-The MVP focuses on core expense splitting functionality — creating groups, logging bills with itemized splits, tracking balances, and settling up. This allows for a fast release cycle while laying the foundation for future features.
+The MVP combines core expense splitting with a unique, premium visual identity known as **"The Prism Core"**. It moves beyond utility to create a "glassmorphic" world where finance feels clear, weightless, and personal.
 
 ### Vision Statement
 
-> Make shared expenses effortless with intuitive item-level splitting and a beautiful, modern interface.
+> **"Refracting finance into clarity."**
+> Transform the stress of shared expenses into a beautiful, calming experience through light, glass, and seamless interaction.
 
 ### Key Differentiators (v1)
 
-| Feature | Splitwise | PrismSplit |
-|---------|-----------|------------|
-| Item-level splits | ❌ Basic | ✅ Per-item with mixed logic |
-| Modern UI/UX | Cluttered | Clean, intuitive |
-| Split types | Limited | Equal, personal, select people, percentage, custom |
-| Mobile-first | Both | ✅ React Native, beautiful design |
+| Feature | Splitwise | PrismSplit (The Prism Core) |
+|---------|-----------|-----------------------------|
+| **Visual Metaphor** | Green lists | **Living Crystal & Light** |
+| **Material** | Flat UI | **Glassmorphism & Refraction** |
+| **Gamification** | None | **"Clarity Ring"** (Peace of mind) |
+| **Personalization**| None | **"Spectral Auras"** (Social identity) |
+| **Input** | Manual forms | **"Speed Parser"** + Fluid Gestures |
 
 ---
 
@@ -89,6 +91,7 @@ Roommates and friend groups frequently share expenses for groceries, household s
 
 | Category | Features |
 |----------|----------|
+| **The Prism Core** 💎 | **Glassmorphic UI**, Gyroscope-reactive backgrounds, "Clarity Ring" avatar, Spectral Auras |
 | **Authentication** | Email/password, Google OAuth, session persistence |
 | **Groups** | Create, view, invite members, remove members, delete |
 | **Bills** | Create bill, add items, assign splits per item, edit/delete |
@@ -101,10 +104,9 @@ Roommates and friend groups frequently share expenses for groceries, household s
 
 | Version | Features |
 |---------|----------|
-| **v1.1** | Dark mode, push notifications, offline mode |
-| **v2.0** | 📦 **Pantry World** — Shopping lists, pre-purchase splits, inventory, stock status |
-| **v2.x** | Wormholes, Twin Worlds toggle, OCR receipt scanning |
-| **v3.0** | Payment integration (Venmo/PayPal), recurring bills, analytics |
+| **v1.1** | Push notifications, offline mode, recurring bills |
+| **v2.0** | 📦 **Pantry World**, OCR receipt scanning |
+| **v3.0** | Payment integration (Venmo/PayPal), advanced analytics |
 
 ---
 
@@ -798,6 +800,44 @@ PrismSplit v1 uses a simple bottom navigation with 4 tabs + center FAB.
 | Decision | Choice | Notes |
 |----------|--------|-------|
 | **Currency handling** | Single currency per group | Simplifies calculations |
+
+---
+
+### 24. The Prism Core Experience (New for v1.0) 💎
+
+> **Note:** These features define the unique "soul" of the application. They are P0 for launch to differentiate from competitors.
+
+#### 24.1 Glassmorphic Design System
+| Requirement | Priority | Description |
+|-------------|----------|-------------|
+| CORE-01 | P0 | **Glass Materials:** UI cards use blur/transparency to look like frosted glass panes floating over background |
+| CORE-02 | P0 | **Refraction:** Background elements (blobs/gradients) visible through glass cards |
+| CORE-03 | P1 | **Gyroscope Interaction:** Background gradient shifts slightly with phone tilt |
+| CORE-04 | P0 | **Light Source:** Consistent lighting direction (top-left) for highlights/shadows |
+
+#### 24.2 The Clarity Ring (Gamification)
+| Requirement | Priority | Description |
+|-------------|----------|-------------|
+| RING-01 | P0 | Avatar surrounded by a dynamic "Clarity Ring" |
+| RING-02 | P0 | **State - Chaos:** Ring fragmented/faint when user has unsettled debts > $50 |
+| RING-03 | P0 | **State - Focus:** Ring solid but dull when debts < $50 or pending confirmation |
+| RING-04 | P0 | **State - Clarity:** Ring glows/spins when user is 100% settled up |
+| RING-05 | P1 | Tapping ring shows "Clarity Score" summary |
+
+#### 24.3 Spectral Auras (Personalization)
+| Requirement | Priority | Description |
+|-------------|----------|-------------|
+| AURA-01 | P0 | User selects an "Aura" color palette during onboarding |
+| AURA-02 | P0 | Options: Neon (Pink/Blue), Forest (Green/Gold), Ocean (Teal/Foam), Sunset (Orange/Purple) |
+| AURA-03 | P0 | **Social Tint:** Bills created by a user appear with their Aura's glow in the feed |
+| AURA-04 | P1 | Profile screen themed to user's Aura |
+
+#### 24.4 Fluid Physics
+| Requirement | Priority | Description |
+|-------------|----------|-------------|
+| PHYS-01 | P0 | **Morphing Transitions:** Elements expand/collapse (shared element transitions) instead of sliding |
+| PHYS-02 | P1 | **Tactile Feedback:** Haptics used for "heavy" actions (paying, deleting) |
+| PHYS-03 | P1 | **Snap Scroll:** Lists have "weight" and settle with physics-based damping |
 | **Rounding** | Max 2 decimal places | Fractional cents distributed via round-robin |
 | **Debt simplification** | ❌ Disabled | Users see actual payment flows |
 | **Notifications** | Push notifications only | Clean and sufficient for MVP |
