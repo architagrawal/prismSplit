@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Animated, TextInput, Pressable, Keyboard, useWindowDimensions } from 'react-native';
+import { Animated, TextInput, Pressable, Keyboard } from 'react-native';
 import { XStack } from 'tamagui';
 import { Search, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -22,7 +22,7 @@ interface AnimatedSearchBarProps {
   value?: string;
   /** Animation duration in ms (default: 250) */
   animationDuration?: number;
-  /** Max width when expanded (optional override) */
+  /** Max width when expanded (default: 150) */
   expandedWidth?: number;
   /** Size of the search icon (default: 22) */
   iconSize?: number;
@@ -33,15 +33,10 @@ export function AnimatedSearchBar({
   onSearchChange,
   value,
   animationDuration = 250,
-  expandedWidth,
+  expandedWidth = 150,
   iconSize = 22,
 }: AnimatedSearchBarProps) {
   const themeColors = useThemeColors();
-  const { width: windowWidth } = useWindowDimensions();
-  
-  // Calculate responsive width if not provided
-  // Default to 45% of screen width, max cap at 300 for tablets
-  const finalExpandedWidth = expandedWidth ?? Math.min(windowWidth * 0.45, 300);
   
   // Search state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -101,7 +96,7 @@ export function AnimatedSearchBar({
   // Animated width for the search box
   const searchBoxWidth = searchAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, finalExpandedWidth],
+    outputRange: [0, expandedWidth],
   });
   
   // Animated opacity for the input content (hides instantly when closing)
