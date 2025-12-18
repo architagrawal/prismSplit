@@ -1,36 +1,38 @@
 /**
- * PrismSplit Home Dashboard
+ * PrismSplit Home Dashboard (Smart Feed - Functional)
  * 
- * Uses authStore, groupsStore, and activityStore.
+ * Focuses on delivering value: Context, Actions, and Insights.
+ * Uses standard UI components for stability.
  */
 
-import { useEffect } from 'react';
-import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
+import { useEffect, useState } from 'react';
+import { Stack, Text, YStack, XStack, ScrollView, Sheet } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { RefreshControl, Pressable } from 'react-native';
+import { RefreshControl, Pressable, Modal } from 'react-native';
 import { 
-  TrendingUp, 
-  TrendingDown, 
-  ArrowRight,
-  Plus,
-  Receipt,
+  AlertCircle,
   CheckCircle,
-  MousePointer
+  Zap,
+  TrendingUp,
+  ArrowRight,
+  Sparkles,
+  Wallet,
+  Plus,
+  X
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { 
   Screen, 
   Card,
-  BalanceCard, 
   Avatar, 
-  BalanceBadge,
   Button,
   GroupImage
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useAuthStore, useGroupsStore, useActivityStore } from '@/lib/store';
-import { demoBalances } from '@/lib/api/demo';
+import { useAuthStore, useGroupsStore, useActivityStore, useUIStore } from '@/lib/store';
+import { useSmartFeed, SmartFeedItem } from '@/hooks/useSmartFeed';
+import { SettleContent } from '@/components/settle/SettleContent';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -38,291 +40,263 @@ export default function HomeScreen() {
   const { user } = useAuthStore();
   const { groups, isLoading: groupsLoading, fetchGroups } = useGroupsStore();
   const { activities, isLoading: activitiesLoading, fetchActivities } = useActivityStore();
+  const { showToast } = useUIStore();
+  
+  // Consuming the Smart Logic
+  const { focusState, netBalance, feedItems, totalOwed, totalOwing } = useSmartFeed();
 
-  // Fetch data on mount
+  // Interaction State
+  const [settleModalVisible, setSettleModalVisible] = useState(false);
+  const [selectedSettleUserId, setSelectedSettleUserId] = useState<string>('');
+
   useEffect(() => {
     fetchGroups();
     fetchActivities();
   }, []);
-
-  // Calculate total balances
-  const totalOwed = demoBalances
-    .filter(b => b.balance > 0)
-    .reduce((sum, b) => sum + b.balance, 0);
-  const totalOwing = demoBalances
-    .filter(b => b.balance < 0)
-    .reduce((sum, b) => sum + Math.abs(b.balance), 0);
-  const netBalance = totalOwed - totalOwing;
 
   const onRefresh = () => {
     fetchGroups();
     fetchActivities();
   };
 
+  const handleAction = (item: SmartFeedItem) => {
+     Haptics.selectionAsync();
+     
+     if (item.actionType === 'modal' && item.actionPayload) {
+        setSelectedSettleUserId(item.actionPayload);
+        setSettleModalVisible(true);
+     } else if (item.actionType === 'navigate' && item.actionPayload) {
+        router.push(item.actionPayload as any);
+     } else if (item.actionType === 'toast' && item.actionPayload) {
+        showToast({ type: 'success', message: item.actionPayload });
+     }
+  };
+
   const firstName = user?.full_name?.split(' ')[0] || 'there';
 
-  const handleGroupPress = (groupId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/(tabs)/group/${groupId}` as any);
+  // --- UI COMPONENTS ---
+
+  const FocusHeader = () => {
+    let greeting = "Welcome back,";
+    let statusColor = themeColors.textPrimary;
+    
+    if (focusState === 'debt') {
+      greeting = "Attention needed,";
+      statusColor = themeColors.error;
+    } else if (focusState === 'lender') {
+      greeting = "Doing great,";
+      statusColor = themeColors.success;
+    } else {
+      greeting = "All settled,";
+    }
+
+    return (
+      <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
+        <XStack justifyContent="space-between" alignItems="center">
+          <YStack>
+            <Text fontSize={14} color={themeColors.textSecondary} fontWeight="500">
+              {greeting}
+            </Text>
+            <Text fontSize={32} fontWeight="700" color={statusColor} letterSpacing={-0.5}>
+              {firstName}
+            </Text>
+          </YStack>
+          <Pressable onPress={() => router.push('/profile' as any)}>
+            <Avatar 
+              name={user?.full_name || 'User'}
+              colorIndex={user?.color_index || 0}
+              size="lg"
+            />
+          </Pressable>
+        </XStack>
+      </Stack>
+    );
+  };
+
+  const FocusPrismCard = () => (
+    <Card 
+       padding="$4" 
+       backgroundColor={themeColors.surface} 
+       borderWidth={1} 
+       borderColor={focusState === 'debt' ? themeColors.errorBg : themeColors.border}
+       shadowColor={focusState === 'debt' ? themeColors.error : themeColors.primary}
+       shadowOpacity={0.05}
+    >
+      <YStack alignItems="center" gap="$2">
+        <Text fontSize={12} color={themeColors.textSecondary} textTransform="uppercase" letterSpacing={1}>
+           {focusState === 'debt' ? 'TOTAL OUTSTANDING' : focusState === 'lender' ? 'TOTAL OWED TO YOU' : 'CURRENT BALANCE'}
+        </Text>
+        <Text 
+           fontSize={42} 
+           fontWeight="800" 
+           color={focusState === 'debt' ? themeColors.error : focusState === 'lender' ? themeColors.success : themeColors.textPrimary}
+        >
+           ${Math.abs(netBalance).toFixed(2)}
+        </Text>
+        
+        {netBalance !== 0 && (
+           <Text fontSize={14} color={themeColors.textMuted}>
+              {focusState === 'debt' ? `You owe across ${groups.length} groups` : `Pending from friends`}
+           </Text>
+        )}
+
+        {/* Primary Action Button based on context */}
+        <Stack marginTop="$3" width="100%">
+           {focusState === 'debt' ? (
+              <Button 
+                variant="primary" 
+                size="md" 
+                fullWidth 
+                icon={<Wallet size={16} color="white"/>}
+                onPress={() => {
+                   // Find the user we owe the most to for the main button
+                   const topDebt = feedItems.find(i => i.type === 'urgent');
+                   if (topDebt) handleAction(topDebt);
+                }}
+              >
+                 Pay All Debt
+              </Button>
+           ) : focusState === 'lender' ? (
+              <Button 
+                variant="outlined" 
+                size="md" 
+                fullWidth
+                onPress={() => showToast({ type: 'success', message: 'Reminders sent! 📨'})}
+              >
+                 Send Reminders
+              </Button>
+           ) : (
+              <Button variant="secondary" size="md" fullWidth icon={<Sparkles size={16} color={themeColors.textPrimary}/>}>
+                 Plan Activity
+              </Button>
+           )}
+        </Stack>
+      </YStack>
+    </Card>
+  );
+
+  const TopCircle = () => (
+    <YStack gap="$3" marginTop="$2">
+       <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary} paddingHorizontal="$4">
+          Top Circle
+       </Text>
+       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 16 }}>
+          {/* Add New */}
+          <Pressable onPress={() => router.push('/group/create' as any)}>
+             <YStack alignItems="center" gap="$2" width={60}>
+                <Stack width={56} height={56} borderRadius={28} backgroundColor={themeColors.surfaceElevated} justifyContent="center" alignItems="center" borderWidth={1} borderColor={themeColors.border} style={{borderStyle: 'dashed'}}>
+                   <Plus size={24} color={themeColors.textMuted} />
+                </Stack>
+                <Text fontSize={12} color={themeColors.textSecondary} numberOfLines={1}>New</Text>
+             </YStack>
+          </Pressable>
+
+          {/* Top Groups */}
+          {groups.slice(0, 5).map(g => (
+             <Pressable key={g.id} onPress={() => router.push(`/(tabs)/group/${g.id}` as any)}>
+                <YStack alignItems="center" gap="$2" width={70}>
+                   <Stack width={56} height={56} borderRadius={28} overflow="hidden" borderWidth={2} borderColor={themeColors.border}>
+                      <GroupImage groupId={g.id} size="lg" />
+                   </Stack>
+                   <Text fontSize={12} fontWeight="600" color={themeColors.textPrimary} numberOfLines={1} textAlign="center">
+                      {g.name}
+                   </Text>
+                </YStack>
+             </Pressable>
+          ))}
+       </ScrollView>
+    </YStack>
+  );
+
+  const SmartFeedCard = ({ item }: { item: SmartFeedItem }) => {
+     const Icon = item.iconName === 'alert-circle' ? AlertCircle : item.iconName === 'check-circle' ? CheckCircle : item.iconName === 'zap' ? Zap : TrendingUp;
+     
+     return (
+        <Card padding="$3" borderWidth={0} backgroundColor={themeColors.surface}>
+           <XStack gap="$3" alignItems="center">
+              <Stack 
+                 width={40} height={40} borderRadius={12} 
+                 backgroundColor={item.type === 'urgent' ? themeColors.errorBg : themeColors.surfaceElevated} 
+                 justifyContent="center" alignItems="center"
+              >
+                 <Icon size={20} color={item.color} />
+              </Stack>
+              
+              <YStack flex={1} gap="$1">
+                 <Text fontSize={15} fontWeight="600" color={themeColors.textPrimary}>{item.title}</Text>
+                 <Text fontSize={13} color={themeColors.textSecondary} numberOfLines={2}>{item.subtitle}</Text>
+              </YStack>
+
+              {item.actionLabel && (
+                 <Button 
+                    size="sm" 
+                    variant={item.type === 'urgent' ? 'primary' : 'outlined'} 
+                    onPress={() => handleAction(item)}
+                 >
+                    {item.actionLabel}
+                 </Button>
+              )}
+           </XStack>
+        </Card>
+     );
   };
 
   return (
     <Screen scroll padded={false}>
       <ScrollView
-        refreshControl={
-          <RefreshControl 
-            refreshing={groupsLoading || activitiesLoading} 
-            onRefresh={onRefresh} 
-          />
-        }
+        refreshControl={<RefreshControl refreshing={groupsLoading || activitiesLoading} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* Header */}
-        <Stack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$4">
-          <XStack justifyContent="space-between" alignItems="center">
-            <YStack>
-              <Text fontSize={14} color={themeColors.textSecondary}>
-                Welcome back,
-              </Text>
-              <Text fontSize={28} fontWeight="700" color={themeColors.textPrimary}>
-                {firstName}
-              </Text>
-            </YStack>
-            <Pressable onPress={() => router.push('/profile' as any)}>
-              <Avatar 
-                name={user?.full_name || 'User'}
-                colorIndex={user?.color_index || 0}
-                size="lg"
-              />
-            </Pressable>
-          </XStack>
-        </Stack>
-
-        {/* Balance Summary */}
+        <FocusHeader />
+        
         <Stack paddingHorizontal="$4" marginBottom="$6">
-          <BalanceCard type={netBalance >= 0 ? 'owed' : 'owing'}>
-            <YStack alignItems="center" gap="$1">
-              <Text fontSize={14} color={themeColors.textSecondary}>
-                Overall Balance
+           <FocusPrismCard />
+        </Stack>
+
+        <TopCircle />
+
+        <Stack paddingHorizontal="$4" marginTop="$6" marginBottom="$4">
+           <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+              <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
+                 Smart Updates
               </Text>
-              <BalanceBadge amount={netBalance} size="lg" />
-            </YStack>
-            
-            <XStack 
-              justifyContent="space-around" 
-              marginTop="$4" 
-              paddingTop="$4"
-              borderTopWidth={1}
-              borderTopColor={themeColors.border}
-            >
-              <YStack alignItems="center" gap="$1">
-                <XStack alignItems="center" gap="$1">
-                  <TrendingUp size={16} color={themeColors.success} />
-                  <Text fontSize={12} color={themeColors.textSecondary}>
-                    You're owed
-                  </Text>
-                </XStack>
-                <Text fontSize={18} fontWeight="600" color={themeColors.success}>
-                  ${totalOwed.toFixed(2)}
-                </Text>
-              </YStack>
-              
-              <Stack width={1} backgroundColor={themeColors.border} />
-              
-              <YStack alignItems="center" gap="$1">
-                <XStack alignItems="center" gap="$1">
-                  <TrendingDown size={16} color={themeColors.error} />
-                  <Text fontSize={12} color={themeColors.textSecondary}>
-                    You owe
-                  </Text>
-                </XStack>
-                <Text fontSize={18} fontWeight="600" color={themeColors.error}>
-                  ${totalOwing.toFixed(2)}
-                </Text>
-              </YStack>
-            </XStack>
-          </BalanceCard>
-        </Stack>
+              {feedItems.some(i => i.type === 'urgent') && (
+                 <Stack backgroundColor={themeColors.error} paddingHorizontal="$2" paddingVertical="$1" borderRadius={8}>
+                    <Text fontSize={10} color="white" fontWeight="700">ACTION NEEDED</Text>
+                 </Stack>
+              )}
+           </XStack>
 
-        {/* Quick Actions */}
-        <Stack paddingHorizontal="$4" marginBottom="$6">
-          <XStack gap="$3">
-            <Stack flex={1}>
-              <Button
-                variant="primary"
-                size="md"
-                fullWidth
-                icon={<Plus size={20} color="white" />}
-                onPress={() => router.push('/bill/create' as any)}
-              >
-                New Bill
-              </Button>
-            </Stack>
-            <Stack flex={1}>
-              <Button
-                variant="outlined"
-                size="md"
-                fullWidth
-                onPress={() => router.push('/(tabs)/groups' as any)}
-              >
-                View Groups
-              </Button>
-            </Stack>
-          </XStack>
-        </Stack>
-
-        {/* Recent Groups */}
-        <Stack paddingHorizontal="$4" marginBottom="$6">
-          <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
-              Your Groups
-            </Text>
-            <Pressable onPress={() => router.push('/(tabs)/groups' as any)}>
-              <XStack alignItems="center" gap="$1">
-                <Text fontSize={14} color={themeColors.primary}>See all</Text>
-                <ArrowRight size={16} color={themeColors.primary} />
-              </XStack>
-            </Pressable>
-          </XStack>
-          
-          <YStack>
-            {groups.slice(0, 3).map((group, index) => (
-              <Pressable 
-                key={group.id}
-                onPress={() => handleGroupPress(group.id)}
-              >
-                <XStack 
-                  alignItems="center" 
-                  gap="$3"
-                  paddingVertical="$3"
-                  borderBottomWidth={index === Math.min(groups.length, 3) - 1 ? 0 : 1}
-                  borderBottomColor={themeColors.border}
-                >
-                  <GroupImage groupId={group.id} size="md" />
-                  <YStack flex={1}>
-                    <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                      {group.name}
-                    </Text>
-                    <Text fontSize={13} color={themeColors.textMuted}>
-                      {group.member_count} members
-                    </Text>
-                  </YStack>
-                  <BalanceBadge amount={group.your_balance || 0} size="sm" />
-                </XStack>
-              </Pressable>
-            ))}
-            {groups.length === 0 && !groupsLoading && (
-              <YStack alignItems="center" paddingVertical="$6" gap="$3">
-                <Text fontSize={16} color={themeColors.textSecondary}>
-                  No groups yet
-                </Text>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onPress={() => router.push('/group/create' as any)}
-                >
-                  Create Group
-                </Button>
-              </YStack>
-            )}
-          </YStack>
-        </Stack>
-
-        {/* Recent Activity */}
-        <Stack paddingHorizontal="$4" marginBottom="$8">
-          <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-            <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
-              Recent Activity
-            </Text>
-            <Pressable onPress={() => router.push('/(tabs)/activity' as any)}>
-              <XStack alignItems="center" gap="$1">
-                <Text fontSize={14} color={themeColors.primary}>See all</Text>
-                <ArrowRight size={16} color={themeColors.primary} />
-              </XStack>
-            </Pressable>
-          </XStack>
-          
-          <YStack>
-            {activities.slice(0, 3).map((activity, index) => {
-              // Get activity icon
-              const getIcon = () => {
-                switch (activity.type) {
-                  case 'bill_created':
-                    return <Receipt size={16} color={themeColors.primary} />;
-                  case 'item_selected':
-                    return <MousePointer size={16} color={themeColors.primary} />;
-                  case 'settlement_created':
-                    return <CheckCircle size={16} color={themeColors.success} />;
-                  default:
-                    return <Receipt size={16} color={themeColors.primary} />;
-                }
-              };
-              
-              return (
-                <XStack 
-                  key={activity.id} 
-                  alignItems="center" 
-                  gap="$3"
-                  paddingVertical="$3"
-                  borderBottomWidth={index === Math.min(activities.length, 3) - 1 ? 0 : 1}
-                  borderBottomColor={themeColors.border}
-                >
-                  <Avatar 
-                    name={activity.user.full_name}
-                    imageUrl={activity.user.avatar_url}
-                    colorIndex={activity.user.color_index ?? 0}
-                    size="md"
-                  />
-                  <YStack flex={1}>
-                    <Text fontSize={14} fontWeight="500" color={themeColors.textPrimary}>
-                      {activity.user.full_name}
-                    </Text>
-                    <Text fontSize={12} color={themeColors.textSecondary}>
-                      {activity.type === 'bill_created' && 'Created a bill'}
-                      {activity.type === 'item_selected' && 'Selected items'}
-                      {activity.type === 'settlement_created' && 'Settled up'}
-                    </Text>
-                  </YStack>
-                  
-                  {/* Group Image with Icon Badge */}
-                  <YStack alignItems="center" gap="$1">
-                    <Stack position="relative">
-                      <GroupImage groupId={activity.group.id} size="sm" />
-                      <Stack
-                        position="absolute"
-                        top={0}
-                        left={0}
-                        right={0}
-                        bottom={0}
-                        justifyContent="center"
-                        alignItems="center"
-                      >
-                        <Stack
-                          width={24}
-                          height={24}
-                          borderRadius={12}
-                          backgroundColor={themeColors.surface}
-                          justifyContent="center"
-                          alignItems="center"
-                          shadowColor="#000"
-                          shadowOffset={{ width: 0, height: 1 }}
-                          shadowOpacity={0.2}
-                          shadowRadius={2}
-                        >
-                          {getIcon()}
-                        </Stack>
-                      </Stack>
-                    </Stack>
-                    <Text fontSize={10} color={themeColors.textMuted} numberOfLines={1}>
-                      {activity.group.name}
-                    </Text>
-                  </YStack>
-                </XStack>
-              );
-            })}
-          </YStack>
+           <YStack gap="$3">
+              {feedItems.map(item => (
+                 <SmartFeedCard key={item.id} item={item} />
+              ))}
+              {feedItems.length === 0 && (
+                 <Text color={themeColors.textMuted} textAlign="center">You're all caught up!</Text>
+              )}
+           </YStack>
         </Stack>
       </ScrollView>
+
+      {/* Settle Modal */}
+      <Modal
+        visible={settleModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSettleModalVisible(false)}
+      >
+        <Stack flex={1} backgroundColor={themeColors.background} paddingTop="$4">
+           <XStack justifyContent="flex-end" paddingHorizontal="$4" marginBottom="$2">
+              <Pressable onPress={() => setSettleModalVisible(false)}>
+                 <Stack backgroundColor={themeColors.surfaceElevated} padding="$2" borderRadius={20}>
+                    <X size={24} color={themeColors.textPrimary} />
+                 </Stack>
+              </Pressable>
+           </XStack>
+           <SettleContent userId={selectedSettleUserId} showBackButton={false} />
+        </Stack>
+      </Modal>
     </Screen>
   );
 }
