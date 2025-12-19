@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 
 import type { Bill, BillItem, ItemSplit, Category, BillItemWithSplits } from '@/types/models';
-import { demoBills, demoBillItems } from '@/lib/api/demo';
+import { demoBills, demoBillItems, demoGroupMembers } from '@/lib/api/demo';
 
 interface BillDraft {
   title: string;
@@ -25,6 +25,7 @@ interface BillDraft {
   discount?: number; // Overall discount
   tax_split_mode?: 'equal' | 'proportional';
   tip_split_mode?: 'equal' | 'proportional';
+  participantIds?: string[]; // IDs of users involved in the split (for simple mode)
 }
 
 interface BillsState {
@@ -214,7 +215,13 @@ export const useBillsStore = create<BillsState>((set, get) => ({
           id: 'current-user',
           full_name: 'You',
         },
-        participant_avatars: [],
+        participant_avatars: draft.participantIds && draft.participantIds.length > 0 
+          ? (demoGroupMembers[draft.groupId] || [])
+              .filter(m => draft.participantIds?.includes(m.user_id))
+              .map(m => m.user.avatar_url || '')
+              .filter(url => url !== '')
+              .slice(0, 3) 
+          : [], 
       };
       
       set(state => ({

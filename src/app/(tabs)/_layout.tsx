@@ -17,8 +17,7 @@ import {
   User,
   UserCircle,
   Plus,
-  Zap,
-  FileText
+  Receipt
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
@@ -70,12 +69,7 @@ function FabOverlay() {
     });
   };
 
-  const handleQuickBill = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    closeMenu(() => router.push('/bill/quick' as any));
-  };
-
-  const handleDetailedBill = () => {
+  const handleNewExpense = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     closeMenu(() => router.push('/bill/create' as any));
   };
@@ -189,47 +183,9 @@ function FabOverlay() {
           </Stack>
         </Pressable>
 
-        {/* Quick Bill Option */}
+        {/* New Expense Option (Unified) */}
         <Pressable 
-          onPress={handleQuickBill} 
-          style={({pressed}) => [
-            styles.menuItem, 
-            { backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent' }
-          ]}
-        >
-          <Stack
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            paddingHorizontal="$4"
-            paddingVertical="$3"
-            borderBottomWidth={1}
-            borderColor={themeColors.border}
-          >
-            <Stack
-              width={40}
-              height={40}
-              borderRadius={20}
-              backgroundColor={themeColors.accent}
-              justifyContent="center"
-              alignItems="center"
-            >
-              <Zap size={20} color={themeColors.primary} />
-            </Stack>
-            <YStack>
-              <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                Quick Bill
-              </Text>
-              <Text fontSize={12} color={themeColors.textSecondary}>
-                Simple expense, no items
-              </Text>
-            </YStack>
-          </Stack>
-        </Pressable>
-
-        {/* Detailed Bill Option */}
-        <Pressable 
-          onPress={handleDetailedBill} 
+          onPress={handleNewExpense} 
           style={({pressed}) => [
             styles.menuItem, 
             { backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent' }
@@ -250,14 +206,14 @@ function FabOverlay() {
               justifyContent="center"
               alignItems="center"
             >
-              <FileText size={20} color={themeColors.primary} />
+              <Receipt size={20} color={themeColors.primary} />
             </Stack>
             <YStack>
               <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                Detailed Bill
+                New Expense
               </Text>
               <Text fontSize={12} color={themeColors.textSecondary}>
-                Itemized with Speed Parser
+                Smart bill creation
               </Text>
             </YStack>
           </Stack>
@@ -395,7 +351,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    // marginTop: -28, // Removed since handled by absolute positioning in overlay
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -406,14 +361,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '39%', // Maintained 45% coverage
+    height: '39%', // Maintained same coverage
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
   },
   menuContainer: {
     position: 'absolute',
-    // bottom handled dynamically
     left: 24,
     right: 24,
     alignItems: 'center',
