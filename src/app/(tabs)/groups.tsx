@@ -199,7 +199,7 @@ export default function GroupsScreen() {
               return (
                 <Pressable 
                   key={group.id}
-                  onPress={() => router.push(`/(tabs)/group/${group.id}` as any)}
+                  onPress={() => router.push(`/group/${group.id}` as any)}
                 >
                   <XStack
                     paddingHorizontal="$4"

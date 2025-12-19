@@ -4,12 +4,14 @@
  * Uses billsStore for selections.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Pressable, RefreshControl } from 'react-native';
+import { Pressable, RefreshControl, Platform, UIManager, Animated } from 'react-native';
 import { ArrowLeft, Share2, Settings2, Plus, Pencil, Trash2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import Reanimated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+
 
 import { 
   Screen, 
@@ -26,6 +28,13 @@ import { useBillsStore, useAuthStore, useUIStore } from '@/lib/store';
 import { demoBillItems, currentUser, demoGroupMembers, demoUsers } from '@/lib/api/demo';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import type { BillItemWithSplits } from '@/types/models';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
 
 export default function BillDetailScreen() {
   const router = useRouter();
@@ -52,7 +61,22 @@ export default function BillDetailScreen() {
   
   // Custom split modal state
   const [showSplitModal, setShowSplitModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<BillItemWithSplits | null>(null);
+  const [selectedItem, setSelectedItem] = useState<(BillItemWithSplits & { collapsedIds?: string[] }) | null>(null);
+  
+  // Track swipeable refs to close others when one opens
+  const swipeableRows = useRef<Map<string, Swipeable>>(new Map());
+  const prevOpenedRow = useRef<Swipeable | null>(null);
+
+  const closePrevOpenedRow = (currentId?: string) => {
+    if (prevOpenedRow.current && prevOpenedRow.current !== swipeableRows.current.get(currentId || '')) {
+      prevOpenedRow.current.close();
+    }
+    if (currentId) {
+        prevOpenedRow.current = swipeableRows.current.get(currentId) || null;
+    } else {
+        prevOpenedRow.current = null;
+    }
+  };
   
   // Local storage for custom split overrides (until backend is connected)
   const [customSplits, setCustomSplits] = useState<Map<string, Array<{
@@ -71,6 +95,82 @@ export default function BillDetailScreen() {
   
   // Use custom items for rendering
   const displayItems = (customBillItems.length > 0 ? customBillItems : (storeItems || [])) as BillItemWithSplits[];
+
+  // Group items for display: Collapse identical selected items
+  const groupedDisplayItems = useMemo(() => {
+    const selectedGroups = new Map<string, BillItemWithSplits[]>();
+    
+    // Helper to strip (1/3) suffix for grouping
+    const normalizeName = (name: string) => name.replace(/\s\(\d+\/\d+\)$/, '');
+
+    // Helper to generate key based on EXISTING participants (excluding current user)
+    const getParticipantsKey = (item: BillItemWithSplits) => {
+        // Check custom splits first, then fallback to item splits
+        const currentSplits = customSplits.get(item.id);
+        
+        let participants: string[] = [];
+        if (currentSplits) {
+            participants = currentSplits.map(s => s.userId);
+        } else {
+            participants = item.splits.map(s => s.user_id);
+        }
+
+        // Filter out current user to find "other" participants
+        const otherParticipants = participants.filter(uid => uid !== (user?.id || 'current-user'));
+        
+        // Sort to ensure consistency (UserA, UserB is same as UserB, UserA)
+        otherParticipants.sort();
+        return otherParticipants.join(',');
+    };
+
+    // First pass: collect all selected items into groups
+    displayItems.forEach(item => {
+      if (selectedItems.has(item.id)) {
+        const cleanName = normalizeName(item.name);
+        // Key now includes participants to prevent merging items with different existing splits
+        const participantsKey = getParticipantsKey(item);
+        const key = `${cleanName}-${item.price}-${participantsKey}`;
+        
+        if (!selectedGroups.has(key)) selectedGroups.set(key, []);
+        selectedGroups.get(key)!.push(item);
+      }
+    });
+
+    const result: (BillItemWithSplits & { isCollapsed?: boolean; collapsedIds?: string[] })[] = [];
+    const processedGroupKeys = new Set<string>();
+
+    displayItems.forEach(item => {
+      if (selectedItems.has(item.id)) {
+        const cleanName = normalizeName(item.name);
+        const participantsKey = getParticipantsKey(item);
+        const key = `${cleanName}-${item.price}-${participantsKey}`;
+        
+        if (!processedGroupKeys.has(key)) {
+          const group = selectedGroups.get(key)!;
+          if (group.length > 1) {
+            // Create collapsed item
+            result.push({
+              ...item,
+              id: `collapsed-${key}`,
+              name: cleanName, // Use clean name for display
+              quantity: group.reduce((sum, i) => sum + i.quantity, 0),
+              isCollapsed: true,
+              collapsedIds: group.map(i => i.id),
+            });
+          } else {
+            result.push(item);
+          }
+          processedGroupKeys.add(key);
+        }
+      } else {
+        result.push(item);
+      }
+    });
+    
+    return result;
+  }, [displayItems, selectedItems, customSplits]); // Add customSplits dependency to re-group on changes
+
+
 
   // Initialize custom items with store data on load
   useEffect(() => {
@@ -95,32 +195,62 @@ export default function BillDetailScreen() {
     showToast({ type: 'success', message: 'Item added!' });
   };
 
-  const handleLocalDeleteItem = (itemId: string) => {
+  // Handle deleting items (single or multiple)
+  const handleLocalDeleteItem = (idsInput: string | string[]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setCustomBillItems(prev => prev.filter(i => i.id !== itemId));
+    const idsToDelete = new Set(Array.isArray(idsInput) ? idsInput : [idsInput]);
+    
+    setCustomBillItems(prev => prev.filter(i => !idsToDelete.has(i.id)));
+    
     // Also remove from selections if present
-    if (selectedItems.has(itemId)) {
-      toggleItemSelection(itemId);
-    }
-    showToast({ type: 'success', message: 'Item deleted' });
+    idsToDelete.forEach(id => {
+      if (selectedItems.has(id)) {
+        toggleItemSelection(id);
+      }
+    });
+
+    showToast({ type: 'success', message: idsToDelete.size > 1 ? 'Items deleted' : 'Item deleted' });
   };
 
-  const renderRightActions = (itemId: string) => {
+  // Animated swipe action (Growth effect)
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>,
+    item: BillItemWithSplits & { collapsedIds?: string[] }
+  ) => {
+    // Grow from small (scale) as it expands
+    const scale = progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1], 
+      extrapolate: 'clamp'
+    });
+
     return (
-      <Pressable 
-        style={{ 
-          backgroundColor: themeColors.error, 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          width: 80,
+      <Animated.View
+        style={{
+          width: 56,
+          justifyContent: 'center',
+          alignItems: 'center',
           marginVertical: 4,
-          borderRadius: 12,
           marginLeft: 8,
+          // Use transform to scale it up
+          transform: [{ scale: scale }],
         }}
-        onPress={() => handleLocalDeleteItem(itemId)}
       >
-        <Trash2 size={24} color="white" />
-      </Pressable>
+        <Pressable 
+          style={{ 
+            backgroundColor: themeColors.error, 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            width: '100%',
+            height: '100%',
+            borderRadius: 12,
+          }}
+          onPress={() => handleLocalDeleteItem(item.collapsedIds || item.id)}
+        >
+          <Trash2 size={20} color="white" />
+        </Pressable>
+      </Animated.View>
     );
   };
 
@@ -425,7 +555,7 @@ export default function BillDetailScreen() {
   };
 
   // Long press to open custom split modal
-  const handleLongPress = (item: BillItemWithSplits) => {
+  const handleLongPress = (item: BillItemWithSplits & { collapsedIds?: string[] }) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedItem(item);
     setShowSplitModal(true);
@@ -434,22 +564,55 @@ export default function BillDetailScreen() {
   // Handle custom split confirmation
   const handleCustomSplitConfirm = (participants: any[]) => {
     if (selectedItem) {
-      // Save custom splits to local state
       const newCustomSplits = new Map(customSplits);
-      newCustomSplits.set(selectedItem.id, participants.map(p => ({
-        userId: p.userId,
-        colorIndex: p.colorIndex,
-        amount: p.amount,
-        percentage: p.percentage,
-      })));
+      
+      // Define helper to apply split to a single item ID works for both single and bulk
+      const applySplitToId = (targetId: string, itemPrice: number) => {
+         const splitData = participants.map(p => ({
+            userId: p.userId,
+            colorIndex: p.colorIndex,
+            // Recalculate amount based on item price to ensure precision if bulk edit has different totals
+            // But here itemPrice is the UNIT price for single items.
+            // If we have percentages from modal, use them.
+            amount: (itemPrice * p.percentage) / 100, 
+            percentage: p.percentage,
+         }));
+         newCustomSplits.set(targetId, splitData);
+      };
+
+      if (selectedItem.collapsedIds && selectedItem.collapsedIds.length > 0) {
+        // Bulk apply to all collapsed items
+        // We assume all items in the group have the same price (enforced by grouping logic)
+        // selectedItem.price is the UNIT price in our grouping logic reference? 
+        // Wait, in grouping logic: result.push({ ...item, quantity: sum }). item.price is unit price.
+        // So selectedItem.price is correct.
+        selectedItem.collapsedIds.forEach(id => {
+            applySplitToId(id, selectedItem.price);
+        });
+      } else {
+        // Single item apply
+        applySplitToId(selectedItem.id, selectedItem.price);
+      }
+      
       setCustomSplits(newCustomSplits);
       
-      // Select the item if not already selected and current user is in the split
+      // Logic to toggle selection state if needed
+      // If bulk, toggle all if needed.
       const currentUserInSplit = participants.some(p => p.userId === (user?.id || 'current-user'));
-      if (currentUserInSplit && !selectedItems.has(selectedItem.id)) {
-        toggleItemSelection(selectedItem.id);
-      } else if (!currentUserInSplit && selectedItems.has(selectedItem.id)) {
-        toggleItemSelection(selectedItem.id); // Deselect if removed from split
+      
+      const toggleLogic = (targetId: string) => {
+          const isSel = selectedItems.has(targetId);
+          if (currentUserInSplit && !isSel) {
+            toggleItemSelection(targetId);
+          } else if (!currentUserInSplit && isSel) {
+            toggleItemSelection(targetId);
+          }
+      };
+
+      if (selectedItem.collapsedIds) {
+          selectedItem.collapsedIds.forEach(id => toggleLogic(id));
+      } else {
+          toggleLogic(selectedItem.id);
       }
     }
     
@@ -526,6 +689,10 @@ export default function BillDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => {
+          // Close any open row on scroll
+          closePrevOpenedRow();
+        }}
       >
         {/* Bill Summary */}
         <Stack paddingHorizontal="$4" marginBottom="$4">
@@ -655,77 +822,110 @@ export default function BillDetailScreen() {
         </Stack>
 
         {/* Items List */}
-        <YStack paddingHorizontal="$4" gap="$3" paddingBottom="$4">
-          {displayItems.map((item) => {
-            const isSelected = selectedItems.has(item.id);
-            
-            // Check if we have custom splits for this item (from modal)
-            const customItemSplits = customSplits.get(item.id);
-            
-            let segments: Array<{userId: string; colorIndex: number; percentage: number}>;
-            let hasOtherParticipants: boolean;
-            
-            if (customItemSplits && customItemSplits.length > 0) {
-              // Use custom splits from modal
-              segments = customItemSplits.map(s => ({
-                userId: s.userId,
-                colorIndex: s.colorIndex,
-                percentage: s.percentage,
-              }));
-              hasOtherParticipants = segments.some(s => s.userId !== (user?.id || 'current-user'));
-            } else {
-              // Fall back to demo data splits
-              const otherParticipants = item.splits.filter(s => s.user_id !== user?.id);
-              const currentUserSplit = item.splits.find(s => s.user_id === user?.id);
-              hasOtherParticipants = otherParticipants.length > 0;
-              
-              // Build segments from demo data
-              segments = otherParticipants.map(s => ({
-                userId: s.user_id,
-                colorIndex: s.color_index,
-                percentage: (s.amount / item.price) * 100,
-              }));
-              
-              // Add current user to segments if they are selected
-              if (isSelected) {
-                const userPercentage = currentUserSplit 
-                  ? (currentUserSplit.amount / item.price) * 100
-                  : 100 / (otherParticipants.length + 1);
-                
-                segments.push({
-                  userId: user?.id || 'current-user',
-                  colorIndex: user?.color_index || 0,
-                  percentage: userPercentage,
-                });
-              }
-            }
+        <Pressable 
+            style={{ flex: 1 }} 
+            onPress={() => closePrevOpenedRow()} // Close on tap outside
+        >
+            <YStack paddingHorizontal="$4" gap="$3" paddingBottom="$4">
 
-            return (
-              <Swipeable
+
+
+
+            {groupedDisplayItems.map((item, index) => {
+                const isSelected = item.isCollapsed ? true : selectedItems.has(item.id);
+                
+                // For collapsed items, we don't calculate complex segments yet, just show 'You'
+                let segments: Array<{userId: string; colorIndex: number; percentage: number}> = [];
+
+                if (item.isCollapsed) {
+                     segments = [{
+                        userId: user?.id || 'current-user',
+                        colorIndex: user?.color_index || 0,
+                        percentage: 100
+                     }];
+                } else {
+                    // Check if we have custom splits for this item (from modal)
+                    const customItemSplits = customSplits.get(item.id);
+                    
+                    if (customItemSplits && customItemSplits.length > 0) {
+                    // Use custom splits from modal
+                    segments = customItemSplits.map(s => ({
+                        userId: s.userId,
+                        colorIndex: s.colorIndex,
+                        percentage: s.percentage,
+                    }));
+                    } else {
+                    // Fall back to demo data splits
+                    const otherParticipants = item.splits.filter(s => s.user_id !== user?.id);
+                    const currentUserSplit = item.splits.find(s => s.user_id === user?.id);
+                    
+                    // Build segments from demo data
+                    segments = otherParticipants.map(s => ({
+                        userId: s.user_id,
+                        colorIndex: s.color_index,
+                        percentage: (s.amount / item.price) * 100,
+                    }));
+                    
+                    // Add current user to segments if they are selected
+                    if (isSelected) {
+                        const userPercentage = currentUserSplit 
+                        ? (currentUserSplit.amount / item.price) * 100
+                        : 100 / (otherParticipants.length + 1);
+                        
+                        segments.push({
+                        userId: user?.id || 'current-user',
+                        colorIndex: user?.color_index || 0,
+                        percentage: userPercentage,
+                        });
+                    }
+                    }
+                }
+
+                return (
+              <Reanimated.View 
                 key={item.id}
-                renderRightActions={() => renderRightActions(item.id)}
-                overshootRight={false}
+                layout={LinearTransition}
+                exiting={FadeOut}
               >
-                  <ItemRow
-                    name={item.name}
-                    price={item.price}
-                    quantity={item.quantity}
-                    participants={segments.map(s => ({
-                      userId: s.userId,
-                      name: s.userId === (user?.id || 'current-user') 
-                        ? (user?.full_name || 'You')
-                        : `User`, // In real app, would look up user name
-                      colorIndex: s.colorIndex,
-                      percentage: s.percentage,
-                    }))}
-                    isSelected={isSelected}
-                    onPress={() => handleToggle(item.id)}
-                    onExpand={() => handleLongPress(item)}
-                  />
-              </Swipeable>
+                <Swipeable
+                  ref={ref => {
+                      if (ref && !swipeableRows.current.has(item.id)) {
+                           swipeableRows.current.set(item.id, ref);
+                      }
+                  }}
+                  renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
+                  overshootRight={false}
+                  onSwipeableWillOpen={() => closePrevOpenedRow(item.id)}
+                >
+                    <ItemRow
+                        name={item.name}
+                        price={item.price}
+                        quantity={item.quantity}
+                        participants={segments.map(s => ({
+                        userId: s.userId,
+                        name: s.userId === (user?.id || 'current-user') 
+                            ? (user?.full_name || 'You')
+                            : `User`, // In real app, would look up user name
+                        colorIndex: s.colorIndex,
+                        percentage: s.percentage,
+                        }))}
+                        isSelected={isSelected}
+                        onPress={() => {
+                          if (item.isCollapsed && item.collapsedIds) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            item.collapsedIds.forEach(id => handleToggle(id));
+                          } else {
+                            handleToggle(item.id);
+                          }
+                        }}
+                        onExpand={() => handleLongPress(item)}
+                    />
+                </Swipeable>
+              </Reanimated.View>
             );
-          })}
-        </YStack>
+            })}
+            </YStack>
+        </Pressable>
       </ScrollView>
 
       {/* Footer */}
@@ -789,10 +989,18 @@ export default function BillDetailScreen() {
           }}
           onConfirm={handleCustomSplitConfirm}
           itemName={selectedItem.name}
-          itemPrice={selectedItem.price}
+          itemPrice={selectedItem.price * (selectedItem.quantity || 1)}
           currentParticipants={(() => {
-            const localSplits = customSplits.get(selectedItem.id);
+            // Determine which ID to look up in customSplits
+            // If it's a collapsed item, look up the first constituent ID
+            const lookupId = (selectedItem.collapsedIds && selectedItem.collapsedIds.length > 0)
+              ? selectedItem.collapsedIds[0]
+              : selectedItem.id;
+
+            const localSplits = customSplits.get(lookupId);
+            
             if (localSplits) {
+              const totalEntityPrice = selectedItem.price * (selectedItem.quantity || 1);
               return localSplits.map(s => ({
                 userId: s.userId,
                 user: allMembers.find(m => m.user_id === s.userId)?.user || { 
@@ -805,16 +1013,21 @@ export default function BillDetailScreen() {
                 },
                 colorIndex: s.colorIndex,
                 percentage: s.percentage,
-                amount: s.amount,
+                // Scale amount to the TOTAL price of the group
+                amount: (totalEntityPrice * s.percentage) / 100,
+                // Shares = proportion of total quantity
+                shares: parseFloat(((s.percentage / 100) * (selectedItem.quantity || 1)).toFixed(2)),
                 locked: false,
               }));
             }
+            // Fallback to item.splits
             return selectedItem.splits.map(s => ({
               userId: s.user_id,
               user: s.user,
               colorIndex: s.color_index,
               percentage: (s.amount / selectedItem.price) * 100,
-              amount: s.amount,
+              amount: s.amount * (selectedItem.quantity || 1), // Scale demo amount too
+              shares: parseFloat((((s.amount / selectedItem.price) * (selectedItem.quantity || 1))).toFixed(2)),
               locked: false,
             }));
           })()}

@@ -591,7 +591,7 @@ export function CustomSplitModal({
       title="Unsaved Changes"
       message="You have changes that haven't been saved yet."
       buttons={[
-        { text: 'Discard Changes', style: 'destructive', onPress: () => { setShowConfirmDialog(false); onClose(); } },
+        { text: 'Discard', style: 'destructive', onPress: () => { setShowConfirmDialog(false); onClose(); } },
         { text: 'Save', style: 'primary', onPress: () => { setShowConfirmDialog(false); handleConfirm(); } },
       ]}
       onDismiss={() => setShowConfirmDialog(false)}

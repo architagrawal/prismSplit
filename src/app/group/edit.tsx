@@ -150,7 +150,7 @@ export default function EditGroupScreen() {
         title="Unsaved Changes"
         message="You have changes that haven't been saved yet."
         buttons={[
-          { text: 'Discard Changes', style: 'destructive', onPress: () => { setShowConfirmDialog(false); router.back(); } },
+          { text: 'Discard', style: 'destructive', onPress: () => { setShowConfirmDialog(false); router.back(); } },
           { text: 'Save', style: 'primary', onPress: () => { setShowConfirmDialog(false); handleSave(); } },
         ]}
         onDismiss={() => setShowConfirmDialog(false)}

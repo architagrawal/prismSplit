@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { Pressable, RefreshControl, SectionList, BackHandler } from 'react-native';
+import { Pressable, RefreshControl, SectionList } from 'react-native';
 import { 
   ArrowLeft, 
   Settings, 
@@ -171,22 +171,7 @@ export function GroupDetailContent({
     }
   }, [groupId]);
 
-  // Handle hardware back button
-  useEffect(() => {
-    if (showBackButton) {
-      const backAction = () => {
-        router.replace('/(tabs)/groups');
-        return true; // prevent default behavior
-      };
 
-      const backHandler = BackHandler.addEventListener(
-        'hardwareBackPress',
-        backAction
-      );
-
-      return () => backHandler.remove();
-    }
-  }, [showBackButton, router]);
 
   const group = currentGroup;
   const groupMembers = members[groupId || ''] || demoGroupMembers[groupId || ''] || [];
@@ -259,7 +244,7 @@ export function GroupDetailContent({
       {/* Top bar with back/settings */}
       <XStack justifyContent={showBackButton ? "space-between" : "flex-end"} alignItems="center" marginBottom="$2">
         {showBackButton && (
-          <Pressable onPress={() => router.replace('/(tabs)/groups')}>
+          <Pressable onPress={() => router.back()}>
             <ArrowLeft size={24} color={themeColors.textPrimary} />
           </Pressable>
         )}

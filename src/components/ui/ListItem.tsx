@@ -395,7 +395,7 @@ export function ItemRow({
   return (
     <Pressable onPress={handlePress} onLongPress={onExpand} delayLongPress={400}>
       <Stack
-        backgroundColor={isSelected ? themeColors.surfaceElevated : 'transparent'}
+        backgroundColor={isSelected ? themeColors.surfaceElevated : themeColors.surface}
         borderBottomWidth={1}
         borderBottomColor={themeColors.border}
         paddingHorizontal="$2"

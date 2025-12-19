@@ -94,7 +94,7 @@ export default function FriendsScreen() {
 
   const handleFriendPress = (userId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/(tabs)/settle/${userId}` as any);
+    router.push(`/settle/${userId}` as any);
   };
 
   const handleRemindPress = (userId: string) => {
