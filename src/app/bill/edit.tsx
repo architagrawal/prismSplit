@@ -289,6 +289,7 @@ export default function BillEditScreen() {
                         value={item.quantity}
                         onChangeText={(val) => handleItemChange(index, 'quantity', val)}
                         keyboardType="number-pad"
+                        selectTextOnFocus={true}
                         style={{
                             fontSize: 18,
                             fontWeight: '600',
@@ -337,6 +338,7 @@ export default function BillEditScreen() {
                                 value={item.unitPrice}
                                 onChangeText={(val) => handleItemChange(index, 'unitPrice', val)}
                                 keyboardType="decimal-pad"
+                                selectTextOnFocus={true}
                                 style={{
                                     fontSize: 14,
                                     color: themeColors.textPrimary,
@@ -355,6 +357,7 @@ export default function BillEditScreen() {
                                 value={item.discount}
                                 onChangeText={(val) => handleItemChange(index, 'discount', val)}
                                 keyboardType="decimal-pad"
+                                selectTextOnFocus={true}
                                 style={{
                                     fontSize: 14,
                                     color: themeColors.error, 
@@ -444,13 +447,13 @@ export default function BillEditScreen() {
                             <Stack
                               paddingHorizontal="$3"
                               paddingVertical="$2"
-                              borderRadius={20}
+                              borderRadius={12}
                               backgroundColor={category === cat.key 
                                 ? `${themeColors.primary}20` 
-                                : themeColors.surface
+                                : themeColors.surfaceElevated
                               }
                               borderWidth={1}
-                              borderColor={category === cat.key ? themeColors.primary : themeColors.border}
+                              borderColor={category === cat.key ? themeColors.primary : 'transparent'}
                             >
                               <XStack alignItems="center" gap="$1">
                                 <Text fontSize={16}>{cat.icon}</Text>
@@ -542,6 +545,7 @@ export default function BillEditScreen() {
                             value={discount}
                             onChangeText={(val) => { setDiscount(val); setHasChanges(true); }}
                             keyboardType="decimal-pad"
+                            selectTextOnFocus={true}
                             style={{
                                 padding: 8,
                                 minWidth: 60,
@@ -578,6 +582,7 @@ export default function BillEditScreen() {
                             value={tax}
                             onChangeText={(val) => { setTax(val); setHasChanges(true); }}
                             keyboardType="decimal-pad"
+                            selectTextOnFocus={true}
                             style={{
                                 padding: 8,
                                 minWidth: 60,
@@ -610,6 +615,7 @@ export default function BillEditScreen() {
                             value={tip}
                             onChangeText={(val) => { setTip(val); setHasChanges(true); }}
                             keyboardType="decimal-pad"
+                            selectTextOnFocus={true}
                             style={{
                                 padding: 8,
                                 minWidth: 60,

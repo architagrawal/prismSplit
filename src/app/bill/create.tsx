@@ -4,7 +4,7 @@
  * Uses billsStore for draft management.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { TextInput, Pressable, KeyboardAvoidingView, Platform, LayoutAnimation } from 'react-native';
@@ -59,7 +59,7 @@ export default function CreateBillScreen() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
   
   // Start with EMPTY items for "Simple Mode"
-  const [items, setItems] = useState<{ id: string; name: string; unitPrice: string; discount: string; quantity: string }[]>([]);
+  const [items, setItems] = useState<{ id: string; name: string; unitPrice: string; discount: string; quantity: string; locked?: 'price' | 'total' }[]>([]);
   
   const [tax, setTax] = useState('');
   const [tip, setTip] = useState('');
@@ -100,7 +100,7 @@ export default function CreateBillScreen() {
     const newId = String(Date.now()); // safe id
     
     // Just add an empty item row
-    setItems([...items, { id: newId, name: '', unitPrice: '', discount: '', quantity: '1' }]);
+    setItems([...items, { id: newId, name: '', unitPrice: '', discount: '', quantity: '1', locked: 'price' }]);
 
     
     // Auto-focus logic
@@ -110,10 +110,41 @@ export default function CreateBillScreen() {
     }, 100);
   };
 
-  const updateItem = (id: string, field: string, value: string) => {
-    setItems(items.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
-    ));
+  const updateItem = (id: string, field: string, value: string, newLock?: 'price' | 'total') => {
+    setItems(items.map(item => {
+      if (item.id !== id) return item;
+
+      const updatedLock = newLock || item.locked || 'price'; // Default to price lock if not changing
+      let updates: any = { [field]: value, locked: updatedLock };
+
+      // SMART CALCULATION LOGIC:
+      // If we are updating Quantity or Discount, and the LOCK is on TOTAL,
+      // we must adjust UNIT PRICE to keep the Total constant.
+      if ((field === 'quantity' || field === 'discount') && updatedLock === 'total') {
+            const qty = field === 'quantity' ? (parseInt(value) || 0) : (parseInt(item.quantity) || 0);
+            const disc = field === 'discount' ? (parseFloat(value) || 0) : (parseFloat(item.discount) || 0);
+            
+            // Calculate current Total (Target) based on OLD values if not changing total directly
+            // Wait, if locked is Total, we assume the Current Line Total is the target.
+            // Price = (TargetTotal + Discount) / Qty
+            
+            // We need the Target Total. 
+            // Since we haven't changed UnitPrice yet, the "current" total is: `item.unitPrice * item.quantity - item.discount`.
+            // BUT this "current" total is what we want to PRESERVE.
+            
+            const currentPrice = parseFloat(item.unitPrice) || 0;
+            const currentQty = parseInt(item.quantity) || 0;
+            const currentDisc = parseFloat(item.discount) || 0;
+            const targetTotal = (currentPrice * currentQty) - currentDisc;
+
+            if (qty > 0) {
+                 const newUnitPrice = (targetTotal + disc) / qty;
+                 updates.unitPrice = newUnitPrice.toFixed(2);
+            }
+      }
+      
+      return { ...item, ...updates };
+    }));
   };
 
   const deleteItem = (id: string) => {
@@ -285,134 +316,7 @@ export default function CreateBillScreen() {
     }
   };
 
-  const renderItemRow = (item: typeof items[0], index: number) => {
-    const unitPrice = parseFloat(item.unitPrice) || 0;
-    const qty = parseInt(item.quantity) || 0;
-    const discount = parseFloat(item.discount) || 0;
-    const lineTotal = (unitPrice * qty) - discount;
 
-    return (
-        <Stack 
-            key={item.id} 
-            borderBottomWidth={index < items.length - 1 ? 1 : 0}
-            borderBottomColor={themeColors.border}
-            paddingVertical="$4"
-            paddingHorizontal="$4"
-            backgroundColor={themeColors.surface}
-        >
-            <XStack gap="$3">
-                {/* COLUMN 1: Quantity */}
-                <Stack width={40} justifyContent="center" alignItems="center">
-                    <TextInput
-                        placeholder="1"
-                        value={item.quantity}
-                        onChangeText={(v) => updateItem(item.id, 'quantity', v)}
-                        keyboardType="number-pad"
-                        scrollEnabled={false}
-                        style={{
-                            fontSize: 18,
-                            fontWeight: '600',
-                            color: themeColors.primary,
-                            textAlign: 'center',
-                            padding: 0,
-                            width: '100%'
-                        }}
-                    />
-                </Stack>
-
-                {/* COLUMN 2: Name & Details */}
-                <YStack flex={1} gap="$2">
-                    {/* ROW 1: Name | Trash */}
-                    <XStack alignItems="center" gap="$2">
-                        <TextInput
-                            ref={(ref) => { nameRefs.current[index] = ref; }}
-                            placeholder="Item Name"
-                            placeholderTextColor={themeColors.textMuted}
-                            value={item.name}
-                            onChangeText={(v) => updateItem(item.id, 'name', v)}
-                            returnKeyType="next"
-                            scrollEnabled={false}
-                            onSubmitEditing={() => priceRefs.current[index]?.focus()}
-                            style={{
-                                flex: 1,
-                                fontSize: 16,
-                                fontWeight: '500',
-                                color: themeColors.textPrimary,
-                                paddingVertical: 0
-                            }}
-                        />
-
-                        <Pressable 
-                            onPress={() => deleteItem(item.id)}
-                            style={{ padding: 4, opacity: 0.6 }}
-                        >
-                            <Trash2 
-                                size={18} 
-                                color={themeColors.error} 
-                            />
-                        </Pressable>
-                    </XStack>
-
-                    {/* ROW 2: Unit Price | Discount | Total */}
-                    <XStack alignItems="center" gap="$3">
-                        {/* Unit Price */}
-                        <XStack alignItems="center" gap="$1" flex={1}>
-                            <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
-                            <TextInput
-                                ref={(ref) => { priceRefs.current[index] = ref; }}
-                                placeholder="0.00"
-                                placeholderTextColor={themeColors.textMuted}
-                                value={item.unitPrice}
-                                onChangeText={(v) => updateItem(item.id, 'unitPrice', v)}
-                                keyboardType="decimal-pad"
-                                returnKeyType={index === items.length - 1 ? 'done' : 'next'}
-                                scrollEnabled={false}
-                                onSubmitEditing={() => {
-                                    if (index === items.length - 1) {
-                                        addNewRow();
-                                    } else {
-                                        nameRefs.current[index + 1]?.focus();
-                                    }
-                                }}
-                                style={{
-                                    fontSize: 14,
-                                    color: themeColors.textPrimary,
-                                    minWidth: 40,
-                                    padding: 0
-                                }}
-                            />
-                        </XStack>
-
-                        {/* Discount */}
-                        <XStack alignItems="center" gap="$1" flex={1}>
-                            <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
-                            <TextInput
-                                placeholder="Discount"
-                                value={item.discount}
-                                onChangeText={(v) => updateItem(item.id, 'discount', v)}
-                                keyboardType="decimal-pad"
-                                style={{
-                                    fontSize: 14,
-                                    color: themeColors.error, 
-                                    minWidth: 40,
-                                    padding: 0
-                                }}
-                                placeholderTextColor={themeColors.textMuted}
-                            />
-                        </XStack>
-
-                        {/* Total Display */}
-                        <XStack alignItems="center" gap="$1" minWidth={60} justifyContent="flex-end">
-                            <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
-                                ${lineTotal.toFixed(2)}
-                            </Text>
-                        </XStack>
-                    </XStack>
-                </YStack>
-            </XStack>
-        </Stack>
-    );
-  };
 
   return (
     <Screen keyboardAvoiding>
@@ -805,7 +709,20 @@ export default function CreateBillScreen() {
           <YStack marginBottom="$4">
             <Card variant="surface" padding={0} overflow="hidden">
                 <YStack>
-                    {items.map((item, index) => renderItemRow(item, index))}
+                    {items.map((item, index) => (
+                        <BillItemRow 
+                            key={item.id}
+                            item={item}
+                            index={index}
+                            lastIndex={items.length - 1}
+                            themeColors={themeColors}
+                            updateItem={updateItem}
+                            deleteItem={deleteItem}
+                            addNewRow={addNewRow}
+                            nameRefs={nameRefs}
+                            priceRefs={priceRefs}
+                        />
+                    ))}
                     
                     {/* Add Item Row */}
                     <Pressable 
@@ -953,3 +870,195 @@ export default function CreateBillScreen() {
     </Screen>
   );
 }
+
+const BillItemRow = memo(({ 
+    item, 
+    index, 
+    lastIndex,
+    themeColors, 
+    updateItem, 
+    deleteItem, 
+    addNewRow,
+    nameRefs,
+    priceRefs 
+}: {
+    item: any, 
+    index: number,
+    lastIndex: number,
+    themeColors: any,
+    updateItem: (id: string, field: string, value: string, newLock?: 'price' | 'total') => void,
+    deleteItem: (id: string) => void,
+    addNewRow: () => void,
+    nameRefs: any,
+    priceRefs: any
+}) => {
+    const unitPrice = parseFloat(item.unitPrice) || 0;
+    const qty = parseInt(item.quantity) || 0;
+    const discount = parseFloat(item.discount) || 0;
+    const lineTotal = (unitPrice * qty) - discount;
+
+    // Local state for Total Input to prevent fighting with user typing
+    const [isTotalFocused, setIsTotalFocused] = useState(false);
+    const [displayTotal, setDisplayTotal] = useState(lineTotal.toFixed(2));
+
+    // Sync calculated total to display IF not focused
+    useEffect(() => {
+        if (!isTotalFocused) {
+            setDisplayTotal(lineTotal.toFixed(2));
+        }
+    }, [lineTotal, isTotalFocused]);
+
+    return (
+        <Stack 
+            borderBottomWidth={index < lastIndex ? 1 : 0}
+            borderBottomColor={themeColors.border}
+            paddingVertical="$4"
+            paddingHorizontal="$4"
+            backgroundColor={themeColors.surface}
+        >
+            <XStack gap="$3">
+                {/* COLUMN 1: Quantity */}
+                <Stack width={40} justifyContent="center" alignItems="center">
+                    <TextInput
+                        placeholder="1"
+                        value={item.quantity}
+                        onChangeText={(v) => updateItem(item.id, 'quantity', v)}
+                        keyboardType="number-pad"
+                        scrollEnabled={false}
+                        selectTextOnFocus={true}
+                        style={{
+                            fontSize: 18,
+                            fontWeight: '600',
+                            color: themeColors.primary,
+                            textAlign: 'center',
+                            padding: 0,
+                            width: '100%'
+                        }}
+                    />
+                </Stack>
+
+                {/* COLUMN 2: Name & Details */}
+                <YStack flex={1} gap="$2">
+                    {/* ROW 1: Name | Trash */}
+                    <XStack alignItems="center" gap="$2">
+                        <TextInput
+                            ref={(ref) => { if (nameRefs.current) nameRefs.current[index] = ref; }}
+                            placeholder="Item Name"
+                            placeholderTextColor={themeColors.textMuted}
+                            value={item.name}
+                            onChangeText={(v) => updateItem(item.id, 'name', v)}
+                            returnKeyType="next"
+                            scrollEnabled={false}
+                            onSubmitEditing={() => priceRefs.current && priceRefs.current[index]?.focus()}
+                            style={{
+                                flex: 1,
+                                fontSize: 16,
+                                fontWeight: '500',
+                                color: themeColors.textPrimary,
+                                paddingVertical: 0
+                            }}
+                        />
+
+                        <Pressable 
+                            onPress={() => deleteItem(item.id)}
+                            style={{ padding: 4, opacity: 0.6 }}
+                        >
+                            <Trash2 
+                                size={18} 
+                                color={themeColors.error} 
+                            />
+                        </Pressable>
+                    </XStack>
+
+                    {/* ROW 2: Unit Price | Discount | Total */}
+                    <XStack alignItems="center" gap="$3">
+                        {/* Unit Price */}
+                        <XStack alignItems="center" gap="$1" flex={1}>
+                            <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
+                            <TextInput
+                                ref={(ref) => { if (priceRefs.current) priceRefs.current[index] = ref; }}
+                                placeholder="0.00"
+                                placeholderTextColor={themeColors.textMuted}
+                                value={item.unitPrice}
+                                onChangeText={(v) => updateItem(item.id, 'unitPrice', v, 'price')}
+                                keyboardType="decimal-pad"
+                                returnKeyType={index === lastIndex ? 'done' : 'next'}
+                                selectTextOnFocus={true} 
+                                scrollEnabled={false}
+                                onSubmitEditing={() => {
+                                    if (index === lastIndex) {
+                                        addNewRow();
+                                    } else {
+                                        nameRefs.current && nameRefs.current[index + 1]?.focus();
+                                    }
+                                }}
+                                style={{
+                                    fontSize: 14,
+                                    color: themeColors.textPrimary,
+                                    minWidth: 40,
+                                    padding: 0
+                                }}
+                            />
+                        </XStack>
+
+                        {/* Discount */}
+                        <XStack alignItems="center" gap="$1" flex={1}>
+                            <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
+                            <TextInput
+                                placeholder="Discount"
+                                value={item.discount}
+                                onChangeText={(v) => updateItem(item.id, 'discount', v)}
+                                keyboardType="decimal-pad"
+                                selectTextOnFocus={true}
+                                style={{
+                                    fontSize: 14,
+                                    color: themeColors.error, 
+                                    minWidth: 40,
+                                    padding: 0
+                                }}
+                                placeholderTextColor={themeColors.textMuted}
+                            />
+                        </XStack>
+
+                        {/* Total Display (Smart Input) */}
+                        <XStack alignItems="center" gap="$1" minWidth={60} justifyContent="flex-end">
+                            <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>$</Text>
+                            <TextInput
+                                value={displayTotal}
+                                onFocus={() => setIsTotalFocused(true)}
+                                onBlur={() => {
+                                    setIsTotalFocused(false);
+                                    // Ensure format on blur
+                                    setDisplayTotal(lineTotal.toFixed(2));
+                                }}
+                                onChangeText={(val) => {
+                                    setDisplayTotal(val); // Update local input immediately
+                                    const newTotal = parseFloat(val) || 0;
+                                    const currentQty = parseInt(item.quantity) || 1; 
+                                    const currentDiscount = parseFloat(item.discount) || 0;
+                                    
+                                    // Reverse Calc: Price = (Total + Discount) / Qty
+                                    // Lock the Total since user is editing it
+                                    const newUnitPrice = (newTotal + currentDiscount) / currentQty;
+                                    updateItem(item.id, 'unitPrice', newUnitPrice.toFixed(2), 'total');
+                                }}
+
+                                keyboardType="decimal-pad"
+                                selectTextOnFocus={true}
+                                style={{
+                                    fontSize: 14,
+                                    fontWeight: '600',
+                                    color: themeColors.textPrimary,
+                                    minWidth: 40,
+                                    padding: 0,
+                                    textAlign: 'right'
+                                }}
+                                placeholderTextColor={themeColors.textMuted}
+                            />
+                        </XStack>
+                    </XStack>
+                </YStack>
+            </XStack>
+        </Stack>
+    );
+});
