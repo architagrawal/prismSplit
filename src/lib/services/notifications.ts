@@ -43,7 +43,7 @@ interface NotificationData {
  */
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
   if (!Device.isDevice) {
-    console.log('Push notifications require a physical device');
+
     return null;
   }
 
@@ -58,7 +58,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 
   if (finalStatus !== 'granted') {
-    console.log('Permission not granted for push notifications');
+
     return null;
   }
 
@@ -68,7 +68,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     const token = await Notifications.getExpoPushTokenAsync({
       projectId,
     });
-    console.log('Push token:', token.data);
+
     return token.data;
   } catch (error) {
     console.error('Error getting push token:', error);
@@ -210,7 +210,7 @@ export function useNotifications() {
 function handleNotificationResponse(data: NotificationData) {
   // This would typically use the router to navigate
   // For now, we log the action
-  console.log('Notification tapped:', data);
+
 
   switch (data.type) {
     case 'bill_shared':
@@ -218,25 +218,25 @@ function handleNotificationResponse(data: NotificationData) {
     case 'bill_finalized':
       // Navigate to bill detail
       if (data.billId) {
-        console.log('Navigate to bill:', data.billId);
+
       }
       break;
     case 'added_to_group':
       // Navigate to group
       if (data.groupId) {
-        console.log('Navigate to group:', data.groupId);
+
       }
       break;
     case 'settlement_complete':
     case 'reminder':
       // Navigate to settle screen
       if (data.userId) {
-        console.log('Navigate to settle:', data.userId);
+
       }
       break;
     default:
       // Navigate to activity
-      console.log('Navigate to activity');
+
   }
 }
 

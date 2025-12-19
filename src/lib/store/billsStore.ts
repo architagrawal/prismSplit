@@ -41,6 +41,7 @@ interface BillsState {
   fetchBillItems: (billId: string) => Promise<void>;
   createBill: (draft: BillDraft) => Promise<Bill>;
   updateBill: (id: string, updates: Partial<Bill>) => Promise<void>;
+  updateBillItems: (billId: string, items: { name: string; price: number; quantity: number }[]) => Promise<void>;
   deleteBill: (id: string) => Promise<void>;
   
   // Draft management
@@ -102,16 +103,16 @@ export const useBillsStore = create<BillsState>((set, get) => ({
   // Fetch bill items
   fetchBillItems: async (billId: string) => {
     try {
-      console.log('Fetching bill items for:', billId);
+
       await new Promise(resolve => setTimeout(resolve, 300));
       
       let rawItems = demoBillItems.filter(i => i.bill_id === billId);
-      console.log('Raw items found:', rawItems.length);
+
       
       // FALLBACK: If no items found for this bill (e.g. demo bills other than bill-1),
       // reuse demoBillItems but assign them to this billId so the UI isn't empty.
       if (rawItems.length === 0 && billId.startsWith('bill-')) {
-         console.log('Using fallback demo items for:', billId);
+
          rawItems = demoBillItems.map(item => ({
              ...item,
              bill_id: billId,
@@ -171,7 +172,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         }
       });
 
-      console.log('Exploded items count:', explodedItems.length);
+
       set(state => ({
         billItems: { ...state.billItems, [billId]: explodedItems }
       }));
@@ -236,6 +237,50 @@ export const useBillsStore = create<BillsState>((set, get) => ({
       }));
     } catch (error) {
       set({ error: 'Failed to update bill' });
+    }
+  },
+
+  // Update bill items (replace existing)
+  updateBillItems: async (billId: string, newItems: { name: string; price: number; quantity: number }[]) => {
+    try {
+        const explodedItems: BillItemWithSplits[] = [];
+
+        newItems.forEach((item, index) => {
+            if (item.quantity <= 1) {
+                 explodedItems.push({
+                     id: `${billId}-item-${Date.now()}-${index}`, // Generate new IDs to ensure freshness
+                     bill_id: billId,
+                     name: item.name,
+                     price: item.price,
+                     quantity: 1,
+                     splits: [],
+                     total_claimed: 0,
+                     unclaimed: item.price,
+                     sort_order: index,
+                 });
+            } else {
+                 // Explode new items
+                 for (let i = 0; i < item.quantity; i++) {
+                     explodedItems.push({
+                         id: `${billId}-item-${Date.now()}-${index}-${i}`,
+                         bill_id: billId,
+                         name: `${item.name} (${i + 1}/${item.quantity})`,
+                         price: item.price,
+                         quantity: 1,
+                         splits: [],
+                         total_claimed: 0,
+                         unclaimed: item.price,
+                         sort_order: index,
+                     });
+                 }
+            }
+        });
+
+        set(state => ({
+            billItems: { ...state.billItems, [billId]: explodedItems }
+        }));
+    } catch (error) {
+        console.error("Failed to update bill items", error);
     }
   },
 
@@ -337,7 +382,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       // In real app, would send selections to API
-      console.log('Confirmed selections for bill', billId, Array.from(selectedItems));
+
       set({ selectedItems: new Set() });
     } catch (error) {
       set({ error: 'Failed to save selections' });

@@ -99,7 +99,7 @@ export default function FriendsScreen() {
 
   const handleRemindPress = (userId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    console.log('Remind:', userId);
+
   };
 
   return (

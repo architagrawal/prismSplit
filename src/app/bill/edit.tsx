@@ -1,10 +1,3 @@
-/**
- * PrismSplit Bill Edit Screen
- * 
- * Edit existing bills - items, prices, tax, tip.
- * Editing resets participant selections if items change.
- */
-
 import { useState, useEffect, useRef } from 'react';
 import { ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, Text, XStack, YStack } from 'tamagui';
@@ -12,7 +5,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Plus, Trash2, Save } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Button, Input, CurrencyInput, Card, CategoryBadge, ConfirmDialog } from '@/components/ui';
+import { 
+  Screen, 
+  ScreenHeader,
+  Button, 
+  Input, 
+  Card, 
+  ConfirmDialog 
+} from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useUIStore, useActivityStore, useAuthStore } from '@/lib/store';
 import { categoryIcons, type Category, type Activity } from '@/types/models';
@@ -20,8 +20,8 @@ import { categoryIcons, type Category, type Activity } from '@/types/models';
 interface EditItem {
   id: string;
   name: string;
-  price: number;
-  quantity: number;
+  totalPrice: string; // User enters TOTAL price for the line
+  quantity: string;
 }
 
 const categories: { key: Category; icon: string; label: string }[] = [
@@ -41,7 +41,7 @@ export default function BillEditScreen() {
   const themeColors = useThemeColors();
   const autoAddProcessed = useRef(false);
   
-  const { currentBill, fetchBillById, billItems, fetchBillItems, updateBill, isLoading } = useBillsStore();
+  const { currentBill, fetchBillById, billItems, fetchBillItems, updateBill, updateBillItems, isLoading } = useBillsStore();
   const { showToast } = useUIStore();
 
   const [title, setTitle] = useState('');
@@ -77,31 +77,48 @@ export default function BillEditScreen() {
   // Populate items and handle autoAdd
   useEffect(() => {
     if (id && billItems[id]) {
-      const loadedItems = billItems[id].map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      }));
+      const rawItems = billItems[id];
+      // Aggregate items for display (reversing the explosion from store)
+      // Group by name + price
+      const aggregatedMap = new Map<string, { id: string, name: string, unitPrice: number, quantity: number }>();
       
+      // Helper to strip (1/3) suffix
+      const normalizeName = (name: string) => name.replace(/\s\(\d+\/\d+\)$/, '');
+
+      rawItems.forEach(item => {
+        const cleanName = normalizeName(item.name);
+        // Round price to 2 decimals to ensure key matching works for float variations
+        const priceKey = item.price.toFixed(2);
+        const key = `${cleanName}-${priceKey}`;
+        
+        if (aggregatedMap.has(key)) {
+            const existing = aggregatedMap.get(key)!;
+            aggregatedMap.set(key, { ...existing, quantity: existing.quantity + item.quantity });
+        } else {
+            aggregatedMap.set(key, {
+                id: item.id.split('-')[0] === 'collapsed' ? item.id : `agg-${key}`, // Use reliable temporary ID for editing
+                name: cleanName,
+                unitPrice: item.price,
+                quantity: item.quantity,
+            });
+        }
+      });
+
+      const loadedItems: EditItem[] = Array.from(aggregatedMap.values()).map(i => ({
+          id: i.id,
+          name: i.name,
+          quantity: i.quantity.toString(),
+          totalPrice: (i.unitPrice * i.quantity).toFixed(2)
+      }));
       setItems(loadedItems);
 
       // Handle autoAdd if requested and not yet processed
-      if (autoAdd === 'true' && !autoAddProcessed.current && loadedItems.length > 0) {
-        autoAddProcessed.current = true;
-        // Small timeout to ensure state is settled before adding
-        setTimeout(() => {
-          const newItem = { id: `new-${Date.now()}`, name: '', price: 0, quantity: 1 };
-          setItems(prev => [...prev, newItem]);
-          setHasChanges(true); // Mark as changed so save button is active
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }, 100);
-      } else if (autoAdd === 'true' && !autoAddProcessed.current && loadedItems.length === 0) {
-        // If no existing items, still add one
+      if (autoAdd === 'true' && !autoAddProcessed.current) {
         autoAddProcessed.current = true;
         setTimeout(() => {
-            const newItem = { id: `new-${Date.now()}`, name: '', price: 0, quantity: 1 };
-            setItems([newItem]);
+            const newItem = { id: `new-${Date.now()}`, name: '', totalPrice: '', quantity: '1' };
+            // If we have items, append. If empty, just set it.
+            setItems(prev => [...prev, newItem]);
             setHasChanges(true); 
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }, 100);
@@ -109,19 +126,20 @@ export default function BillEditScreen() {
     }
   }, [id, billItems, autoAdd]);
 
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Subtotal is straight sum of Total Prices
+  const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.totalPrice) || 0), 0);
   const total = subtotal + (parseFloat(tax) || 0) + (parseFloat(tip) || 0);
 
-  const handleItemChange = (index: number, field: keyof EditItem, value: string | number) => {
+  const handleItemChange = (index: number, field: keyof EditItem, value: string) => {
     setHasChanges(true);
     setItems(prev => {
       const updated = [...prev];
       if (field === 'name') {
-        updated[index] = { ...updated[index], name: value as string };
-      } else if (field === 'price') {
-        updated[index] = { ...updated[index], price: parseFloat(value as string) || 0 };
+        updated[index] = { ...updated[index], name: value };
+      } else if (field === 'totalPrice') {
+        updated[index] = { ...updated[index], totalPrice: value };
       } else if (field === 'quantity') {
-        updated[index] = { ...updated[index], quantity: parseInt(value as string) || 1 };
+        updated[index] = { ...updated[index], quantity: value };
       }
       return updated;
     });
@@ -132,7 +150,7 @@ export default function BillEditScreen() {
     setHasChanges(true);
     setItems(prev => [
       ...prev,
-      { id: `new-${Date.now()}`, name: '', price: 0, quantity: 1 }
+      { id: `new-${Date.now()}`, name: '', totalPrice: '', quantity: '1' }
     ]);
   };
 
@@ -148,7 +166,22 @@ export default function BillEditScreen() {
       return;
     }
 
-    const validItems = items.filter(item => item.name.trim() && item.price > 0);
+    // Filter and transform to store format (deriving unit price)
+    const validItems: { name: string, price: number, quantity: number }[] = [];
+    
+    items.forEach(item => {
+        const total = parseFloat(item.totalPrice) || 0;
+        const qty = parseInt(item.quantity) || 0;
+        
+        if (item.name.trim() && total > 0 && qty > 0) {
+            validItems.push({
+                name: item.name,
+                price: total / qty, // Derive unit price
+                quantity: qty
+            });
+        }
+    });
+
     if (validItems.length === 0) {
       showToast({ type: 'error', message: 'Please add at least one item' });
       return;
@@ -159,13 +192,8 @@ export default function BillEditScreen() {
       let finalTip = parseFloat(tip) || 0;
       let finalTaxSplitMode: 'equal' | 'proportional' | undefined = taxSplitMode === 'custom' ? undefined : taxSplitMode;
       let finalTipSplitMode: 'equal' | 'proportional' | undefined = tipSplitMode === 'custom' ? undefined : tipSplitMode;
-
-      // Handle Custom Split Mode: Convert Tax/Tip to items
-      // Note: In Edit flow, we're not adding items here because the store updateBill 
-      // doesn't support adding items directly in this simulation. 
-      // We kept simple implementation as per previous step decisions, 
-      // but respecting the "Custom" selection by setting split mode to undefined (custom behavior handled manually).
       
+      // 1. Update Bill Metadata
       await updateBill(id!, {
         title,
         category,
@@ -175,6 +203,13 @@ export default function BillEditScreen() {
         tax_split_mode: finalTaxSplitMode,
         tip_split_mode: finalTipSplitMode,
       });
+
+      // 2. Update Bill Items
+      await updateBillItems(id!, validItems.map(i => ({
+        name: i.name,
+        price: i.price,
+        quantity: i.quantity,
+      })));
 
       
       // Log activity
@@ -188,7 +223,7 @@ export default function BillEditScreen() {
           group: { id: currentBill.group_id, name: 'Group', emoji: '👥' }, // Simplified for demo
           user_id: user.id,
           user: user,
-          type: 'bill_shared', // Using 'bill_shared' as closest proxy for 'updated' or add new type if allowed
+          type: 'bill_shared', 
           entity_type: 'bill',
           entity_id: id!,
           metadata: { action: 'updated', billTitle: title },
@@ -208,34 +243,28 @@ export default function BillEditScreen() {
 
   const handleCancel = () => {
     if (hasChanges) {
-      setShowConfirmDialog(true);
+        setShowConfirmDialog(true);
     } else {
-      router.back();
+        router.back();
     }
   };
-
-  if (!currentBill) {
-    return (
-      <Screen>
-        <Text>Loading...</Text>
-      </Screen>
-    );
-  }
 
   return (
     <Screen keyboardAvoiding>
       {/* Header */}
-      <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
-        <Pressable onPress={handleCancel}>
-          <X size={24} color={themeColors.textPrimary} />
-        </Pressable>
-        <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
-          Edit Bill
-        </Text>
-        <Pressable onPress={handleSave} disabled={isLoading}>
-          <Save size={24} color={themeColors.primary} />
-        </Pressable>
-      </XStack>
+      <ScreenHeader 
+        title="Edit Bill"
+        leftAction={
+          <Pressable onPress={handleCancel} hitSlop={10}>
+             <X size={24} color={themeColors.textPrimary} />
+          </Pressable>
+        }
+        rightAction={
+          <Pressable onPress={handleSave} disabled={isLoading} hitSlop={10}>
+             <Save size={24} color={themeColors.primary} />
+          </Pressable>
+        }
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -245,6 +274,7 @@ export default function BillEditScreen() {
           showsVerticalScrollIndicator={false} 
           style={{ flex: 1 }}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           {/* Title */}
           <YStack marginBottom="$4">
@@ -261,7 +291,7 @@ export default function BillEditScreen() {
             <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
               Category
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
               <XStack gap="$2">
                 {categories.map((cat) => (
                   <Pressable
@@ -280,8 +310,8 @@ export default function BillEditScreen() {
                         ? `${themeColors.primary}20` 
                         : themeColors.surfaceElevated
                       }
-                      borderWidth={category === cat.key ? 2 : 0}
-                      borderColor={themeColors.primary}
+                      borderWidth={1}
+                      borderColor={category === cat.key ? themeColors.primary : themeColors.border}
                     >
                       <XStack alignItems="center" gap="$1">
                         <Text fontSize={16}>{cat.icon}</Text>
@@ -305,251 +335,267 @@ export default function BillEditScreen() {
           {/* Items */}
           <YStack marginBottom="$4">
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$2">
-              <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary}>
+              <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
                 Items ({items.length})
               </Text>
-              <Pressable onPress={handleAddItem}>
+              <Pressable onPress={handleAddItem} hitSlop={10}>
                 <XStack alignItems="center" gap="$1">
                   <Plus size={16} color={themeColors.primary} />
                   <Text fontSize={14} color={themeColors.primary}>Add Item</Text>
                 </XStack>
               </Pressable>
             </XStack>
+            
+            {/* List Row Style Container */}
+            <Stack 
+                backgroundColor={themeColors.surface} 
+                borderRadius={12} 
+                borderWidth={1} 
+                borderColor={themeColors.border}
+                overflow="hidden"
+            >
+                {items.map((item, index) => (
+                <Stack 
+                    key={item.id} 
+                    borderBottomWidth={index < items.length - 1 ? 1 : 0}
+                    borderBottomColor={themeColors.border}
+                    paddingHorizontal="$3"
+                    paddingVertical="$3"
+                    backgroundColor={themeColors.surface}
+                >
+                    <XStack alignItems="center" gap="$3">
+                        {/* 1. Qty Input (Left) */}
+                        <Stack 
+                            width={32}
+                            height={32} 
+                            backgroundColor={themeColors.background} 
+                            borderRadius={6} 
+                            justifyContent="center" 
+                            alignItems="center"
+                            borderWidth={1}
+                            borderColor={themeColors.border}
+                        >
+                            <TextInput
+                                value={item.quantity}
+                                onChangeText={(val) => handleItemChange(index, 'quantity', val)}
+                                keyboardType="number-pad"
+                                style={{
+                                    fontSize: 14,
+                                    fontWeight: '600',
+                                    color: themeColors.textPrimary,
+                                    textAlign: 'center',
+                                    textAlignVertical: 'center',
+                                    width: '100%',
+                                    height: '100%',
+                                    padding: 0, 
+                                }}
+                            />
+                        </Stack>
 
-            {items.map((item, index) => (
-              <Card key={item.id} variant="surface" marginBottom="$2">
-                <XStack alignItems="center" gap="$2">
-                  <YStack flex={1} gap="$2">
-                    <TextInput
-                      placeholder="Item name"
-                      value={item.name}
-                      onChangeText={(val) => handleItemChange(index, 'name', val)}
-                      scrollEnabled={false}
-                      style={{
-                        fontSize: 16,
-                        color: themeColors.textPrimary,
-                        padding: 0,
-                      }}
-                      placeholderTextColor={themeColors.textMuted}
-                    />
-                    <XStack gap="$3">
-                      <XStack alignItems="center" gap="$1" flex={1}>
-                        <Text fontSize={14} color={themeColors.textMuted}>$</Text>
+                        {/* 2. Name Input (Flex Middle) */}
                         <TextInput
-                          placeholder="0.00"
-                          value={item.price > 0 ? item.price.toString() : ''}
-                          onChangeText={(val) => handleItemChange(index, 'price', val)}
-                          keyboardType="decimal-pad"
-                          scrollEnabled={false}
-                          style={{
-                            flex: 1,
-                            fontSize: 14,
-                            color: themeColors.textPrimary,
-                            padding: 0,
-                          }}
-                          placeholderTextColor={themeColors.textMuted}
+                            placeholder="Item Name"
+                            value={item.name}
+                            onChangeText={(val) => handleItemChange(index, 'name', val)}
+                            style={{
+                                flex: 1,
+                                fontSize: 16,
+                                color: themeColors.textPrimary,
+                                paddingVertical: 4
+                            }}
+                            placeholderTextColor={themeColors.textMuted}
                         />
-                      </XStack>
-                      <XStack alignItems="center" gap="$1">
-                        <Text fontSize={14} color={themeColors.textMuted}>Qty:</Text>
-                        <TextInput
-                          value={item.quantity.toString()}
-                          onChangeText={(val) => handleItemChange(index, 'quantity', val)}
-                          keyboardType="number-pad"
-                          scrollEnabled={false}
-                          style={{
-                            width: 40,
-                            fontSize: 14,
-                            color: themeColors.textPrimary,
-                            padding: 0,
-                            textAlign: 'center',
-                          }}
-                        />
-                      </XStack>
+
+                        {/* 3. Price Input & Trash (Right) */}
+                        <XStack alignItems="center" gap="$3">
+                            <XStack alignItems="center">
+                                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>$</Text>
+                                <TextInput
+                                    placeholder="0.00"
+                                    value={item.totalPrice}
+                                    onChangeText={(val) => handleItemChange(index, 'totalPrice', val)}
+                                    keyboardType="decimal-pad"
+                                    style={{
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                        color: themeColors.textPrimary,
+                                        minWidth: 50,
+                                        textAlign: 'right'
+                                    }}
+                                    placeholderTextColor={themeColors.textMuted}
+                                />
+                            </XStack>
+                            
+                            <Pressable 
+                                onPress={() => handleRemoveItem(index)}
+                                hitSlop={15}
+                                style={{ opacity: 0.6 }}
+                            >
+                                <Trash2 size={18} color={themeColors.error} />
+                            </Pressable>
+                        </XStack>
                     </XStack>
-                  </YStack>
-                  
-                  <Pressable 
-                    onPress={() => handleRemoveItem(index)}
-                    hitSlop={10}
-                    style={{ padding: 8 }}
-                  >
-                    <Trash2 size={20} color={themeColors.error} />
-                  </Pressable>
-                </XStack>
-              </Card>
-            ))}
-          </YStack>
+                </Stack>
+                ))}
+            </Stack>
+        </YStack>
 
-          {/* Tax & Tip & Split Selector */}
-          <Card variant="surface" marginBottom="$4">
-            <YStack gap="$3">
+        {/* Tax & Tip */}
+        <Card variant="surface" marginBottom="$4">
+            <YStack gap="$4">
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={themeColors.textSecondary}>Subtotal</Text>
-                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+                <Text fontSize={16} fontWeight="600" color={themeColors.textSecondary}>Subtotal</Text>
+                <Text fontSize={18} fontWeight="700" color={themeColors.textPrimary}>
                   ${subtotal.toFixed(2)}
                 </Text>
               </XStack>
               
-              <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={themeColors.textSecondary}>Tax</Text>
-                <XStack alignItems="center" gap="$1">
-                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
-                  <TextInput
-                    placeholder="0.00"
-                    value={tax}
-                    onChangeText={(val) => { setTax(val); setHasChanges(true); }}
-                    keyboardType="decimal-pad"
-                    scrollEnabled={false}
-                    style={{
-                      width: 60,
-                      fontSize: 16,
-                      color: themeColors.textPrimary,
-                      textAlign: 'right',
-                    }}
-                    placeholderTextColor={themeColors.textMuted}
-                  />
-                </XStack>
-              </XStack>
+              <Stack height={1} backgroundColor={themeColors.border} opacity={0.5} />
 
-              {/* Tax Split Selector */}
-              {parseFloat(tax) > 0 && (
-                <XStack 
-                  backgroundColor={themeColors.surfaceElevated} 
-                  padding="$1" 
-                  borderRadius={8}
-                >
-                  {(['equal', 'proportional', 'custom'] as const).map((mode) => (
-                    <Pressable 
-                      key={`tax-${mode}`}
-                      style={{ flex: 1 }}
-                      onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setTaxSplitMode(mode);
-                          setHasChanges(true);
-                      }}
-                    >
-                      <Stack 
-                        paddingVertical="$2" 
-                        alignItems="center"
-                        borderRadius={6}
-                        backgroundColor={taxSplitMode === mode ? themeColors.primary : 'transparent'}
-                      >
-                          <Text 
-                            fontSize={11} 
-                            fontWeight={taxSplitMode === mode ? '600' : '400'}
-                            color={taxSplitMode === mode ? 'white' : themeColors.textSecondary}
-                            textTransform="capitalize"
-                          >
-                            {mode}
-                          </Text>
-                      </Stack>
-                    </Pressable>
-                  ))}
-                </XStack>
-              )}
+              {/* Tax */}
+              <YStack gap="$2">
+                  <XStack justifyContent="space-between" alignItems="center">
+                      <Text fontSize={16} color={themeColors.textPrimary}>Tax</Text>
+                      <XStack alignItems="center" backgroundColor={themeColors.background} borderRadius={8} paddingHorizontal="$3" borderWidth={1} borderColor={themeColors.border}>
+                          <Text color={themeColors.textMuted}>$</Text>
+                          <TextInput
+                            placeholder="0.00"
+                            value={tax}
+                            onChangeText={(val) => { setTax(val); setHasChanges(true); }}
+                            keyboardType="decimal-pad"
+                            style={{
+                                padding: 8,
+                                minWidth: 60,
+                                fontSize: 16,
+                                textAlign: 'right',
+                                color: themeColors.textPrimary
+                            }}
+                          />
+                      </XStack>
+                  </XStack>
+                  {/* Tax Split Mode Selector */}
+                  {parseFloat(tax) > 0 && (
+                     <XStack backgroundColor={themeColors.background} padding="$1" borderRadius={8} borderWidth={1} borderColor={themeColors.border}>
+                          {(['equal', 'proportional', 'custom'] as const).map((mode) => (
+                            <Pressable 
+                              key={`tax-${mode}`}
+                              style={{ flex: 1 }}
+                              onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  setTaxSplitMode(mode);
+                                  setHasChanges(true);
+                              }}
+                            >
+                              <Stack 
+                                paddingVertical="$2" 
+                                alignItems="center"
+                                borderRadius={6}
+                                backgroundColor={taxSplitMode === mode ? themeColors.primary : 'transparent'}
+                              >
+                                  <Text 
+                                    fontSize={12} 
+                                    fontWeight={taxSplitMode === mode ? '600' : '400'}
+                                    color={taxSplitMode === mode ? 'white' : themeColors.textSecondary}
+                                    textTransform="capitalize"
+                                  >
+                                    {mode}
+                                  </Text>
+                              </Stack>
+                            </Pressable>
+                          ))}
+                     </XStack>
+                  )}
+              </YStack>
 
-              <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={themeColors.textSecondary}>Tip</Text>
-                <XStack alignItems="center" gap="$1">
-                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
-                  <TextInput
-                    placeholder="0.00"
-                    value={tip}
-                    onChangeText={(val) => { setTip(val); setHasChanges(true); }}
-                    keyboardType="decimal-pad"
-                    scrollEnabled={false}
-                    style={{
-                      width: 60,
-                      fontSize: 16,
-                      color: themeColors.textPrimary,
-                      textAlign: 'right',
-                    }}
-                    placeholderTextColor={themeColors.textMuted}
-                  />
-                </XStack>
-              </XStack>
+              {/* Tip */}
+              <YStack gap="$2">
+                  <XStack justifyContent="space-between" alignItems="center">
+                      <Text fontSize={16} color={themeColors.textPrimary}>Tip</Text>
+                      <XStack alignItems="center" backgroundColor={themeColors.background} borderRadius={8} paddingHorizontal="$3" borderWidth={1} borderColor={themeColors.border}>
+                          <Text color={themeColors.textMuted}>$</Text>
+                          <TextInput
+                            placeholder="0.00"
+                            value={tip}
+                            onChangeText={(val) => { setTip(val); setHasChanges(true); }}
+                            keyboardType="decimal-pad"
+                            style={{
+                                padding: 8,
+                                minWidth: 60,
+                                fontSize: 16,
+                                textAlign: 'right',
+                                color: themeColors.textPrimary
+                            }}
+                          />
+                      </XStack>
+                  </XStack>
+                   {/* Tip Split Mode Selector */}
+                   {parseFloat(tip) > 0 && (
+                     <XStack backgroundColor={themeColors.background} padding="$1" borderRadius={8} borderWidth={1} borderColor={themeColors.border}>
+                          {(['equal', 'proportional', 'custom'] as const).map((mode) => (
+                            <Pressable 
+                              key={`tip-${mode}`}
+                              style={{ flex: 1 }}
+                              onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  setTipSplitMode(mode);
+                                  setHasChanges(true);
+                              }}
+                            >
+                              <Stack 
+                                paddingVertical="$2" 
+                                alignItems="center"
+                                borderRadius={6}
+                                backgroundColor={tipSplitMode === mode ? themeColors.primary : 'transparent'}
+                              >
+                                  <Text 
+                                    fontSize={12} 
+                                    fontWeight={tipSplitMode === mode ? '600' : '400'}
+                                    color={tipSplitMode === mode ? 'white' : themeColors.textSecondary}
+                                    textTransform="capitalize"
+                                  >
+                                    {mode}
+                                  </Text>
+                              </Stack>
+                            </Pressable>
+                          ))}
+                     </XStack>
+                  )}
+              </YStack>
 
-              {/* Tip Split Selector */}
-              {parseFloat(tip) > 0 && (
-                <XStack 
-                  backgroundColor={themeColors.surfaceElevated} 
-                  padding="$1" 
-                  borderRadius={8}
-                >
-                  {(['equal', 'proportional', 'custom'] as const).map((mode) => (
-                    <Pressable 
-                      key={`tip-${mode}`}
-                      style={{ flex: 1 }}
-                      onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setTipSplitMode(mode);
-                          setHasChanges(true);
-                      }}
-                    >
-                      <Stack 
-                        paddingVertical="$2" 
-                        alignItems="center"
-                        borderRadius={6}
-                        backgroundColor={tipSplitMode === mode ? themeColors.primary : 'transparent'}
-                      >
-                          <Text 
-                            fontSize={11} 
-                            fontWeight={tipSplitMode === mode ? '600' : '400'}
-                            color={tipSplitMode === mode ? 'white' : themeColors.textSecondary}
-                            textTransform="capitalize"
-                          >
-                            {mode}
-                          </Text>
-                      </Stack>
-                    </Pressable>
-                  ))}
-                </XStack>
-              )}
-
-              {(taxSplitMode === 'custom' || tipSplitMode === 'custom') && (
-                 <Text fontSize={11} color={themeColors.info} marginTop="$1" fontStyle="italic">
-                   *Custom splitting will convert amounts to bill items.
-                 </Text>
-              )}
-
-              <Stack height={1} backgroundColor={themeColors.border} />
+              <Stack height={1} backgroundColor={themeColors.border} opacity={0.5} />
 
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>Total</Text>
-                <Text fontSize={20} fontWeight="700" color={themeColors.primary}>
+                <Text fontSize={18} fontWeight="700" color={themeColors.textPrimary}>Total</Text>
+                <Text fontSize={24} fontWeight="800" color={themeColors.primary}>
                   ${total.toFixed(2)}
                 </Text>
               </XStack>
             </YStack>
-          </Card>
+        </Card>
 
-        </ScrollView>
-
-        {/* Save Button */}
-        <Stack paddingTop="$4">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            loading={isLoading}
-            disabled={!hasChanges}
-            onPress={handleSave}
-          >
-            Save Changes
-          </Button>
-        </Stack>
+      </ScrollView>
       </KeyboardAvoidingView>
 
       <ConfirmDialog
         visible={showConfirmDialog}
-        title="Unsaved Changes"
-        message="You have changes that haven't been saved yet."
-        buttons={[
-          { text: 'Discard', style: 'destructive', onPress: () => { setShowConfirmDialog(false); router.back(); } },
-          { text: 'Save', style: 'primary', onPress: () => { setShowConfirmDialog(false); handleSave(); } },
-        ]}
+        title="Discard Changes?"
+        message="You have unsaved changes. Are you sure you want to discard them?"
         onDismiss={() => setShowConfirmDialog(false)}
+        buttons={[
+          {
+            text: "Keep Editing",
+            onPress: () => setShowConfirmDialog(false),
+            style: "default"
+          },
+          {
+            text: "Discard",
+            onPress: () => {
+              setShowConfirmDialog(false);
+              router.back();
+            },
+            style: "destructive"
+          }
+        ]}
       />
     </Screen>
   );
