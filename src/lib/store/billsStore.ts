@@ -259,35 +259,41 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         const explodedItems: BillItemWithSplits[] = [];
 
         newItems.forEach((item, index) => {
-            if (item.quantity <= 1) {
+            // Calculate total line value in cents to allow fair splitting
+            // We use the INPUT price (which might be high precision 17.3333) * Qty to get the intended Total (52.00)
+            const totalLinePrice = Math.round(item.price * item.quantity * 100);
+            const totalLineDiscount = Math.round((item.discount || 0) * 100);
+            
+            const qty = Math.max(1, Math.floor(item.quantity)); // Ensure at least 1, integer
+            
+            // Base amounts per item (in cents)
+            const basePriceCents = Math.floor(totalLinePrice / qty);
+            const priceRemainder = totalLinePrice % qty;
+            
+            const baseDiscountCents = Math.floor(totalLineDiscount / qty);
+            const discountRemainder = totalLineDiscount % qty;
+
+            for (let i = 0; i < qty; i++) {
+                 // Distribute price remainder to first N items
+                 const priceCents = basePriceCents + (i < priceRemainder ? 1 : 0);
+                 const finalPrice = priceCents / 100;
+                 
+                 // Distribute discount remainder to first N items
+                 const discountCents = baseDiscountCents + (i < discountRemainder ? 1 : 0);
+                 const finalDiscount = discountCents / 100;
+
                  explodedItems.push({
-                     id: `${billId}-item-${Date.now()}-${index}`, // Generate new IDs to ensure freshness
+                     id: `${billId}-item-${Date.now()}-${index}-${i}`,
                      bill_id: billId,
-                     name: item.name,
-                     price: item.price,
+                     name: qty > 1 ? `${item.name} (${i + 1}/${qty})` : item.name,
+                     price: finalPrice,
                      quantity: 1,
-                     discount: item.discount, // Preserve discount
+                     discount: finalDiscount,
                      splits: [],
                      total_claimed: 0,
-                     unclaimed: item.price - (item.discount || 0), // Reduce unclaimed by discount
+                     unclaimed: finalPrice - finalDiscount,
                      sort_order: index,
                  });
-            } else {
-                 // Explode new items
-                 for (let i = 0; i < item.quantity; i++) {
-                     explodedItems.push({
-                         id: `${billId}-item-${Date.now()}-${index}-${i}`,
-                         bill_id: billId,
-                         name: `${item.name} (${i + 1}/${item.quantity})`,
-                         price: item.price,
-                         quantity: 1,
-                         discount: (item.discount || 0) / item.quantity, // Distributed discount
-                         splits: [],
-                         total_claimed: 0,
-                         unclaimed: item.price - ((item.discount || 0) / item.quantity), // Reduced unclaimed by distributed discount
-                         sort_order: index,
-                     });
-                 }
             }
         });
 

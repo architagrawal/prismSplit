@@ -138,8 +138,16 @@ export default function CreateBillScreen() {
             const targetTotal = (currentPrice * currentQty) - currentDisc;
 
             if (qty > 0) {
-                 const newUnitPrice = (targetTotal + disc) / qty;
-                 updates.unitPrice = newUnitPrice.toFixed(2);
+                 const rawPrice = (targetTotal + disc) / qty;
+                 // Adaptive Precision: If 2 decimals drifts from total, use 4
+                 const checkPrice = parseFloat(rawPrice.toFixed(2));
+                 const checkTotal = (checkPrice * qty) - disc;
+                 
+                 if (Math.abs(checkTotal - targetTotal) > 0.009) {
+                     updates.unitPrice = rawPrice.toFixed(4);
+                 } else {
+                     updates.unitPrice = rawPrice.toFixed(2);
+                 }
             }
       }
       
@@ -899,6 +907,7 @@ const BillItemRow = memo(({
 
     // Local state for Total Input to prevent fighting with user typing
     const [isTotalFocused, setIsTotalFocused] = useState(false);
+    const [isPriceFocused, setIsPriceFocused] = useState(false);
     const [displayTotal, setDisplayTotal] = useState(lineTotal.toFixed(2));
 
     // Sync calculated total to display IF not focused
@@ -979,8 +988,10 @@ const BillItemRow = memo(({
                                 ref={(ref) => { if (priceRefs.current) priceRefs.current[index] = ref; }}
                                 placeholder="0.00"
                                 placeholderTextColor={themeColors.textMuted}
-                                value={item.unitPrice}
+                                value={isPriceFocused ? item.unitPrice : (parseFloat(item.unitPrice) || 0).toFixed(2)}
                                 onChangeText={(v) => updateItem(item.id, 'unitPrice', v, 'price')}
+                                onFocus={() => setIsPriceFocused(true)}
+                                onBlur={() => setIsPriceFocused(false)}
                                 keyboardType="decimal-pad"
                                 returnKeyType={index === lastIndex ? 'done' : 'next'}
                                 selectTextOnFocus={true} 
@@ -1040,7 +1051,17 @@ const BillItemRow = memo(({
                                     // Reverse Calc: Price = (Total + Discount) / Qty
                                     // Lock the Total since user is editing it
                                     const newUnitPrice = (newTotal + currentDiscount) / currentQty;
-                                    updateItem(item.id, 'unitPrice', newUnitPrice.toFixed(2), 'total');
+                                    
+                                    // Adaptive Precision: Check if 2 decimals is enough
+                                    const checkPrice = parseFloat(newUnitPrice.toFixed(2));
+                                    const checkTotal = (checkPrice * currentQty) - currentDiscount;
+                                    
+                                    let finalPriceStr = newUnitPrice.toFixed(2);
+                                    if (Math.abs(checkTotal - newTotal) > 0.009) {
+                                        finalPriceStr = newUnitPrice.toFixed(4);
+                                    }
+
+                                    updateItem(item.id, 'unitPrice', finalPriceStr, 'total');
                                 }}
 
                                 keyboardType="decimal-pad"
