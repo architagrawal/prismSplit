@@ -22,6 +22,7 @@ interface BillDraft {
   }>;
   tax: number;
   tip: number;
+  discount?: number; // Overall discount
   tax_split_mode?: 'equal' | 'proportional';
   tip_split_mode?: 'equal' | 'proportional';
 }
@@ -193,7 +194,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const subtotal = draft.items.reduce((sum, item) => sum + (item.price * item.quantity) - (item.discount || 0), 0);
-      const total = subtotal + draft.tax + draft.tip;
+      const total = subtotal - (draft.discount || 0) + draft.tax + draft.tip;
       
       const newBill: Bill = {
         id: `bill-${Date.now()}`,
@@ -203,6 +204,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         total_amount: total,
         tax_amount: draft.tax,
         tip_amount: draft.tip,
+        discount_amount: draft.discount || 0,
         tax_split_mode: draft.tax_split_mode || 'proportional', // Default to 'proportional' if not provided
         tip_split_mode: draft.tip_split_mode || 'proportional', // Default to 'proportional' if not provided
         your_share: 0,
@@ -314,6 +316,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         items: [{ id: '1', name: '', price: 0, quantity: 1, discount: 0 }],
         tax: 0,
         tip: 0,
+        discount: 0,
         tax_split_mode: 'proportional',
         tip_split_mode: 'proportional',
       },

@@ -30,11 +30,7 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import type { BillItemWithSplits } from '@/types/models';
 
 // Enable LayoutAnimation on Android
-if (Platform.OS === 'android') {
-  if (UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
-}
+
 
 export default function BillDetailScreen() {
   const router = useRouter();
@@ -343,9 +339,10 @@ export default function BillDetailScreen() {
       itemParticipants.forEach(p => billParticipants.add(p));
     });
 
-    // Add Tax and Tip independently
+    // Add Tax, Tip, and Discount
     const taxAmount = bill.tax_amount || 0;
     const tipAmount = bill.tip_amount || 0;
+    const discountAmount = bill.discount_amount || 0;
     const taxMode = bill.tax_split_mode || 'proportional';
     const tipMode = bill.tip_split_mode || 'proportional';
     const participantCount = Math.max(billParticipants.size, 1);
@@ -384,6 +381,14 @@ export default function BillDetailScreen() {
       }
     }
 
+    // Calculate Discount Share (Always Proportional)
+    if (discountAmount > 0 && isUserParticipant) {
+        if (totalBillItemCost > 0) {
+            const userRatio = baseUserShare / totalBillItemCost;
+            userItemShare -= discountAmount * userRatio; // Subtracts discount
+        }
+    }
+
     // Recalculate discrete parts for breakdown display
     // Note: The above logic accumulated into userItemShare. To get clear breakdown, we should calculate parts separately.
     
@@ -410,14 +415,15 @@ export default function BillDetailScreen() {
     }
 
     return {
-        total: finalItemShare + finalTaxShare + finalTipShare,
+        total: Math.max(0, finalItemShare + finalTaxShare + finalTipShare - (discountAmount * (baseUserShare / totalBillItemCost || 0))),
         items: finalItemShare,
         tax: finalTaxShare,
-        tip: finalTipShare
+        tip: finalTipShare,
+        discount: discountAmount * (baseUserShare / totalBillItemCost || 0)
     };
   };
 
-  const { total: yourShare, items: yourItemShare, tax: yourTaxShare, tip: yourTipShare } = calculateYourShare();
+  const { total: yourShare, items: yourItemShare, tax: yourTaxShare, tip: yourTipShare, discount: yourDiscountShare } = calculateYourShare();
 
   // Helper to check if splits are equal (all same percentage)
   const areAllSplitsEqual = (splits: Array<{percentage: number}>) => {
@@ -717,8 +723,8 @@ export default function BillDetailScreen() {
                             top={-2}
                             bottom="50%"
                           />
-                           {/* Vertical Line Part 2 (Bottom half - only if not last) */}
-                           {bill.tip_amount > 0 && (
+                           {/* Vertical Line Part 2 (Bottom half - if Tip OR Discount follows) */}
+                           {(bill.tip_amount > 0 || (bill.discount_amount || 0) > 0) && (
                              <Stack 
                                width={1.0} 
                                backgroundColor={themeColors.primary} 
@@ -739,7 +745,7 @@ export default function BillDetailScreen() {
                           />
                         </Stack>
                         <XStack marginTop={-2} gap="$1" paddingLeft={4}>
-                          <XStack width={28} justifyContent="space-between">
+                          <XStack width={40} justifyContent="space-between">
                             <Text fontSize={12} color={themeColors.textSecondary}>Tax</Text>
                             <Text fontSize={12} color={themeColors.textSecondary}>:</Text>
                           </XStack>
@@ -768,9 +774,20 @@ export default function BillDetailScreen() {
                             right={0} 
                             top="50%"
                           />
+                          {/* Vertical Line Part 2 (Bottom half - if Discount follows) */}
+                           {((bill.discount_amount || 0) > 0) && (
+                             <Stack 
+                               width={1.0} 
+                               backgroundColor={themeColors.primary} 
+                               position="absolute" 
+                               left={5} 
+                               top="50%"
+                               bottom={0}
+                             />
+                           )}
                         </Stack>
                         <XStack marginTop={-2} gap="$1" paddingLeft={4}>
-                          <XStack width={28} justifyContent="space-between">
+                          <XStack width={40} justifyContent="space-between">
                             <Text fontSize={12} color={themeColors.textSecondary}>Tip</Text>
                             <Text fontSize={12} color={themeColors.textSecondary}>:</Text>
                           </XStack>
@@ -778,6 +795,41 @@ export default function BillDetailScreen() {
                         </XStack>
                       </XStack>
                     )}
+                  </YStack>
+                )}
+
+                {/* Discount Row */}
+                {(bill.discount_amount || 0) > 0 && (
+                  <YStack marginTop="$1" paddingLeft={2}>
+                      <XStack alignItems="center" gap={0} height={20}>
+                         <Stack width={20} height="100%" position="relative">
+                          {/* Vertical Line (Connects to tree) */}
+                          <Stack 
+                            width={1.0} 
+                            backgroundColor={themeColors.primary} 
+                            position="absolute" 
+                            left={5} 
+                            top={-2} 
+                            bottom="50%"
+                          />
+                          {/* Horizontal Line */}
+                          <Stack 
+                            height={1.0} 
+                            backgroundColor={themeColors.primary} 
+                            position="absolute" 
+                            left={5} 
+                            right={0} 
+                            top="50%"
+                          />
+                        </Stack>
+                        <XStack marginTop={-2} gap="$1" paddingLeft={4}>
+                          <XStack width={40} justifyContent="space-between">
+                            <Text fontSize={12} color={themeColors.error}>Disc.</Text>
+                            <Text fontSize={12} color={themeColors.error}>:</Text>
+                          </XStack>
+                          <Text fontSize={12} color={themeColors.error}>-${(bill.discount_amount || 0).toFixed(2)}</Text>
+                        </XStack>
+                      </XStack>
                   </YStack>
                 )}
               </YStack>
@@ -942,14 +994,22 @@ export default function BillDetailScreen() {
           </Text>
           <YStack alignItems="flex-start" gap="$1">
             <XStack gap="$3" alignItems="flex-end">
-              <XStack width={40} justifyContent="space-between">
+              <XStack width={60} justifyContent="space-between">
                 <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>Items</Text>
               </XStack>
               <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>${yourItemShare.toFixed(2)}</Text>
             </XStack>
+            {(yourDiscountShare || 0) > 0 && (
+              <XStack gap="$3" alignItems="flex-end">
+                <XStack width={60} justifyContent="space-between">
+                  <Text fontSize={12} color={themeColors.error}>-  Disc.</Text>
+                </XStack>
+                <Text fontSize={12} color={themeColors.error}>-${(yourDiscountShare || 0).toFixed(2)}</Text>
+              </XStack>
+            )}
             {yourTaxShare > 0 && (
               <XStack gap="$3" alignItems="flex-end">
-                <XStack width={40} justifyContent="space-between">
+                <XStack width={60} justifyContent="space-between">
                   <Text fontSize={12} color={themeColors.textPrimary}>+ Tax</Text>
                 </XStack>
                 <Text fontSize={12} color={themeColors.textPrimary}>${yourTaxShare.toFixed(2)}</Text>
@@ -957,7 +1017,7 @@ export default function BillDetailScreen() {
             )}
             {yourTipShare > 0 && (
               <XStack gap="$3" alignItems="flex-end">
-                <XStack width={40} justifyContent="space-between">
+                <XStack width={60} justifyContent="space-between">
                   <Text fontSize={12} color={themeColors.textPrimary}>+ Tip</Text>
                 </XStack>
                 <Text fontSize={12} color={themeColors.textPrimary}>${yourTipShare.toFixed(2)}</Text>

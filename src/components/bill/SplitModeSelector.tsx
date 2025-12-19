@@ -43,14 +43,14 @@ export const SplitModeSelector: React.FC<DropdownSelectorProps> = ({ value, onCh
         style={{ flex: 1, paddingHorizontal: 12 }}
       >
         <Stack
-          paddingHorizontal="$3"
-          paddingVertical="$2"
-          backgroundColor={visible ? themeColors.primary + '20' : themeColors.surfaceElevated} // Highlight when open
+          paddingHorizontal="$2"
+          paddingVertical="$1"
+          backgroundColor={visible ? themeColors.primary + '15' : 'transparent'} 
           borderRadius={8}
           borderWidth={1}
-          borderColor={visible ? themeColors.primary : themeColors.border}
+          borderColor={visible ? themeColors.primary + '30' : 'transparent'}
           width="100%"
-          height={36}
+          height={32}
           justifyContent="center"
         >
           <XStack alignItems="center" width="100%">

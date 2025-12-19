@@ -146,6 +146,7 @@ interface BillListItemProps {
   variant?: 'card' | 'compact';
   isPayer?: boolean; // True if current user is the payer
   itemCount?: number; // Number of items in bill (for itemized bills)
+  hasDiscount?: boolean;
 }
 
 export function BillListItem({
@@ -162,6 +163,7 @@ export function BillListItem({
   variant = 'card',
   isPayer = false,
   itemCount = 0,
+  hasDiscount = false,
 }: BillListItemProps) {
   const themeColors = useThemeColors();
   
@@ -273,8 +275,13 @@ export function BillListItem({
             </Text>
             {itemCount > 1 && (
               <Text fontSize={11} color={themeColors.textMuted}>
-                {itemCount} items
+                {itemCount} items {hasDiscount && '• Discount applied'}
               </Text>
+            )}
+            {!itemCount && hasDiscount && (
+               <Text fontSize={11} color={themeColors.success}>
+                 Discount applied
+               </Text>
             )}
           </Stack>
           
@@ -325,6 +332,11 @@ export function BillListItem({
             </Text>
             <Stack flexDirection="row" alignItems="center" gap="$2">
               <CategoryBadge category={category} icon={categoryIcon} />
+              {hasDiscount && (
+                <Stack backgroundColor={themeColors.surfaceElevated} paddingHorizontal="$2" paddingVertical="$1" borderRadius={4}>
+                   <Text fontSize={10} color={themeColors.success} fontWeight="600">SAVE</Text>
+                </Stack>
+              )}
             </Stack>
           </Stack>
           

@@ -478,6 +478,7 @@ export function GroupDetailContent({
                   variant="compact"
                   isPayer={item.payer.id === user?.id}
                   itemCount={(item as any).item_count ?? 0}
+                  hasDiscount={(item.discount_amount || 0) > 0}
                   onPress={() => router.push(`/bill/${item.id}` as any)}
                 />
               </YStack>

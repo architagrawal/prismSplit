@@ -39,6 +39,7 @@ export default function CreateBillScreen() {
   ]);
   const [tax, setTax] = useState('');
   const [tip, setTip] = useState('');
+  const [discount, setDiscount] = useState('');
   const [taxSplitMode, setTaxSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
   const [tipSplitMode, setTipSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
 
@@ -82,7 +83,8 @@ export default function CreateBillScreen() {
   
   const taxAmount = parseFloat(tax) || 0;
   const tipAmount = parseFloat(tip) || 0;
-  const total = subtotal + taxAmount + tipAmount;
+  const discountAmount = parseFloat(discount) || 0;
+  const total = subtotal - discountAmount + taxAmount + tipAmount;
 
   const handleShare = async () => {
     if (!billName || items.every(i => !i.name || !i.unitPrice)) {
@@ -137,6 +139,7 @@ export default function CreateBillScreen() {
         items: finalItems,
         tax: finalTax,
         tip: finalTip,
+        discount: parseFloat(discount) || 0,
         tax_split_mode: finalTaxSplitMode,
         tip_split_mode: finalTipSplitMode,
       });
@@ -156,10 +159,17 @@ export default function CreateBillScreen() {
     const lineTotal = (unitPrice * qty) - discount;
 
     return (
-        <Card key={item.id} variant="surface" padding="$3">
+        <Stack 
+            key={item.id} 
+            borderBottomWidth={index < items.length - 1 ? 1 : 0}
+            borderBottomColor={themeColors.border}
+            paddingVertical="$4"
+            paddingHorizontal="$4"
+            backgroundColor={themeColors.surface}
+        >
             <XStack gap="$3">
                 {/* COLUMN 1: Quantity */}
-                <Stack width={40}>
+                <Stack width={40} justifyContent="center" alignItems="center">
                     <TextInput
                         placeholder="1"
                         value={item.quantity}
@@ -167,13 +177,11 @@ export default function CreateBillScreen() {
                         keyboardType="number-pad"
                         scrollEnabled={false}
                         style={{
-                            fontSize: 16,
-                            color: themeColors.textSecondary,
+                            fontSize: 18,
+                            fontWeight: '600',
+                            color: themeColors.primary,
                             textAlign: 'center',
                             padding: 0,
-                            paddingBottom: 4,
-                            borderBottomWidth: 1,
-                            borderBottomColor: themeColors.border,
                             width: '100%'
                         }}
                     />
@@ -269,7 +277,7 @@ export default function CreateBillScreen() {
                     </XStack>
                 </YStack>
             </XStack>
-        </Card>
+        </Stack>
     );
   };
 
@@ -293,33 +301,42 @@ export default function CreateBillScreen() {
 
         <ScrollView flex={1} showsVerticalScrollIndicator={false}>
           {/* Bill Details */}
-          <YStack gap="$4" marginBottom="$6">
-            <Input
-              label="Bill Name"
-              placeholder="e.g., Costco Grocery"
-              value={billName}
-              onChangeText={setBillName}
-            />
+          <Card variant="surface" padding={0} marginBottom="$6" overflow="hidden">
+            <YStack>
+                {/* Bill Name Input */}
+                <XStack alignItems="center" paddingHorizontal="$4" paddingVertical="$3" borderBottomWidth={1} borderBottomColor={themeColors.border}>
+                    <Text width={80} fontSize={16} fontWeight="500" color={themeColors.textPrimary}>Title</Text>
+                    <TextInput
+                        placeholder="e.g., Costco Grocery"
+                        placeholderTextColor={themeColors.textMuted}
+                        value={billName}
+                        onChangeText={setBillName}
+                        style={{
+                            flex: 1,
+                            fontSize: 16,
+                            color: themeColors.textPrimary,
+                            padding: 0
+                        }}
+                    />
+                </XStack>
 
-            <YStack gap="$1">
-              <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary}>
-                Group
-              </Text>
-              <Pressable>
-                <Card variant="surface">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <XStack alignItems="center" gap="$2">
-                      {selectedGroup && <GroupImage groupId={selectedGroup.id} size="sm" />}
-                      <Text fontSize={16} color={themeColors.textPrimary}>
-                        {selectedGroup?.name}
-                      </Text>
+                {/* Group Selector */}
+                <Pressable>
+                    <XStack alignItems="center" justifyContent="space-between" paddingHorizontal="$4" paddingVertical="$3">
+                        <XStack alignItems="center" gap="$3">
+                            <Text width={68} fontSize={16} fontWeight="500" color={themeColors.textPrimary}>Group</Text>
+                            <XStack alignItems="center" gap="$2">
+                                {selectedGroup && <GroupImage groupId={selectedGroup.id} size="sm" />}
+                                <Text fontSize={16} color={themeColors.textSecondary}>
+                                    {selectedGroup?.name}
+                                </Text>
+                            </XStack>
+                        </XStack>
+                        <ChevronDown size={20} color={themeColors.textMuted} />
                     </XStack>
-                    <ChevronDown size={20} color={themeColors.textMuted} />
-                  </XStack>
-                </Card>
-              </Pressable>
+                </Pressable>
             </YStack>
-          </YStack>
+          </Card>
 
           {/* Items Header */}
           <XStack 
@@ -336,19 +353,35 @@ export default function CreateBillScreen() {
           </XStack>
 
           {/* Items List */}
-          <YStack gap="$2" marginBottom="$4">
-            {items.map((item, index) => renderItemRow(item, index))}
-            
-            <Pressable onPress={addNewRow}>
-              <Card variant="outlined">
-                <XStack justifyContent="center" alignItems="center" gap="$2">
-                  <Plus size={20} color={themeColors.primary} />
-                  <Text fontSize={14} fontWeight="500" color={themeColors.primary}>
-                    Add Item
-                  </Text>
-                </XStack>
-              </Card>
-            </Pressable>
+          <YStack marginBottom="$4">
+            <Card variant="surface" padding={0} overflow="hidden">
+                <YStack>
+                    {items.map((item, index) => renderItemRow(item, index))}
+                    
+                    {/* Add Item Row - Integrated */}
+                    <Pressable 
+                        onPress={addNewRow}
+                        style={({ pressed }) => ({
+                            backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent',
+                        })}
+                    >
+                        <XStack 
+                            paddingVertical="$4" 
+                            paddingHorizontal="$4" 
+                            alignItems="center" 
+                            justifyContent="center"
+                            gap="$2"
+                            borderTopWidth={items.length > 0 ? 1 : 0}
+                            borderTopColor={themeColors.border}
+                        >
+                            <Plus size={18} color={themeColors.primary} />
+                            <Text fontSize={16} fontWeight="500" color={themeColors.primary}>
+                                Add Item
+                            </Text>
+                        </XStack>
+                    </Pressable>
+                </YStack>
+            </Card>
           </YStack>
 
           {/* Tax & Tip & Split Selector */}
@@ -360,20 +393,44 @@ export default function CreateBillScreen() {
                   ${subtotal.toFixed(2)}
                 </Text>
               </XStack>
+
+              {/* Discount - Overall */}
+              <YStack gap="$2" opacity={items.length > 0 ? 1 : 0.5}>
+                  <XStack alignItems="center" justifyContent="space-between">
+                      <Text fontSize={14} color={themeColors.textSecondary} minWidth={60}>Discount</Text>
+                      
+                       <Stack flex={1} />
+
+                      <XStack alignItems="center" gap="$1">
+                          <Text fontSize={14} color={themeColors.error}>-$</Text>
+                          <TextInput
+                            placeholder="0.00"
+                            value={discount}
+                            onChangeText={setDiscount}
+                            keyboardType="decimal-pad"
+                            scrollEnabled={false}
+                            style={{
+                              minWidth: 60,
+                              fontSize: 16,
+                              color: themeColors.error,
+                              textAlign: 'right',
+                              padding: 0,
+                            }}
+                            placeholderTextColor={themeColors.textMuted}
+                          />
+                      </XStack>
+                  </XStack>
+              </YStack>
               
               {/* Tax */}
               <YStack gap="$2">
                   <XStack alignItems="center" justifyContent="space-between">
                       <Text fontSize={14} color={themeColors.textSecondary} minWidth={40}>Tax</Text>
                       
-                       {parseFloat(tax) > 0 && (
-                        <SplitModeSelector 
+                       <SplitModeSelector 
                             value={taxSplitMode} 
                             onChange={setTaxSplitMode} 
                         />
-                      )}
-
-                       {parseFloat(tax) <= 0 && <Stack flex={1} />}
 
                       <XStack alignItems="center" gap="$1">
                           <Text fontSize={14} color={themeColors.textMuted}>$</Text>
@@ -401,14 +458,10 @@ export default function CreateBillScreen() {
                   <XStack alignItems="center" justifyContent="space-between">
                       <Text fontSize={14} color={themeColors.textSecondary} minWidth={40}>Tip</Text>
                       
-                      {parseFloat(tip) > 0 && (
-                        <SplitModeSelector 
+                      <SplitModeSelector 
                             value={tipSplitMode} 
                             onChange={setTipSplitMode} 
                         />
-                      )}
-
-                       {parseFloat(tip) <= 0 && <Stack flex={1} />}
 
                       <XStack alignItems="center" gap="$1">
                           <Text fontSize={14} color={themeColors.textMuted}>$</Text>

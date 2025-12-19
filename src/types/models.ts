@@ -64,6 +64,7 @@ export interface Bill {
   total_amount: number;
   tax_amount: number;
   tip_amount: number;
+  discount_amount?: number; // Overall bill discount (always proportional)
   tax_split_mode?: 'equal' | 'proportional';
   tip_split_mode?: 'equal' | 'proportional'; // Defaults to equal if undefined
   paid_by?: string;

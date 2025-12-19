@@ -52,6 +52,7 @@ export default function BillEditScreen() {
   const [items, setItems] = useState<EditItem[]>([]);
   const [tax, setTax] = useState('');
   const [tip, setTip] = useState('');
+  const [discount, setDiscount] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [taxSplitMode, setTaxSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
@@ -72,6 +73,7 @@ export default function BillEditScreen() {
       setCategory(currentBill.category);
       setTax(currentBill.tax_amount.toString());
       setTip(currentBill.tip_amount.toString());
+      setDiscount((currentBill.discount_amount || 0).toString() === '0' ? '' : (currentBill.discount_amount || 0).toString());
       setTaxSplitMode(currentBill.tax_split_mode || 'proportional');
       setTipSplitMode(currentBill.tip_split_mode || 'proportional');
     }
@@ -145,7 +147,7 @@ export default function BillEditScreen() {
       return sum + (price * qty) - discount;
   }, 0);
 
-  const total = subtotal + (parseFloat(tax) || 0) + (parseFloat(tip) || 0);
+  const total = subtotal - (parseFloat(discount) || 0) + (parseFloat(tax) || 0) + (parseFloat(tip) || 0);
 
   const handleItemChange = (index: number, field: keyof EditItem, value: string) => {
     setHasChanges(true);
@@ -200,22 +202,24 @@ export default function BillEditScreen() {
       return;
     }
 
-    try {
-      let finalTax = parseFloat(tax) || 0;
-      let finalTip = parseFloat(tip) || 0;
-      let finalTaxSplitMode: 'equal' | 'proportional' | undefined = taxSplitMode === 'custom' ? undefined : taxSplitMode;
-      let finalTipSplitMode: 'equal' | 'proportional' | undefined = tipSplitMode === 'custom' ? undefined : tipSplitMode;
-      
-      // 1. Update Bill Metadata
-      await updateBill(id!, {
-        title,
-        category,
-        tax_amount: finalTax,
-        tip_amount: finalTip,
-        total_amount: total, // Recalculated total
-        tax_split_mode: finalTaxSplitMode,
-        tip_split_mode: finalTipSplitMode,
-      });
+      try {
+        let finalTax = parseFloat(tax) || 0;
+        let finalTip = parseFloat(tip) || 0;
+        let finalDiscount = parseFloat(discount) || 0;
+        let finalTaxSplitMode: 'equal' | 'proportional' | undefined = taxSplitMode === 'custom' ? undefined : taxSplitMode;
+        let finalTipSplitMode: 'equal' | 'proportional' | undefined = tipSplitMode === 'custom' ? undefined : tipSplitMode;
+        
+        // 1. Update Bill Metadata
+        await updateBill(id!, {
+          title,
+          category,
+          tax_amount: finalTax,
+          tip_amount: finalTip,
+          discount_amount: finalDiscount,
+          total_amount: total, // Recalculated total
+          tax_split_mode: finalTaxSplitMode,
+          tip_split_mode: finalTipSplitMode,
+        });
 
       // 2. Update Bill Items
       await updateBillItems(id!, validItems.map(i => ({
@@ -274,34 +278,24 @@ export default function BillEditScreen() {
             key={item.id} 
             borderBottomWidth={index < items.length - 1 ? 1 : 0}
             borderBottomColor={themeColors.border}
-            paddingHorizontal="$3"
-            paddingVertical="$3"
+            paddingHorizontal="$4"
+            paddingVertical="$4"
             backgroundColor={themeColors.surface}
         >
             <XStack gap="$3">
                 {/* COLUMN 1: Quantity */}
-                 <Stack 
-                    width={32}
-                    height={32} 
-                    backgroundColor={themeColors.background} 
-                    borderRadius={6} 
-                    justifyContent="center" 
-                    alignItems="center"
-                    borderWidth={1}
-                    borderColor={themeColors.border}
-                >
+                 <Stack width={40} justifyContent="center" alignItems="center">
                     <TextInput
                         value={item.quantity}
                         onChangeText={(val) => handleItemChange(index, 'quantity', val)}
                         keyboardType="number-pad"
                         style={{
-                            fontSize: 14,
+                            fontSize: 18,
                             fontWeight: '600',
-                            color: themeColors.textPrimary,
+                            color: themeColors.primary,
                             textAlign: 'center',
                             textAlignVertical: 'center',
                             width: '100%',
-                            height: '100%',
                             padding: 0
                         }}
                     />
@@ -411,86 +405,115 @@ export default function BillEditScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 100 }}
         >
-          {/* Title */}
-          <YStack marginBottom="$4">
-            <Input
-              label="Bill Title"
-              placeholder="e.g., Costco Trip"
-              value={title}
-              onChangeText={(val) => { setTitle(val); setHasChanges(true); }}
-            />
-          </YStack>
+          {/* Bill Details Card */}
+          <Card variant="surface" padding={0} marginBottom="$6" overflow="hidden">
+            <YStack>
+                {/* Bill Title Input */}
+                <XStack alignItems="center" paddingHorizontal="$4" paddingVertical="$3" borderBottomWidth={1} borderBottomColor={themeColors.border}>
+                    <Text width={80} fontSize={16} fontWeight="500" color={themeColors.textPrimary}>Title</Text>
+                    <TextInput
+                        placeholder="e.g., Costco Trip"
+                        value={title}
+                        onChangeText={(val) => { setTitle(val); setHasChanges(true); }}
+                        placeholderTextColor={themeColors.textMuted}
+                        style={{
+                            flex: 1,
+                            fontSize: 16,
+                            color: themeColors.textPrimary,
+                            padding: 0
+                        }}
+                    />
+                </XStack>
 
-          {/* Category */}
-          <YStack marginBottom="$4">
-            <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
-              Category
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
-              <XStack gap="$2">
-                {categories.map((cat) => (
-                  <Pressable
-                    key={cat.key}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setCategory(cat.key);
-                      setHasChanges(true);
-                    }}
-                  >
-                    <Stack
-                      paddingHorizontal="$3"
-                      paddingVertical="$2"
-                      borderRadius={20}
-                      backgroundColor={category === cat.key 
-                        ? `${themeColors.primary}20` 
-                        : themeColors.surfaceElevated
-                      }
-                      borderWidth={1}
-                      borderColor={category === cat.key ? themeColors.primary : themeColors.border}
-                    >
-                      <XStack alignItems="center" gap="$1">
-                        <Text fontSize={16}>{cat.icon}</Text>
-                        <Text 
-                          fontSize={14} 
-                          color={category === cat.key 
-                            ? themeColors.primary 
-                            : themeColors.textSecondary
-                          }
-                        >
-                          {cat.label}
-                        </Text>
+                {/* Category Selector */}
+                <YStack paddingVertical="$3">
+                    <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary} paddingHorizontal="$4" marginBottom="$3">
+                      Category
+                    </Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+                      <XStack gap="$2">
+                        {categories.map((cat) => (
+                          <Pressable
+                            key={cat.key}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              setCategory(cat.key);
+                              setHasChanges(true);
+                            }}
+                          >
+                            <Stack
+                              paddingHorizontal="$3"
+                              paddingVertical="$2"
+                              borderRadius={20}
+                              backgroundColor={category === cat.key 
+                                ? `${themeColors.primary}20` 
+                                : themeColors.surface
+                              }
+                              borderWidth={1}
+                              borderColor={category === cat.key ? themeColors.primary : themeColors.border}
+                            >
+                              <XStack alignItems="center" gap="$1">
+                                <Text fontSize={16}>{cat.icon}</Text>
+                                <Text 
+                                  fontSize={14} 
+                                  color={category === cat.key 
+                                    ? themeColors.primary 
+                                    : themeColors.textSecondary
+                                  }
+                                >
+                                  {cat.label}
+                                </Text>
+                              </XStack>
+                            </Stack>
+                          </Pressable>
+                        ))}
                       </XStack>
-                    </Stack>
-                  </Pressable>
-                ))}
-              </XStack>
-            </ScrollView>
-          </YStack>
+                    </ScrollView>
+                </YStack>
+            </YStack>
+          </Card>
 
           {/* Items */}
           <YStack marginBottom="$4">
-            <XStack justifyContent="space-between" alignItems="center" marginBottom="$2">
+            <XStack justifyContent="space-between" alignItems="center" marginBottom="$2" paddingHorizontal="$1">
               <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                Items ({items.length})
+                Items
               </Text>
-              <Pressable onPress={handleAddItem} hitSlop={10}>
-                <XStack alignItems="center" gap="$1">
-                  <Plus size={16} color={themeColors.primary} />
-                  <Text fontSize={14} color={themeColors.primary}>Add Item</Text>
-                </XStack>
-              </Pressable>
+              <Text fontSize={14} color={themeColors.textMuted}>
+                {items.length} items
+               </Text>
             </XStack>
             
             {/* List Row Style Container */}
-            <Stack 
-                backgroundColor={themeColors.surface} 
-                borderRadius={12} 
-                borderWidth={1} 
-                borderColor={themeColors.border}
-                overflow="hidden"
-            >
-                {items.map((item, index) => renderItemRow(item, index))}
-            </Stack>
+            <Card variant="surface" padding={0} overflow="hidden">
+                <YStack>
+                    {items.map((item, index) => renderItemRow(item, index))}
+                    
+                    {/* Add Item Row - Integrated */}
+                    <Pressable 
+                        onPress={handleAddItem}
+                        hitSlop={10}
+                        style={({ pressed }) => ({
+                            backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent',
+                        })}
+                    >
+                        <XStack 
+                            paddingVertical="$4" 
+                            paddingHorizontal="$4" 
+                            alignItems="center" 
+                            justifyContent="center"
+                            gap="$2"
+                            borderTopWidth={items.length > 0 ? 1 : 0}
+                            borderTopColor={themeColors.border}
+                        >
+                            <Plus size={18} color={themeColors.primary} />
+                            <Text fontSize={16} fontWeight="500" color={themeColors.primary}>
+                                Add Item
+                            </Text>
+                        </XStack>
+                    </Pressable>
+                </YStack>
+            </Card>
         </YStack>
 
         {/* Tax & Tip */}
@@ -505,6 +528,32 @@ export default function BillEditScreen() {
               
               <Stack height={1} backgroundColor={themeColors.border} opacity={0.5} />
 
+              {/* Discount - Overall */}
+              <YStack gap="$2">
+                  <XStack alignItems="center" justifyContent="space-between">
+                      <Text fontSize={16} color={themeColors.textPrimary} minWidth={60}>Discount</Text>
+                      
+                       <Stack flex={1} />
+
+                      <XStack alignItems="center" backgroundColor={themeColors.background} borderRadius={8} paddingHorizontal="$3" borderWidth={1} borderColor={themeColors.border}>
+                          <Text color={themeColors.error}>-$</Text>
+                          <TextInput
+                            placeholder="0.00"
+                            value={discount}
+                            onChangeText={(val) => { setDiscount(val); setHasChanges(true); }}
+                            keyboardType="decimal-pad"
+                            style={{
+                                padding: 8,
+                                minWidth: 60,
+                                fontSize: 16,
+                                textAlign: 'right',
+                                color: themeColors.error
+                            }}
+                          />
+                      </XStack>
+                  </XStack>
+              </YStack>
+
 
 
 
@@ -514,17 +563,13 @@ export default function BillEditScreen() {
                   <XStack alignItems="center" justifyContent="space-between">
                       <Text fontSize={16} color={themeColors.textPrimary} minWidth={40}>Tax</Text>
                       
-                       {parseFloat(tax) > 0 && (
-                        <SplitModeSelector 
+                       <SplitModeSelector 
                             value={taxSplitMode} 
                             onChange={(mode) => {
                                 setTaxSplitMode(mode);
                                 setHasChanges(true);
                             }} 
                         />
-                      )}
-
-                       {parseFloat(tax) <= 0 && <Stack flex={1} />}
 
                       <XStack alignItems="center" backgroundColor={themeColors.background} borderRadius={8} paddingHorizontal="$3" borderWidth={1} borderColor={themeColors.border}>
                           <Text color={themeColors.textMuted}>$</Text>
@@ -550,17 +595,13 @@ export default function BillEditScreen() {
                   <XStack alignItems="center" justifyContent="space-between">
                       <Text fontSize={16} color={themeColors.textPrimary} minWidth={40}>Tip</Text>
                       
-                      {parseFloat(tip) > 0 && (
-                        <SplitModeSelector 
+                      <SplitModeSelector 
                             value={tipSplitMode} 
                             onChange={(mode) => {
                                 setTipSplitMode(mode);
                                 setHasChanges(true);
                             }} 
                         />
-                      )}
-
-                       {parseFloat(tip) <= 0 && <Stack flex={1} />}
 
                       <XStack alignItems="center" backgroundColor={themeColors.background} borderRadius={8} paddingHorizontal="$3" borderWidth={1} borderColor={themeColors.border}>
                           <Text color={themeColors.textMuted}>$</Text>
