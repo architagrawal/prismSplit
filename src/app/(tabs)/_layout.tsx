@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Animated, Modal, View } from 'react-native';
+import { Pressable, StyleSheet, Animated, View } from 'react-native';
 import { Stack, Text, YStack } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
@@ -17,11 +17,11 @@ import {
   User,
   UserCircle,
   Plus,
-  X,
   Zap,
   FileText
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -40,10 +40,12 @@ function TabIcon({ Icon, focused }: TabIconProps) {
   );
 }
 
-// Center FAB with menu
-function CenterFAB() {
+// Global Overlay Component for FAB and Menu
+function FabOverlay() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const themeColors = useThemeColors();
+  const bottomPadding = Math.max(insets.bottom, 8);
   const [isOpen, setIsOpen] = useState(false);
   const [animation] = useState(new Animated.Value(0));
   
@@ -100,13 +102,179 @@ function CenterFAB() {
 
   const backdropOpacity = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.5],
+    outputRange: [0, 1],
   });
 
+  // Calculate FAB position to match tab bar hole
+  // Tab bar height = 56 + bottomPadding
+  // FAB sits on top, offset by -28 (half height)
+  const fabBottomPosition = 28 + bottomPadding;
+
   return (
-    <>
-      {/* FAB Button */}
-      <View style={styles.fabContainer}>
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      {/* 1. Backdrop Layer (only active when open) */}
+      {isOpen && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="auto">
+           {/* Transparent Closer */}
+           <Pressable style={StyleSheet.absoluteFill} onPress={() => closeMenu()} />
+           
+           {/* Localized Blur Backdrop */}
+           <Animated.View 
+             style={[
+               styles.blurLayer,
+               { opacity: backdropOpacity }
+             ]}
+             pointerEvents="none"
+           >
+             <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+           </Animated.View>
+        </View>
+      )}
+
+      {/* 2. Menu Items Layer */}
+      <Animated.View 
+        style={[
+          styles.menuContainer,
+          { 
+            bottom: fabBottomPosition + 60, // Position above FAB
+            transform: [{ scale: menuScale }],
+            opacity: menuOpacity,
+            backgroundColor: themeColors.surface,
+            borderRadius: 24,
+            overflow: 'hidden',
+            shadowColor: "black",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 8,
+          }
+        ]}
+        pointerEvents={isOpen ? 'auto' : 'none'}
+      >
+        {/* Create Group Option */}
+        <Pressable 
+          onPress={handleCreateGroup} 
+          style={({pressed}) => [
+            styles.menuItem, 
+            { backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent' }
+          ]}
+        >
+          <Stack
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            paddingHorizontal="$4"
+            paddingVertical="$3"
+            borderBottomWidth={1}
+            borderColor={themeColors.border}
+          >
+            <Stack
+              width={40}
+              height={40}
+              borderRadius={20}
+              backgroundColor={themeColors.tertiaryLight || themeColors.tertiary}
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Users size={20} color={themeColors.tertiary || themeColors.primary} />
+            </Stack>
+            <YStack>
+              <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+                Create Group
+              </Text>
+              <Text fontSize={12} color={themeColors.textSecondary}>
+                Start a new expense group
+              </Text>
+            </YStack>
+          </Stack>
+        </Pressable>
+
+        {/* Quick Bill Option */}
+        <Pressable 
+          onPress={handleQuickBill} 
+          style={({pressed}) => [
+            styles.menuItem, 
+            { backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent' }
+          ]}
+        >
+          <Stack
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            paddingHorizontal="$4"
+            paddingVertical="$3"
+            borderBottomWidth={1}
+            borderColor={themeColors.border}
+          >
+            <Stack
+              width={40}
+              height={40}
+              borderRadius={20}
+              backgroundColor={themeColors.accent}
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Zap size={20} color={themeColors.primary} />
+            </Stack>
+            <YStack>
+              <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+                Quick Bill
+              </Text>
+              <Text fontSize={12} color={themeColors.textSecondary}>
+                Simple expense, no items
+              </Text>
+            </YStack>
+          </Stack>
+        </Pressable>
+
+        {/* Detailed Bill Option */}
+        <Pressable 
+          onPress={handleDetailedBill} 
+          style={({pressed}) => [
+            styles.menuItem, 
+            { backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent' }
+          ]}
+        >
+          <Stack
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            paddingHorizontal="$4"
+            paddingVertical="$3"
+          >
+            <Stack
+              width={40}
+              height={40}
+              borderRadius={20}
+              backgroundColor={themeColors.primaryLight}
+              justifyContent="center"
+              alignItems="center"
+            >
+              <FileText size={20} color={themeColors.primary} />
+            </Stack>
+            <YStack>
+              <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
+                Detailed Bill
+              </Text>
+              <Text fontSize={12} color={themeColors.textSecondary}>
+                Itemized with Speed Parser
+              </Text>
+            </YStack>
+          </Stack>
+        </Pressable>
+      </Animated.View>
+
+      {/* 3. FAB Button Layer (Top) */}
+      <View 
+        style={{
+          position: 'absolute',
+          bottom: fabBottomPosition,
+          left: 0,
+          right: 0,
+          alignItems: 'center',
+        }}
+        pointerEvents="box-none"
+      >
         <Pressable 
           onPress={isOpen ? () => closeMenu() : openMenu}
           style={[styles.fab, { backgroundColor: themeColors.primary, shadowColor: themeColors.primary }]}
@@ -116,147 +284,13 @@ function CenterFAB() {
           </Animated.View>
         </Pressable>
       </View>
-
-      {/* Menu Overlay */}
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="none"
-        statusBarTranslucent
-        onRequestClose={() => closeMenu()}
-      >
-        {/* Backdrop */}
-        <Pressable style={styles.backdrop} onPress={() => closeMenu()}>
-          <Animated.View 
-            style={[
-              styles.backdropInner,
-              { opacity: backdropOpacity }
-            ]} 
-          />
-        </Pressable>
-
-        {/* Menu Items */}
-        <Animated.View 
-          style={[
-            styles.menuContainer,
-            { 
-              transform: [{ scale: menuScale }],
-              opacity: menuOpacity
-            }
-          ]}
-          pointerEvents={isOpen ? 'auto' : 'none'}
-        >
-          {/* Create Group Option */}
-          <Pressable onPress={handleCreateGroup} style={styles.menuItem}>
-            <Stack
-              flexDirection="row"
-              alignItems="center"
-              gap="$3"
-              backgroundColor={themeColors.surface}
-              paddingHorizontal="$4"
-              paddingVertical="$3"
-              borderRadius={16}
-              shadowColor="black"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-            >
-              <Stack
-                width={40}
-                height={40}
-                borderRadius={20}
-                backgroundColor={themeColors.tertiaryLight || themeColors.tertiary}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <Users size={20} color={themeColors.tertiary || themeColors.primary} />
-              </Stack>
-              <YStack>
-                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                  Create Group
-                </Text>
-                <Text fontSize={12} color={themeColors.textSecondary}>
-                  Start a new expense group
-                </Text>
-              </YStack>
-            </Stack>
-          </Pressable>
-
-          {/* Quick Bill Option */}
-          <Pressable onPress={handleQuickBill} style={styles.menuItem}>
-            <Stack
-              flexDirection="row"
-              alignItems="center"
-              gap="$3"
-              backgroundColor={themeColors.surface}
-              paddingHorizontal="$4"
-              paddingVertical="$3"
-              borderRadius={16}
-              shadowColor="black"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-            >
-              <Stack
-                width={40}
-                height={40}
-                borderRadius={20}
-                backgroundColor={themeColors.accent}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <Zap size={20} color={themeColors.primary} />
-              </Stack>
-              <YStack>
-                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                  Quick Bill
-                </Text>
-                <Text fontSize={12} color={themeColors.textSecondary}>
-                  Simple expense, no items
-                </Text>
-              </YStack>
-            </Stack>
-          </Pressable>
-
-          {/* Detailed Bill Option */}
-          <Pressable onPress={handleDetailedBill} style={styles.menuItem}>
-            <Stack
-              flexDirection="row"
-              alignItems="center"
-              gap="$3"
-              backgroundColor={themeColors.surface}
-              paddingHorizontal="$4"
-              paddingVertical="$3"
-              borderRadius={16}
-              shadowColor="black"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-            >
-              <Stack
-                width={40}
-                height={40}
-                borderRadius={20}
-                backgroundColor={themeColors.primaryLight}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <FileText size={20} color={themeColors.primary} />
-              </Stack>
-              <YStack>
-                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-                  Detailed Bill
-                </Text>
-                <Text fontSize={12} color={themeColors.textSecondary}>
-                  Itemized with Speed Parser
-                </Text>
-              </YStack>
-            </Stack>
-          </Pressable>
-        </Animated.View>
-      </Modal>
-    </>
+    </View>
   );
+}
+
+// Placeholder for the Tab Bar to reserve space
+function TabPlaceholder() {
+  return <View style={{ width: 56, height: 56 }} />;
 }
 
 export default function TabLayout() {
@@ -265,85 +299,87 @@ export default function TabLayout() {
   const bottomPadding = Math.max(insets.bottom, 8);
   
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: themeColors.primary,
-        tabBarInactiveTintColor: themeColors.textMuted,
-        tabBarStyle: {
-          backgroundColor: themeColors.surface,
-          borderTopWidth: 1,
-          borderTopColor: themeColors.border,
-          height: 56 + bottomPadding,
-          paddingTop: 8,
-          paddingBottom: bottomPadding,
-        },
-        tabBarShowLabel: true,
-        tabBarLabelStyle: styles.tabBarLabel,
-        headerShown: false,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={Home} focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="groups"
-        options={{
-          title: 'Groups',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={Users} focused={focused} />,
-        }}
-      />
-      
-      {/* Center FAB placeholder - we use a blank tab and overlay FAB */}
-      <Tabs.Screen
-        name="fab"
-        options={{
-          title: '',
-          tabBarButton: () => <CenterFAB />,
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: themeColors.primary,
+          tabBarInactiveTintColor: themeColors.textMuted,
+          tabBarStyle: {
+            backgroundColor: themeColors.surface,
+            borderTopWidth: 1,
+            borderTopColor: themeColors.border,
+            height: 56 + bottomPadding,
+            paddingTop: 8,
+            paddingBottom: bottomPadding,
           },
+          tabBarShowLabel: true,
+          tabBarLabelStyle: styles.tabBarLabel,
+          headerShown: false,
         }}
-      />
-      
-      <Tabs.Screen
-        name="activity"
-        options={{
-          title: 'Activity',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={Logs} focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="friends"
-        options={{
-          title: 'Friends',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={UserCircle} focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Account',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={User} focused={focused} />,
-          href: null, // Hide from tab bar, access via Friends or other screens
-        }}
-      />
-      
-      {/* Hide the old two.tsx */}
-      <Tabs.Screen
-        name="two"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ focused }) => <TabIcon Icon={Home} focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="groups"
+          options={{
+            title: 'Groups',
+            tabBarIcon: ({ focused }) => <TabIcon Icon={Users} focused={focused} />,
+          }}
+        />
+        
+        {/* Placeholder Tab */}
+        <Tabs.Screen
+          name="fab"
+          options={{
+            title: '',
+            tabBarButton: () => <TabPlaceholder />,
+          }}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+            },
+          }}
+        />
+        
+        <Tabs.Screen
+          name="activity"
+          options={{
+            title: 'Activity',
+            tabBarIcon: ({ focused }) => <TabIcon Icon={Logs} focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="friends"
+          options={{
+            title: 'Friends',
+            tabBarIcon: ({ focused }) => <TabIcon Icon={UserCircle} focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Account',
+            tabBarIcon: ({ focused }) => <TabIcon Icon={User} focused={focused} />,
+            href: null, // Hide from tab bar
+          }}
+        />
+        
+        <Tabs.Screen
+          name="two"
+          options={{
+            href: null, // Hide from tab bar
+          }}
+        />
+      </Tabs>
 
-    </Tabs>
+      {/* Global FAB Overlay */}
+      <FabOverlay />
+    </View>
   );
 }
 
@@ -359,31 +395,28 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -28,
+    // marginTop: -28, // Removed since handled by absolute positioning in overlay
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
-  fabContainer: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  backdropInner: {
-    flex: 1,
-    backgroundColor: 'black',
+  blurLayer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '45%', // Maintained 45% coverage
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
   },
   menuContainer: {
     position: 'absolute',
-    bottom: 120,
+    // bottom handled dynamically
     left: 24,
     right: 24,
     alignItems: 'center',
-    gap: 12,
   },
   menuItem: {
     width: '100%',
