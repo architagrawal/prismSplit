@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, Text, XStack, YStack } from 'tamagui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { X, Plus, Trash2, Save } from 'lucide-react-native';
+import { X, Plus, Trash2, Save, ChevronDown } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { 
@@ -16,6 +16,8 @@ import {
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useUIStore, useActivityStore, useAuthStore } from '@/lib/store';
 import { categoryIcons, type Category, type Activity } from '@/types/models';
+
+import { SplitModeSelector } from '@/components/bill/SplitModeSelector';
 
 interface EditItem {
   id: string;
@@ -503,10 +505,27 @@ export default function BillEditScreen() {
               
               <Stack height={1} backgroundColor={themeColors.border} opacity={0.5} />
 
+
+
+
+
               {/* Tax */}
               <YStack gap="$2">
-                  <XStack justifyContent="space-between" alignItems="center">
-                      <Text fontSize={16} color={themeColors.textPrimary}>Tax</Text>
+                  <XStack alignItems="center" justifyContent="space-between">
+                      <Text fontSize={16} color={themeColors.textPrimary} minWidth={40}>Tax</Text>
+                      
+                       {parseFloat(tax) > 0 && (
+                        <SplitModeSelector 
+                            value={taxSplitMode} 
+                            onChange={(mode) => {
+                                setTaxSplitMode(mode);
+                                setHasChanges(true);
+                            }} 
+                        />
+                      )}
+
+                       {parseFloat(tax) <= 0 && <Stack flex={1} />}
+
                       <XStack alignItems="center" backgroundColor={themeColors.background} borderRadius={8} paddingHorizontal="$3" borderWidth={1} borderColor={themeColors.border}>
                           <Text color={themeColors.textMuted}>$</Text>
                           <TextInput
@@ -524,44 +543,25 @@ export default function BillEditScreen() {
                           />
                       </XStack>
                   </XStack>
-                  {/* Tax Split Mode Selector */}
-                  {parseFloat(tax) > 0 && (
-                     <XStack backgroundColor={themeColors.background} padding="$1" borderRadius={8} borderWidth={1} borderColor={themeColors.border}>
-                          {(['equal', 'proportional', 'custom'] as const).map((mode) => (
-                            <Pressable 
-                              key={`tax-${mode}`}
-                              style={{ flex: 1 }}
-                              onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  setTaxSplitMode(mode);
-                                  setHasChanges(true);
-                              }}
-                            >
-                              <Stack 
-                                paddingVertical="$2" 
-                                alignItems="center"
-                                borderRadius={6}
-                                backgroundColor={taxSplitMode === mode ? themeColors.primary : 'transparent'}
-                              >
-                                  <Text 
-                                    fontSize={12} 
-                                    fontWeight={taxSplitMode === mode ? '600' : '400'}
-                                    color={taxSplitMode === mode ? 'white' : themeColors.textSecondary}
-                                    textTransform="capitalize"
-                                  >
-                                    {mode}
-                                  </Text>
-                              </Stack>
-                            </Pressable>
-                          ))}
-                     </XStack>
-                  )}
               </YStack>
 
               {/* Tip */}
               <YStack gap="$2">
-                  <XStack justifyContent="space-between" alignItems="center">
-                      <Text fontSize={16} color={themeColors.textPrimary}>Tip</Text>
+                  <XStack alignItems="center" justifyContent="space-between">
+                      <Text fontSize={16} color={themeColors.textPrimary} minWidth={40}>Tip</Text>
+                      
+                      {parseFloat(tip) > 0 && (
+                        <SplitModeSelector 
+                            value={tipSplitMode} 
+                            onChange={(mode) => {
+                                setTipSplitMode(mode);
+                                setHasChanges(true);
+                            }} 
+                        />
+                      )}
+
+                       {parseFloat(tip) <= 0 && <Stack flex={1} />}
+
                       <XStack alignItems="center" backgroundColor={themeColors.background} borderRadius={8} paddingHorizontal="$3" borderWidth={1} borderColor={themeColors.border}>
                           <Text color={themeColors.textMuted}>$</Text>
                           <TextInput
@@ -579,38 +579,6 @@ export default function BillEditScreen() {
                           />
                       </XStack>
                   </XStack>
-                   {/* Tip Split Mode Selector */}
-                   {parseFloat(tip) > 0 && (
-                     <XStack backgroundColor={themeColors.background} padding="$1" borderRadius={8} borderWidth={1} borderColor={themeColors.border}>
-                          {(['equal', 'proportional', 'custom'] as const).map((mode) => (
-                            <Pressable 
-                              key={`tip-${mode}`}
-                              style={{ flex: 1 }}
-                              onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  setTipSplitMode(mode);
-                                  setHasChanges(true);
-                              }}
-                            >
-                              <Stack 
-                                paddingVertical="$2" 
-                                alignItems="center"
-                                borderRadius={6}
-                                backgroundColor={tipSplitMode === mode ? themeColors.primary : 'transparent'}
-                              >
-                                  <Text 
-                                    fontSize={12} 
-                                    fontWeight={tipSplitMode === mode ? '600' : '400'}
-                                    color={tipSplitMode === mode ? 'white' : themeColors.textSecondary}
-                                    textTransform="capitalize"
-                                  >
-                                    {mode}
-                                  </Text>
-                              </Stack>
-                            </Pressable>
-                          ))}
-                     </XStack>
-                  )}
               </YStack>
 
               <Stack height={1} backgroundColor={themeColors.border} opacity={0.5} />

@@ -20,6 +20,8 @@ import { Screen, Button, Card, Input, CurrencyInput, GroupImage } from '@/compon
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 
+import { SplitModeSelector } from '@/components/bill/SplitModeSelector';
+
 export default function CreateBillScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
@@ -359,121 +361,75 @@ export default function CreateBillScreen() {
                 </Text>
               </XStack>
               
-              <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={themeColors.textSecondary}>Tax</Text>
-                <XStack alignItems="center" gap="$1">
-                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
-                  <TextInput
-                    placeholder="0.00"
-                    value={tax}
-                    onChangeText={setTax}
-                    keyboardType="decimal-pad"
-                    scrollEnabled={false}
-                    style={{
-                      minWidth: 60,
-                      fontSize: 16,
-                      color: themeColors.textPrimary,
-                      textAlign: 'right',
-                      padding: 0,
-                    }}
-                    placeholderTextColor={themeColors.textMuted}
-                  />
-                </XStack>
-              </XStack>
-              
-              {/* Tax Split Selector */}
-              {parseFloat(tax) > 0 && (
-                <XStack 
-                  backgroundColor={themeColors.surfaceElevated} 
-                  padding="$1" 
-                  borderRadius={8}
-                >
-                  {(['equal', 'proportional', 'custom'] as const).map((mode) => (
-                    <Pressable 
-                      key={`tax-${mode}`}
-                      style={{ flex: 1 }}
-                      onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setTaxSplitMode(mode);
-                      }}
-                    >
-                      <Stack 
-                        paddingVertical="$2" 
-                        alignItems="center"
-                        borderRadius={6}
-                        backgroundColor={taxSplitMode === mode ? themeColors.primary : 'transparent'}
-                      >
-                          <Text 
-                            fontSize={11} 
-                            fontWeight={taxSplitMode === mode ? '600' : '400'}
-                            color={taxSplitMode === mode ? 'white' : themeColors.textSecondary}
-                            textTransform="capitalize"
-                          >
-                            {mode}
-                          </Text>
-                      </Stack>
-                    </Pressable>
-                  ))}
-                </XStack>
-              )}
+              {/* Tax */}
+              <YStack gap="$2">
+                  <XStack alignItems="center" justifyContent="space-between">
+                      <Text fontSize={14} color={themeColors.textSecondary} minWidth={40}>Tax</Text>
+                      
+                       {parseFloat(tax) > 0 && (
+                        <SplitModeSelector 
+                            value={taxSplitMode} 
+                            onChange={setTaxSplitMode} 
+                        />
+                      )}
 
-              <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize={14} color={themeColors.textSecondary}>Tip</Text>
-                <XStack alignItems="center" gap="$1">
-                  <Text fontSize={14} color={themeColors.textMuted}>$</Text>
-                  <TextInput
-                    placeholder="0.00"
-                    value={tip}
-                    onChangeText={setTip}
-                    keyboardType="decimal-pad"
-                    scrollEnabled={false}
-                    style={{
-                      minWidth: 60,
-                      fontSize: 16,
-                      color: themeColors.textPrimary,
-                      textAlign: 'right',
-                      padding: 0,
-                    }}
-                    placeholderTextColor={themeColors.textMuted}
-                  />
-                </XStack>
-              </XStack>
+                       {parseFloat(tax) <= 0 && <Stack flex={1} />}
 
-              {/* Tip Split Selector */}
-              {parseFloat(tip) > 0 && (
-                <XStack 
-                  backgroundColor={themeColors.surfaceElevated} 
-                  padding="$1" 
-                  borderRadius={8}
-                >
-                  {(['equal', 'proportional', 'custom'] as const).map((mode) => (
-                    <Pressable 
-                      key={`tip-${mode}`}
-                      style={{ flex: 1 }}
-                      onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setTipSplitMode(mode);
-                      }}
-                    >
-                      <Stack 
-                        paddingVertical="$2" 
-                        alignItems="center"
-                        borderRadius={6}
-                        backgroundColor={tipSplitMode === mode ? themeColors.primary : 'transparent'}
-                      >
-                          <Text 
-                            fontSize={11} 
-                            fontWeight={tipSplitMode === mode ? '600' : '400'}
-                            color={tipSplitMode === mode ? 'white' : themeColors.textSecondary}
-                            textTransform="capitalize"
-                          >
-                            {mode}
-                          </Text>
-                      </Stack>
-                    </Pressable>
-                  ))}
-                </XStack>
-              )}
+                      <XStack alignItems="center" gap="$1">
+                          <Text fontSize={14} color={themeColors.textMuted}>$</Text>
+                          <TextInput
+                            placeholder="0.00"
+                            value={tax}
+                            onChangeText={setTax}
+                            keyboardType="decimal-pad"
+                            scrollEnabled={false}
+                            style={{
+                              minWidth: 60,
+                              fontSize: 16,
+                              color: themeColors.textPrimary,
+                              textAlign: 'right',
+                              padding: 0,
+                            }}
+                            placeholderTextColor={themeColors.textMuted}
+                          />
+                      </XStack>
+                  </XStack>
+              </YStack>
+
+              {/* Tip */}
+              <YStack gap="$2">
+                  <XStack alignItems="center" justifyContent="space-between">
+                      <Text fontSize={14} color={themeColors.textSecondary} minWidth={40}>Tip</Text>
+                      
+                      {parseFloat(tip) > 0 && (
+                        <SplitModeSelector 
+                            value={tipSplitMode} 
+                            onChange={setTipSplitMode} 
+                        />
+                      )}
+
+                       {parseFloat(tip) <= 0 && <Stack flex={1} />}
+
+                      <XStack alignItems="center" gap="$1">
+                          <Text fontSize={14} color={themeColors.textMuted}>$</Text>
+                          <TextInput
+                            placeholder="0.00"
+                            value={tip}
+                            onChangeText={setTip}
+                            keyboardType="decimal-pad"
+                            scrollEnabled={false}
+                            style={{
+                              minWidth: 60,
+                              fontSize: 16,
+                              color: themeColors.textPrimary,
+                              textAlign: 'right',
+                              padding: 0,
+                            }}
+                            placeholderTextColor={themeColors.textMuted}
+                          />
+                      </XStack>
+                  </XStack>
+              </YStack>
 
               {(taxSplitMode === 'custom' || tipSplitMode === 'custom') && (
                  <Text fontSize={11} color={themeColors.info} marginTop="$1" fontStyle="italic">
