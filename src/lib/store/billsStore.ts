@@ -18,6 +18,7 @@ interface BillDraft {
     name: string;
     price: number;
     quantity: number;
+    discount?: number;
   }>;
   tax: number;
   tip: number;
@@ -41,7 +42,7 @@ interface BillsState {
   fetchBillItems: (billId: string) => Promise<void>;
   createBill: (draft: BillDraft) => Promise<Bill>;
   updateBill: (id: string, updates: Partial<Bill>) => Promise<void>;
-  updateBillItems: (billId: string, items: { name: string; price: number; quantity: number }[]) => Promise<void>;
+  updateBillItems: (billId: string, items: { name: string; price: number; quantity: number; discount?: number }[]) => Promise<void>;
   deleteBill: (id: string) => Promise<void>;
   
   // Draft management
@@ -129,6 +130,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         } else {
           // Explode!
           let remainingSplits = [...item.splits].map(s => ({...s})); // Deep copy splits to track remaining amounts
+          const unitDiscount = (item.discount || 0) / item.quantity;
           
           for (let i = 0; i < item.quantity; i++) {
             const newItemId = `${item.id}_${i}`;
@@ -166,7 +168,9 @@ export const useBillsStore = create<BillsState>((set, get) => ({
               id: newItemId,
               name: `${item.name} (${i + 1}/${item.quantity})`,
               quantity: 1, // Force quantity to 1 for exploded items
+              discount: unitDiscount, // Per-unit discount
               splits: newItemSplits,
+              unclaimed: newItemPrice - currentUnitFilled - unitDiscount, // Adjust unclaimed by discount
             } as BillItemWithSplits);
           }
         }
@@ -188,7 +192,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const subtotal = draft.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const subtotal = draft.items.reduce((sum, item) => sum + (item.price * item.quantity) - (item.discount || 0), 0);
       const total = subtotal + draft.tax + draft.tip;
       
       const newBill: Bill = {
@@ -241,7 +245,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
   },
 
   // Update bill items (replace existing)
-  updateBillItems: async (billId: string, newItems: { name: string; price: number; quantity: number }[]) => {
+  updateBillItems: async (billId: string, newItems: { name: string; price: number; quantity: number; discount?: number }[]) => {
     try {
         const explodedItems: BillItemWithSplits[] = [];
 
@@ -253,9 +257,10 @@ export const useBillsStore = create<BillsState>((set, get) => ({
                      name: item.name,
                      price: item.price,
                      quantity: 1,
+                     discount: item.discount, // Preserve discount
                      splits: [],
                      total_claimed: 0,
-                     unclaimed: item.price,
+                     unclaimed: item.price - (item.discount || 0), // Reduce unclaimed by discount
                      sort_order: index,
                  });
             } else {
@@ -267,9 +272,10 @@ export const useBillsStore = create<BillsState>((set, get) => ({
                          name: `${item.name} (${i + 1}/${item.quantity})`,
                          price: item.price,
                          quantity: 1,
+                         discount: (item.discount || 0) / item.quantity, // Distributed discount
                          splits: [],
                          total_claimed: 0,
-                         unclaimed: item.price,
+                         unclaimed: item.price - ((item.discount || 0) / item.quantity), // Reduced unclaimed by distributed discount
                          sort_order: index,
                      });
                  }
@@ -305,7 +311,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         title: '',
         groupId,
         category: 'groceries',
-        items: [{ id: '1', name: '', price: 0, quantity: 1 }],
+        items: [{ id: '1', name: '', price: 0, quantity: 1, discount: 0 }],
         tax: 0,
         tip: 0,
         tax_split_mode: 'proportional',
@@ -331,7 +337,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
           ...draft,
           items: [
             ...draft.items,
-            { id: String(draft.items.length + 1), name: '', price: 0, quantity: 1 }
+            { id: String(draft.items.length + 1), name: '', price: 0, quantity: 1, discount: 0 }
           ],
         },
       });

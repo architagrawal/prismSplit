@@ -91,6 +91,7 @@ export interface BillItem {
   name: string;
   price: number;
   quantity: number;
+  discount?: number; // Total discount for this line item (not per unit)
   sort_order: number;
 }
 

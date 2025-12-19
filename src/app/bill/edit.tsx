@@ -11,7 +11,7 @@ import {
   Button, 
   Input, 
   Card, 
-  ConfirmDialog 
+  ConfirmDialog
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useUIStore, useActivityStore, useAuthStore } from '@/lib/store';
@@ -20,7 +20,8 @@ import { categoryIcons, type Category, type Activity } from '@/types/models';
 interface EditItem {
   id: string;
   name: string;
-  totalPrice: string; // User enters TOTAL price for the line
+  unitPrice: string;
+  discount: string;
   quantity: string;
 }
 
@@ -79,8 +80,8 @@ export default function BillEditScreen() {
     if (id && billItems[id]) {
       const rawItems = billItems[id];
       // Aggregate items for display (reversing the explosion from store)
-      // Group by name + price
-      const aggregatedMap = new Map<string, { id: string, name: string, unitPrice: number, quantity: number }>();
+      // Group by name + price + discount
+      const aggregatedMap = new Map<string, { id: string, name: string, unitPrice: number, quantity: number, discount: number }>();
       
       // Helper to strip (1/3) suffix
       const normalizeName = (name: string) => name.replace(/\s\(\d+\/\d+\)$/, '');
@@ -89,17 +90,24 @@ export default function BillEditScreen() {
         const cleanName = normalizeName(item.name);
         // Round price to 2 decimals to ensure key matching works for float variations
         const priceKey = item.price.toFixed(2);
-        const key = `${cleanName}-${priceKey}`;
+        // Include discount in key to group identical items with same discount
+        const discountKey = (item.discount || 0).toFixed(2);
+        const key = `${cleanName}-${priceKey}-${discountKey}`;
         
         if (aggregatedMap.has(key)) {
             const existing = aggregatedMap.get(key)!;
-            aggregatedMap.set(key, { ...existing, quantity: existing.quantity + item.quantity });
+            aggregatedMap.set(key, { 
+                ...existing, 
+                quantity: existing.quantity + item.quantity,
+                discount: existing.discount + (item.discount || 0)
+            });
         } else {
             aggregatedMap.set(key, {
                 id: item.id.split('-')[0] === 'collapsed' ? item.id : `agg-${key}`, // Use reliable temporary ID for editing
                 name: cleanName,
                 unitPrice: item.price,
                 quantity: item.quantity,
+                discount: item.discount || 0,
             });
         }
       });
@@ -108,7 +116,8 @@ export default function BillEditScreen() {
           id: i.id,
           name: i.name,
           quantity: i.quantity.toString(),
-          totalPrice: (i.unitPrice * i.quantity).toFixed(2)
+          unitPrice: i.unitPrice.toFixed(2),
+          discount: i.discount.toFixed(2) === '0.00' ? '' : i.discount.toFixed(2)
       }));
       setItems(loadedItems);
 
@@ -116,7 +125,7 @@ export default function BillEditScreen() {
       if (autoAdd === 'true' && !autoAddProcessed.current) {
         autoAddProcessed.current = true;
         setTimeout(() => {
-            const newItem = { id: `new-${Date.now()}`, name: '', totalPrice: '', quantity: '1' };
+            const newItem = { id: `new-${Date.now()}`, name: '', unitPrice: '', discount: '', quantity: '1' };
             // If we have items, append. If empty, just set it.
             setItems(prev => [...prev, newItem]);
             setHasChanges(true); 
@@ -126,21 +135,21 @@ export default function BillEditScreen() {
     }
   }, [id, billItems, autoAdd]);
 
-  // Subtotal is straight sum of Total Prices
-  const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.totalPrice) || 0), 0);
+  // Subtotal calculation
+  const subtotal = items.reduce((sum, item) => {
+      const price = parseFloat(item.unitPrice) || 0;
+      const qty = parseInt(item.quantity) || 0;
+      const discount = parseFloat(item.discount) || 0;
+      return sum + (price * qty) - discount;
+  }, 0);
+
   const total = subtotal + (parseFloat(tax) || 0) + (parseFloat(tip) || 0);
 
   const handleItemChange = (index: number, field: keyof EditItem, value: string) => {
     setHasChanges(true);
     setItems(prev => {
       const updated = [...prev];
-      if (field === 'name') {
-        updated[index] = { ...updated[index], name: value };
-      } else if (field === 'totalPrice') {
-        updated[index] = { ...updated[index], totalPrice: value };
-      } else if (field === 'quantity') {
-        updated[index] = { ...updated[index], quantity: value };
-      }
+      updated[index] = { ...updated[index], [field]: value };
       return updated;
     });
   };
@@ -150,7 +159,7 @@ export default function BillEditScreen() {
     setHasChanges(true);
     setItems(prev => [
       ...prev,
-      { id: `new-${Date.now()}`, name: '', totalPrice: '', quantity: '1' }
+      { id: `new-${Date.now()}`, name: '', unitPrice: '', discount: '', quantity: '1' }
     ]);
   };
 
@@ -166,18 +175,20 @@ export default function BillEditScreen() {
       return;
     }
 
-    // Filter and transform to store format (deriving unit price)
-    const validItems: { name: string, price: number, quantity: number }[] = [];
+    // Filter and transform to store format
+    const validItems: { name: string, price: number, quantity: number, discount?: number }[] = [];
     
     items.forEach(item => {
-        const total = parseFloat(item.totalPrice) || 0;
+        const unitPrice = parseFloat(item.unitPrice) || 0;
         const qty = parseInt(item.quantity) || 0;
+        const discount = parseFloat(item.discount) || 0;
         
-        if (item.name.trim() && total > 0 && qty > 0) {
+        if (item.name.trim() && unitPrice > 0 && qty > 0) {
             validItems.push({
                 name: item.name,
-                price: total / qty, // Derive unit price
-                quantity: qty
+                price: unitPrice,
+                quantity: qty,
+                discount: discount > 0 ? discount : undefined
             });
         }
     });
@@ -209,6 +220,7 @@ export default function BillEditScreen() {
         name: i.name,
         price: i.price,
         quantity: i.quantity,
+        discount: i.discount
       })));
 
       
@@ -247,6 +259,127 @@ export default function BillEditScreen() {
     } else {
         router.back();
     }
+  };
+
+  const renderItemRow = (item: EditItem, index: number) => {
+    const unitPrice = parseFloat(item.unitPrice) || 0;
+    const qty = parseInt(item.quantity) || 0;
+    const discount = parseFloat(item.discount) || 0;
+    const lineTotal = (unitPrice * qty) - discount;
+
+    return (
+        <Stack 
+            key={item.id} 
+            borderBottomWidth={index < items.length - 1 ? 1 : 0}
+            borderBottomColor={themeColors.border}
+            paddingHorizontal="$3"
+            paddingVertical="$3"
+            backgroundColor={themeColors.surface}
+        >
+            <XStack gap="$3">
+                {/* COLUMN 1: Quantity */}
+                 <Stack 
+                    width={32}
+                    height={32} 
+                    backgroundColor={themeColors.background} 
+                    borderRadius={6} 
+                    justifyContent="center" 
+                    alignItems="center"
+                    borderWidth={1}
+                    borderColor={themeColors.border}
+                >
+                    <TextInput
+                        value={item.quantity}
+                        onChangeText={(val) => handleItemChange(index, 'quantity', val)}
+                        keyboardType="number-pad"
+                        style={{
+                            fontSize: 14,
+                            fontWeight: '600',
+                            color: themeColors.textPrimary,
+                            textAlign: 'center',
+                            textAlignVertical: 'center',
+                            width: '100%',
+                            height: '100%',
+                            padding: 0
+                        }}
+                    />
+                </Stack>
+
+                {/* COLUMN 2: Name & Details */}
+                <YStack flex={1} gap="$2">
+                    {/* ROW 1: Name | Trash */}
+                    <XStack alignItems="center" gap="$2">
+                        <TextInput
+                            placeholder="Item Name"
+                            value={item.name}
+                            onChangeText={(val) => handleItemChange(index, 'name', val)}
+                            style={{
+                                flex: 1,
+                                fontSize: 16,
+                                color: themeColors.textPrimary,
+                                paddingVertical: 0
+                            }}
+                            placeholderTextColor={themeColors.textMuted}
+                        />
+
+                        <Pressable 
+                            onPress={() => handleRemoveItem(index)}
+                            hitSlop={15}
+                            style={{ opacity: 0.6 }}
+                        >
+                            <Trash2 size={18} color={themeColors.error} />
+                        </Pressable>
+                    </XStack>
+
+                    {/* ROW 2: Unit Price | Discount | Total */}
+                    <XStack alignItems="center" gap="$3">
+                        {/* Unit Price Group */}
+                        <XStack alignItems="center" gap="$1" flex={1}>
+                             <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
+                             <TextInput
+                                placeholder="0.00"
+                                value={item.unitPrice}
+                                onChangeText={(val) => handleItemChange(index, 'unitPrice', val)}
+                                keyboardType="decimal-pad"
+                                style={{
+                                    fontSize: 14,
+                                    color: themeColors.textPrimary,
+                                    minWidth: 40,
+                                    padding: 0
+                                }}
+                                placeholderTextColor={themeColors.textMuted}
+                            />
+                        </XStack>
+
+                        {/* Discount Group */}
+                        <XStack alignItems="center" gap="$1" flex={1}>
+                             <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
+                             <TextInput
+                                placeholder="Discount"
+                                value={item.discount}
+                                onChangeText={(val) => handleItemChange(index, 'discount', val)}
+                                keyboardType="decimal-pad"
+                                style={{
+                                    fontSize: 14,
+                                    color: themeColors.error, 
+                                    minWidth: 40,
+                                    padding: 0
+                                }}
+                                placeholderTextColor={themeColors.textMuted}
+                            />
+                        </XStack>
+
+                        {/* Total Display */}
+                        <XStack alignItems="center" gap="$1" minWidth={60} justifyContent="flex-end">
+                            <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
+                                ${lineTotal.toFixed(2)}
+                            </Text>
+                        </XStack>
+                    </XStack>
+                </YStack>
+            </XStack>
+        </Stack>
+    );
   };
 
   return (
@@ -354,89 +487,7 @@ export default function BillEditScreen() {
                 borderColor={themeColors.border}
                 overflow="hidden"
             >
-                {items.map((item, index) => (
-                <Stack 
-                    key={item.id} 
-                    borderBottomWidth={index < items.length - 1 ? 1 : 0}
-                    borderBottomColor={themeColors.border}
-                    paddingHorizontal="$3"
-                    paddingVertical="$3"
-                    backgroundColor={themeColors.surface}
-                >
-                    <XStack alignItems="center" gap="$3">
-                        {/* 1. Qty Input (Left) */}
-                        <Stack 
-                            width={32}
-                            height={32} 
-                            backgroundColor={themeColors.background} 
-                            borderRadius={6} 
-                            justifyContent="center" 
-                            alignItems="center"
-                            borderWidth={1}
-                            borderColor={themeColors.border}
-                        >
-                            <TextInput
-                                value={item.quantity}
-                                onChangeText={(val) => handleItemChange(index, 'quantity', val)}
-                                keyboardType="number-pad"
-                                style={{
-                                    fontSize: 14,
-                                    fontWeight: '600',
-                                    color: themeColors.textPrimary,
-                                    textAlign: 'center',
-                                    textAlignVertical: 'center',
-                                    width: '100%',
-                                    height: '100%',
-                                    padding: 0, 
-                                }}
-                            />
-                        </Stack>
-
-                        {/* 2. Name Input (Flex Middle) */}
-                        <TextInput
-                            placeholder="Item Name"
-                            value={item.name}
-                            onChangeText={(val) => handleItemChange(index, 'name', val)}
-                            style={{
-                                flex: 1,
-                                fontSize: 16,
-                                color: themeColors.textPrimary,
-                                paddingVertical: 4
-                            }}
-                            placeholderTextColor={themeColors.textMuted}
-                        />
-
-                        {/* 3. Price Input & Trash (Right) */}
-                        <XStack alignItems="center" gap="$3">
-                            <XStack alignItems="center">
-                                <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>$</Text>
-                                <TextInput
-                                    placeholder="0.00"
-                                    value={item.totalPrice}
-                                    onChangeText={(val) => handleItemChange(index, 'totalPrice', val)}
-                                    keyboardType="decimal-pad"
-                                    style={{
-                                        fontSize: 16,
-                                        fontWeight: '600',
-                                        color: themeColors.textPrimary,
-                                        minWidth: 50,
-                                        textAlign: 'right'
-                                    }}
-                                    placeholderTextColor={themeColors.textMuted}
-                                />
-                            </XStack>
-                            
-                            <Pressable 
-                                onPress={() => handleRemoveItem(index)}
-                                hitSlop={15}
-                                style={{ opacity: 0.6 }}
-                            >
-                                <Trash2 size={18} color={themeColors.error} />
-                            </Pressable>
-                        </XStack>
-                    </XStack>
-                </Stack>
-                ))}
+                {items.map((item, index) => renderItemRow(item, index))}
             </Stack>
         </YStack>
 
