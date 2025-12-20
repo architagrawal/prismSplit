@@ -115,8 +115,8 @@ export function AnimatedSearchBar({
           borderWidth={1}
           borderColor={isSearchOpen && !isClosing ? themeColors.border : 'transparent'}
           overflow="hidden"
-          height={iconSize + 16}
-          paddingVertical={8}
+          height={iconSize + 22}
+          paddingVertical={11}
           paddingLeft={isSearchOpen && !isClosing ? 12 : 0}
           paddingRight={isSearchOpen && !isClosing ? 8 : 0}
         >

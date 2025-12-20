@@ -29,9 +29,9 @@ interface ButtonProps {
 }
 
 const sizeStyles = {
-  sm: { height: 36, paddingHorizontal: 12, fontSize: 14 },
-  md: { height: 44, paddingHorizontal: 16, fontSize: 16 },
-  lg: { height: 52, paddingHorizontal: 24, fontSize: 18 },
+  sm: { height: 44, paddingHorizontal: 16, fontSize: 14 },
+  md: { height: 50, paddingHorizontal: 20, fontSize: 16 },
+  lg: { height: 56, paddingHorizontal: 28, fontSize: 18 },
 };
 
 export function Button({

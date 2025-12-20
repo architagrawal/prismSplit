@@ -411,7 +411,7 @@ export function ItemRow({
         borderBottomWidth={1}
         borderBottomColor={themeColors.border}
         paddingHorizontal="$2"
-        paddingVertical="$2.5"
+        paddingVertical="$3.5"
       >
         <Stack flexDirection="row" alignItems="center" gap="$3">
           {/* Selection Checkbox / Indicator */}
