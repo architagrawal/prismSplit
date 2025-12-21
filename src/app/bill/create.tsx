@@ -94,6 +94,8 @@ export default function CreateBillScreen() {
 
   const nameRefs = useRef<(TextInput | null)[]>([]);
   const priceRefs = useRef<(TextInput | null)[]>([]);
+  const quantityRefs = useRef<(TextInput | null)[]>([]);
+  const discountRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     fetchGroups();
@@ -754,6 +756,8 @@ export default function CreateBillScreen() {
                             addNewRow={addNewRow}
                             nameRefs={nameRefs}
                             priceRefs={priceRefs}
+                            quantityRefs={quantityRefs}
+                            discountRefs={discountRefs}
                             onPickCategory={(itemId) => {
                                 setPickingCategoryFor(itemId);
                                 setCategoryModalVisible(true);
@@ -975,6 +979,8 @@ const BillItemRow = memo(({
     addNewRow,
     nameRefs,
     priceRefs,
+    quantityRefs,
+    discountRefs,
     onPickCategory
 }: {
     item: any, 
@@ -986,6 +992,8 @@ const BillItemRow = memo(({
     addNewRow: () => void,
     nameRefs: any,
     priceRefs: any,
+    quantityRefs: any,
+    discountRefs: any,
     onPickCategory: (id: string) => void
 }) => {
     const unitPrice = parseFloat(item.unitPrice) || 0;
@@ -1041,78 +1049,113 @@ const BillItemRow = memo(({
                     />
 
                     {/* Inputs Row: Quantity | Unit Price | Discount */}
-                    <XStack alignItems="center" gap="$3">
-                        {/* Quantity */}
-                         <XStack alignItems="center" gap="$1">
-                            <Text fontSize={12} color={themeColors.textSecondary}>x</Text>
-                            <TextInput
-                                placeholder="1"
-                                value={item.quantity}
-                                onChangeText={(v) => updateItem(item.id, 'quantity', v)}
-                                keyboardType="number-pad"
-                                scrollEnabled={false}
-                                selectTextOnFocus={true}
-                                style={{
-                                    fontSize: 14,
-                                    fontWeight: '500',
-                                    color: themeColors.primary,
-                                    textAlign: 'center',
-                                    padding: 0,
-                                    minWidth: 20
-                                }}
-                            />
-                        </XStack>
+                    <XStack alignItems="center" gap="$2">
+                        {/* Quantity Pill */}
+                        <Pressable onPress={() => quantityRefs.current[index]?.focus()}>
+                            <Stack 
+                                backgroundColor={themeColors.surfaceElevated} 
+                                borderRadius={8}
+                                paddingHorizontal={8}
+                                height={36}
+                                justifyContent="center"
+                                borderWidth={1}
+                                borderColor="transparent"
+                            >
+                                <XStack alignItems="center" gap="$1">
+                                    <Text fontSize={12} color={themeColors.textSecondary}>x</Text>
+                                    <TextInput
+                                        ref={(ref) => { if (quantityRefs.current) quantityRefs.current[index] = ref; }}
+                                        placeholder="1"
+                                        value={item.quantity}
+                                        onChangeText={(v) => updateItem(item.id, 'quantity', v)}
+                                        keyboardType="number-pad"
+                                        scrollEnabled={false}
+                                        selectTextOnFocus={true}
+                                        style={{
+                                            fontSize: 14,
+                                            fontWeight: '500',
+                                            color: themeColors.primary,
+                                            textAlign: 'center',
+                                            padding: 0,
+                                            minWidth: 16
+                                        }}
+                                    />
+                                </XStack>
+                            </Stack>
+                        </Pressable>
+                        
+                        {/* Unit Price Pill */}
+                        <Pressable style={{ flex: 1 }} onPress={() => priceRefs.current[index]?.focus()}>
+                            <Stack 
+                                backgroundColor={themeColors.surfaceElevated} 
+                                borderRadius={8}
+                                paddingHorizontal={8}
+                                height={36}
+                                justifyContent="center"
+                                width="100%"
+                            >
+                                <XStack alignItems="center" gap="$1">
+                                    <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
+                                    <TextInput
+                                        ref={(ref) => { if (priceRefs.current) priceRefs.current[index] = ref; }}
+                                        placeholder="0.00"
+                                        placeholderTextColor={themeColors.textMuted}
+                                        value={isPriceFocused ? item.unitPrice : (parseFloat(item.unitPrice) || 0).toFixed(2)}
+                                        onChangeText={(v) => updateItem(item.id, 'unitPrice', v, 'price')}
+                                        onFocus={() => setIsPriceFocused(true)}
+                                        onBlur={() => setIsPriceFocused(false)}
+                                        keyboardType="decimal-pad"
+                                        returnKeyType={index === lastIndex ? 'done' : 'next'}
+                                        selectTextOnFocus={true} 
+                                        scrollEnabled={false}
+                                        onSubmitEditing={() => {
+                                            if (index === lastIndex) {
+                                                addNewRow();
+                                            } else {
+                                                nameRefs.current && nameRefs.current[index + 1]?.focus();
+                                            }
+                                        }}
+                                        style={{
+                                            fontSize: 14,
+                                            color: themeColors.textPrimary,
+                                            flex: 1,
+                                            padding: 0
+                                        }}
+                                    />
+                                </XStack>
+                            </Stack>
+                        </Pressable>
 
-                        {/* Unit Price */}
-                        <XStack alignItems="center" gap="$1">
-                            <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
-                            <TextInput
-                                ref={(ref) => { if (priceRefs.current) priceRefs.current[index] = ref; }}
-                                placeholder="0.00"
-                                placeholderTextColor={themeColors.textMuted}
-                                value={isPriceFocused ? item.unitPrice : (parseFloat(item.unitPrice) || 0).toFixed(2)}
-                                onChangeText={(v) => updateItem(item.id, 'unitPrice', v, 'price')}
-                                onFocus={() => setIsPriceFocused(true)}
-                                onBlur={() => setIsPriceFocused(false)}
-                                keyboardType="decimal-pad"
-                                returnKeyType={index === lastIndex ? 'done' : 'next'}
-                                selectTextOnFocus={true} 
-                                scrollEnabled={false}
-                                onSubmitEditing={() => {
-                                    if (index === lastIndex) {
-                                        addNewRow();
-                                    } else {
-                                        nameRefs.current && nameRefs.current[index + 1]?.focus();
-                                    }
-                                }}
-                                style={{
-                                    fontSize: 14,
-                                    color: themeColors.textPrimary,
-                                    minWidth: 40,
-                                    padding: 0
-                                }}
-                            />
-                        </XStack>
-
-                        {/* Discount */}
-                        <XStack alignItems="center" gap="$1">
-                            <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
-                            <TextInput
-                                placeholder="Disc"
-                                placeholderTextColor={themeColors.textMuted}
-                                value={item.discount}
-                                onChangeText={(v) => updateItem(item.id, 'discount', v)}
-                                keyboardType="decimal-pad"
-                                selectTextOnFocus={true}
-                                scrollEnabled={false}
-                                style={{
-                                    fontSize: 14,
-                                    color: themeColors.error, 
-                                    minWidth: 30,
-                                    padding: 0
-                                }}
-                            />
-                        </XStack>
+                        {/* Discount Pill */}
+                        <Pressable onPress={() => discountRefs.current[index]?.focus()}>
+                            <Stack 
+                                backgroundColor={themeColors.surfaceElevated} 
+                                borderRadius={8}
+                                paddingHorizontal={8}
+                                height={36}
+                                justifyContent="center"
+                            >
+                                <XStack alignItems="center" gap="$1">
+                                    <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
+                                    <TextInput
+                                        ref={(ref) => { if (discountRefs.current) discountRefs.current[index] = ref; }}
+                                        placeholder="Disc"
+                                        placeholderTextColor={themeColors.textMuted}
+                                        value={item.discount}
+                                        onChangeText={(v) => updateItem(item.id, 'discount', v)}
+                                        keyboardType="decimal-pad"
+                                        selectTextOnFocus={true}
+                                        scrollEnabled={false}
+                                        style={{
+                                            fontSize: 14,
+                                            color: themeColors.error, 
+                                            minWidth: 30,
+                                            padding: 0
+                                        }}
+                                    />
+                                </XStack>
+                            </Stack>
+                        </Pressable>
                     </XStack>
                 </YStack>
 

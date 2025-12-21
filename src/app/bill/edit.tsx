@@ -45,6 +45,9 @@ export default function BillEditScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const autoAddProcessed = useRef(false);
+  const quantityRefs = useRef<(TextInput | null)[]>([]);
+  const priceRefs = useRef<(TextInput | null)[]>([]);
+  const discountRefs = useRef<(TextInput | null)[]>([]);
   
   const { currentBill, fetchBillById, billItems, fetchBillItems, updateBill, updateBillItems, isLoading } = useBillsStore();
   const { showToast } = useUIStore();
@@ -300,8 +303,10 @@ export default function BillEditScreen() {
     const discount = parseFloat(item.discount) || 0;
     const lineTotal = (unitPrice * qty) - discount;
 
-    return (
+    
 
+    
+    return (
         <Stack 
             key={item.id} 
             borderBottomWidth={index < items.length - 1 ? 1 : 0}
@@ -336,63 +341,99 @@ export default function BillEditScreen() {
                     />
 
                     {/* Row 2: Stats (Qty | Price | Discount) */}
-                    <XStack alignItems="center" gap="$3">
-                        {/* Quantity */}
-                        <XStack alignItems="center" gap="$1">
-                            <Text fontSize={12} color={themeColors.textSecondary}>x</Text>
-                            <TextInput
-                                value={item.quantity}
-                                onChangeText={(val) => handleItemChange(index, 'quantity', val)}
-                                keyboardType="number-pad"
-                                selectTextOnFocus={true}
-                                style={{
-                                    fontSize: 14,
-                                    fontWeight: '500',
-                                    color: themeColors.primary,
-                                    minWidth: 20,
-                                    padding: 0,
-                                    textAlign: 'center'
-                                }}
-                            />
-                        </XStack>
+                    <XStack alignItems="center" gap="$2">
+                        {/* Quantity Pill */}
+                        <Pressable onPress={() => quantityRefs.current[index]?.focus()}>
+                            <Stack 
+                                backgroundColor={themeColors.surfaceElevated} 
+                                borderRadius={8}
+                                paddingHorizontal={8}
+                                height={36}
+                                justifyContent="center"
+                                borderWidth={1}
+                                borderColor="transparent"
+                            >
+                                <XStack alignItems="center" gap="$1">
+                                    <Text fontSize={12} color={themeColors.textSecondary}>x</Text>
+                                    <TextInput
+                                        ref={(el) => { quantityRefs.current[index] = el; }}
+                                        value={item.quantity}
+                                        onChangeText={(val) => handleItemChange(index, 'quantity', val)}
+                                        keyboardType="number-pad"
+                                        selectTextOnFocus={true}
+                                        style={{
+                                            fontSize: 14,
+                                            fontWeight: '500',
+                                            color: themeColors.primary,
+                                            minWidth: 16,
+                                            padding: 0,
+                                            textAlign: 'center'
+                                        }}
+                                    />
+                                </XStack>
+                            </Stack>
+                        </Pressable>
 
-                        {/* Unit Price */}
-                        <XStack alignItems="center" gap="$1">
-                             <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
-                             <TextInput
-                                placeholder="0.00"
-                                value={item.unitPrice}
-                                onChangeText={(val) => handleItemChange(index, 'unitPrice', val)}
-                                keyboardType="decimal-pad"
-                                selectTextOnFocus={true}
-                                style={{
-                                    fontSize: 14,
-                                    color: themeColors.textPrimary,
-                                    minWidth: 40,
-                                    padding: 0
-                                }}
-                                placeholderTextColor={themeColors.textMuted}
-                            />
-                        </XStack>
+                        {/* Unit Price Pill */}
+                        <Pressable style={{ flex: 1 }} onPress={() => priceRefs.current[index]?.focus()}>
+                            <Stack 
+                                backgroundColor={themeColors.surfaceElevated} 
+                                borderRadius={8}
+                                paddingHorizontal={8}
+                                height={36}
+                                justifyContent="center"
+                                width="100%"
+                            >
+                                <XStack alignItems="center" gap="$1">
+                                    <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
+                                    <TextInput
+                                        ref={(el) => { priceRefs.current[index] = el; }}
+                                        placeholder="0.00"
+                                        value={item.unitPrice}
+                                        onChangeText={(val) => handleItemChange(index, 'unitPrice', val)}
+                                        keyboardType="decimal-pad"
+                                        selectTextOnFocus={true}
+                                        style={{
+                                            fontSize: 14,
+                                            color: themeColors.textPrimary,
+                                            flex: 1,
+                                            padding: 0
+                                        }}
+                                        placeholderTextColor={themeColors.textMuted}
+                                    />
+                                </XStack>
+                            </Stack>
+                        </Pressable>
 
-                        {/* Discount */}
-                        <XStack alignItems="center" gap="$1">
-                                <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
-                                <TextInput
-                                placeholder="Disc"
-                                value={item.discount}
-                                onChangeText={(val) => handleItemChange(index, 'discount', val)}
-                                keyboardType="decimal-pad"
-                                selectTextOnFocus={true}
-                                style={{
-                                    fontSize: 14,
-                                    color: themeColors.error, 
-                                    minWidth: 30,
-                                    padding: 0
-                                }}
-                                placeholderTextColor={themeColors.error}
-                            />
-                        </XStack>
+                        {/* Discount Pill */}
+                        <Pressable onPress={() => discountRefs.current[index]?.focus()}>
+                            <Stack 
+                                backgroundColor={themeColors.surfaceElevated} 
+                                borderRadius={8}
+                                paddingHorizontal={8}
+                                height={36}
+                                justifyContent="center"
+                            >
+                                <XStack alignItems="center" gap="$1">
+                                        <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
+                                        <TextInput
+                                        ref={(el) => { discountRefs.current[index] = el; }}
+                                        placeholder="Disc"
+                                        value={item.discount}
+                                        onChangeText={(val) => handleItemChange(index, 'discount', val)}
+                                        keyboardType="decimal-pad"
+                                        selectTextOnFocus={true}
+                                        style={{
+                                            fontSize: 14,
+                                            color: themeColors.error, 
+                                            minWidth: 30,
+                                            padding: 0
+                                        }}
+                                        placeholderTextColor={themeColors.error}
+                                    />
+                                </XStack>
+                            </Stack>
+                        </Pressable>
                     </XStack>
                 </YStack>
 
