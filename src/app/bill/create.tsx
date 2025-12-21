@@ -1005,17 +1005,18 @@ const BillItemRow = memo(({
         }
     }, [lineTotal, isTotalFocused]);
 
+
     return (
         <Stack 
             borderBottomWidth={index < lastIndex ? 1 : 0}
             borderBottomColor={themeColors.border}
-            paddingVertical="$4"
-            paddingHorizontal="$4"
+            paddingVertical="$3"
+            paddingHorizontal="$3"
             backgroundColor={themeColors.surface}
         >
-            <XStack gap="$3">
+            <XStack gap="$3" alignItems="center">
                 {/* COLUMN 1: Quantity */}
-                <Stack width={40} justifyContent="center" alignItems="center">
+                <Stack width={30} justifyContent="center" alignItems="center">
                     <TextInput
                         placeholder="1"
                         value={item.quantity}
@@ -1034,48 +1035,34 @@ const BillItemRow = memo(({
                     />
                 </Stack>
 
-                {/* COLUMN 2: Name & Details */}
-                <YStack flex={1} gap="$2">
-                    {/* ROW 1: Name | Trash */}
-                    <XStack alignItems="center" gap="$2">
-                        {/* Category Icon */}
-                        <Pressable onPress={() => onPickCategory(item.id)}>
-                             <CategoryBadge category={item.category || 'other'} size="sm" iconOnly />
-                        </Pressable>
+                {/* COLUMN 2: Large Category Icon */}
+                <Pressable onPress={() => onPickCategory(item.id)}>
+                        <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
+                </Pressable>
 
-                        <TextInput
-                            ref={(ref) => { if (nameRefs.current) nameRefs.current[index] = ref; }}
-                            placeholder="Item Name"
-                            placeholderTextColor={themeColors.textMuted}
-                            value={item.name}
-                            onChangeText={(v) => updateItem(item.id, 'name', v)}
-                            returnKeyType="next"
-                            scrollEnabled={false}
-                            onSubmitEditing={() => priceRefs.current && priceRefs.current[index]?.focus()}
-                            style={{
-                                flex: 1,
-                                fontSize: 16,
-                                fontWeight: '500',
-                                color: themeColors.textPrimary,
-                                paddingVertical: 0
-                            }}
-                        />
+                {/* COLUMN 3: Name & Details */}
+                <YStack flex={1} gap="$1">
+                    {/* Item Name */}
+                    <TextInput
+                        ref={(ref) => { if (nameRefs.current) nameRefs.current[index] = ref; }}
+                        placeholder="Item Name"
+                        placeholderTextColor={themeColors.textMuted}
+                        value={item.name}
+                        onChangeText={(v) => updateItem(item.id, 'name', v)}
+                        returnKeyType="next"
+                        scrollEnabled={false}
+                        onSubmitEditing={() => priceRefs.current && priceRefs.current[index]?.focus()}
+                        style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: themeColors.textPrimary,
+                            paddingVertical: 0
+                        }}
+                    />
 
-                        <Pressable 
-                            onPress={() => deleteItem(item.id)}
-                            style={{ padding: 4, opacity: 0.6 }}
-                        >
-                            <Trash2 
-                                size={18} 
-                                color={themeColors.error} 
-                            />
-                        </Pressable>
-                    </XStack>
-
-                    {/* ROW 2: Unit Price | Discount | Total */}
+                    {/* Inputs Row: Unit Price | Discount */}
                     <XStack alignItems="center" gap="$3">
-                        {/* Unit Price */}
-                        <XStack alignItems="center" gap="$1" flex={1}>
+                        <XStack alignItems="center" gap="$1">
                             <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
                             <TextInput
                                 ref={(ref) => { if (priceRefs.current) priceRefs.current[index] = ref; }}
@@ -1105,74 +1092,68 @@ const BillItemRow = memo(({
                             />
                         </XStack>
 
-                        {/* Discount */}
-                        <XStack alignItems="center" gap="$1" flex={1}>
+                        <XStack alignItems="center" gap="$1">
                             <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
                             <TextInput
-                                placeholder="Discount"
+                                placeholder="Disc"
+                                placeholderTextColor={themeColors.textMuted}
                                 value={item.discount}
                                 onChangeText={(v) => updateItem(item.id, 'discount', v)}
                                 keyboardType="decimal-pad"
                                 selectTextOnFocus={true}
+                                scrollEnabled={false}
                                 style={{
                                     fontSize: 14,
-                                    color: themeColors.error, 
+                                    color: themeColors.error,
                                     minWidth: 40,
                                     padding: 0
                                 }}
-                                placeholderTextColor={themeColors.textMuted}
-                            />
-                        </XStack>
-
-                        {/* Total Display (Smart Input) */}
-                        <XStack alignItems="center" gap="$1" minWidth={60} justifyContent="flex-end">
-                            <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>$</Text>
-                            <TextInput
-                                value={displayTotal}
-                                onFocus={() => setIsTotalFocused(true)}
-                                onBlur={() => {
-                                    setIsTotalFocused(false);
-                                    // Ensure format on blur
-                                    setDisplayTotal(lineTotal.toFixed(2));
-                                }}
-                                onChangeText={(val) => {
-                                    setDisplayTotal(val); // Update local input immediately
-                                    const newTotal = parseFloat(val) || 0;
-                                    const currentQty = parseInt(item.quantity) || 1; 
-                                    const currentDiscount = parseFloat(item.discount) || 0;
-                                    
-                                    // Reverse Calc: Price = (Total + Discount) / Qty
-                                    // Lock the Total since user is editing it
-                                    const newUnitPrice = (newTotal + currentDiscount) / currentQty;
-                                    
-                                    // Adaptive Precision: Check if 2 decimals is enough
-                                    const checkPrice = parseFloat(newUnitPrice.toFixed(2));
-                                    const checkTotal = (checkPrice * currentQty) - currentDiscount;
-                                    
-                                    let finalPriceStr = newUnitPrice.toFixed(2);
-                                    if (Math.abs(checkTotal - newTotal) > 0.009) {
-                                        finalPriceStr = newUnitPrice.toFixed(4);
-                                    }
-
-                                    updateItem(item.id, 'unitPrice', finalPriceStr, 'total');
-                                }}
-
-                                keyboardType="decimal-pad"
-                                selectTextOnFocus={true}
-                                style={{
-                                    fontSize: 14,
-                                    fontWeight: '600',
-                                    color: themeColors.textPrimary,
-                                    minWidth: 40,
-                                    padding: 0,
-                                    textAlign: 'right'
-                                }}
-                                placeholderTextColor={themeColors.textMuted}
                             />
                         </XStack>
                     </XStack>
                 </YStack>
+
+                {/* COLUMN 4: Actions & Total */}
+                <YStack alignItems="flex-end" justifyContent="space-between" height={45}>
+                    <Pressable 
+                        onPress={() => deleteItem(item.id)}
+                        hitSlop={15}
+                        style={{ opacity: 0.6 }}
+                    >
+                         <Trash2 size={18} color={themeColors.error} />
+                    </Pressable>
+
+                    <XStack alignItems="center" gap="$1">
+                        <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>$</Text>
+                        <TextInput
+                            value={displayTotal}
+                            onFocus={() => setIsTotalFocused(true)}
+                            onBlur={() => {
+                                setIsTotalFocused(false);
+                                setDisplayTotal(lineTotal.toFixed(2));
+                            }}
+                            onChangeText={(val) => {
+                                setDisplayTotal(val);
+                                const newTotal = parseFloat(val) || 0;
+                                const currentQty = parseInt(item.quantity) || 1; 
+                                const currentDiscount = parseFloat(item.discount) || 0;
+                                const newUnitPrice = (newTotal + currentDiscount) / currentQty;
+                                updateItem(item.id, 'unitPrice', newUnitPrice.toFixed(2), 'total');
+                            }}
+                            keyboardType="decimal-pad"
+                            selectTextOnFocus={true}
+                            style={{
+                                fontSize: 15,
+                                fontWeight: '700',
+                                color: themeColors.textPrimary,
+                                padding: 0,
+                                minWidth: 40,
+                                textAlign: 'right'
+                            }}
+                        />
+                    </XStack>
+                </YStack>
             </XStack>
-        </Stack>
+        </Stack>                                    
     );
 });

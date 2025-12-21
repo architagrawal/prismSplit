@@ -305,13 +305,13 @@ export default function BillEditScreen() {
             key={item.id} 
             borderBottomWidth={index < items.length - 1 ? 1 : 0}
             borderBottomColor={themeColors.border}
-            paddingHorizontal="$4"
-            paddingVertical="$4"
+            paddingHorizontal="$3"
+            paddingVertical="$3"
             backgroundColor={themeColors.surface}
         >
-            <XStack gap="$3">
+            <XStack gap="$3" alignItems="center">
                 {/* COLUMN 1: Quantity */}
-                 <Stack width={40} justifyContent="center" alignItems="center">
+                 <Stack width={30} justifyContent="center" alignItems="center">
                     <TextInput
                         value={item.quantity}
                         onChangeText={(val) => handleItemChange(index, 'quantity', val)}
@@ -322,52 +322,41 @@ export default function BillEditScreen() {
                             fontWeight: '600',
                             color: themeColors.primary,
                             textAlign: 'center',
-                            textAlignVertical: 'center',
                             width: '100%',
                             padding: 0
                         }}
                     />
                 </Stack>
 
-                {/* COLUMN 2: Name & Details */}
-                <YStack flex={1} gap="$2">
-                    {/* ROW 1: Name | Trash */}
-                    <XStack alignItems="center" gap="$2">
-                         <Pressable onPress={() => {
-                            setPickingCategoryFor(item.id);
-                            setCategoryModalVisible(true);
-                         }}>
-                             <CategoryBadge category={item.category || 'other'} size="sm" iconOnly />
-                        </Pressable>
+                {/* COLUMN 2: Large Category Icon */}
+                <Pressable onPress={() => {
+                    setPickingCategoryFor(item.id);
+                    setCategoryModalVisible(true);
+                    }}>
+                    <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
+                </Pressable>
 
-                        <TextInput
-                            placeholder="Item Name"
-                            value={item.name}
-                            onChangeText={(val) => handleItemChange(index, 'name', val)}
-                            style={{
-                                flex: 1,
-                                fontSize: 16,
-                                color: themeColors.textPrimary,
-                                paddingVertical: 0
-                            }}
-                            placeholderTextColor={themeColors.textMuted}
-                        />
+                {/* COLUMN 3: Name & Details */}
+                <YStack flex={1} gap="$1">
+                    {/* Item Name */}
+                    <TextInput
+                        placeholder="Item Name"
+                        value={item.name}
+                        onChangeText={(val) => handleItemChange(index, 'name', val)}
+                        style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: themeColors.textPrimary,
+                            paddingVertical: 0
+                        }}
+                        placeholderTextColor={themeColors.textMuted}
+                    />
 
-                        <Pressable 
-                            onPress={() => handleRemoveItem(index)}
-                            hitSlop={15}
-                            style={{ opacity: 0.6 }}
-                        >
-                            <Trash2 size={18} color={themeColors.error} />
-                        </Pressable>
-                    </XStack>
-
-                    {/* ROW 2: Unit Price | Discount | Total */}
+                    {/* Inputs Row: Unit Price | Discount */}
                     <XStack alignItems="center" gap="$3">
-                        {/* Unit Price Group */}
-                        <XStack alignItems="center" gap="$1" flex={1}>
-                             <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
-                             <TextInput
+                        <XStack alignItems="center" gap="$1">
+                                <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
+                                <TextInput
                                 placeholder="0.00"
                                 value={item.unitPrice}
                                 onChangeText={(val) => handleItemChange(index, 'unitPrice', val)}
@@ -383,11 +372,10 @@ export default function BillEditScreen() {
                             />
                         </XStack>
 
-                        {/* Discount Group */}
-                        <XStack alignItems="center" gap="$1" flex={1}>
-                             <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
-                             <TextInput
-                                placeholder="Discount"
+                        <XStack alignItems="center" gap="$1">
+                                <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
+                                <TextInput
+                                placeholder="Disc"
                                 value={item.discount}
                                 onChangeText={(val) => handleItemChange(index, 'discount', val)}
                                 keyboardType="decimal-pad"
@@ -398,21 +386,30 @@ export default function BillEditScreen() {
                                     minWidth: 40,
                                     padding: 0
                                 }}
-                                placeholderTextColor={themeColors.textMuted}
+                                placeholderTextColor={themeColors.error}
                             />
                         </XStack>
-
-                        {/* Total Display */}
-                        <XStack alignItems="center" gap="$1" minWidth={60} justifyContent="flex-end">
-                            <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
-                                ${lineTotal.toFixed(2)}
-                            </Text>
-                        </XStack>
                     </XStack>
+                </YStack>
+
+                {/* COLUMN 4: Actions & Total */}
+                <YStack alignItems="flex-end" justifyContent="space-between" height={45}>
+                    <Pressable 
+                        onPress={() => handleRemoveItem(index)}
+                        hitSlop={15}
+                        style={{ opacity: 0.6 }}
+                    >
+                        <Trash2 size={18} color={themeColors.error} />
+                    </Pressable>
+
+                    <Text fontSize={15} fontWeight="700" color={themeColors.textPrimary}>
+                        ${lineTotal.toFixed(2)}
+                    </Text>
                 </YStack>
             </XStack>
         </Stack>
     );
+
   };
 
   return (
