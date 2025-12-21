@@ -301,34 +301,17 @@ export default function BillEditScreen() {
     const lineTotal = (unitPrice * qty) - discount;
 
     return (
+
         <Stack 
             key={item.id} 
             borderBottomWidth={index < items.length - 1 ? 1 : 0}
             borderBottomColor={themeColors.border}
             paddingHorizontal="$3"
-            paddingVertical="$3"
+            paddingVertical="$4"
             backgroundColor={themeColors.surface}
         >
             <XStack gap="$3" alignItems="center">
-                {/* COLUMN 1: Quantity */}
-                 <Stack width={30} justifyContent="center" alignItems="center">
-                    <TextInput
-                        value={item.quantity}
-                        onChangeText={(val) => handleItemChange(index, 'quantity', val)}
-                        keyboardType="number-pad"
-                        selectTextOnFocus={true}
-                        style={{
-                            fontSize: 18,
-                            fontWeight: '600',
-                            color: themeColors.primary,
-                            textAlign: 'center',
-                            width: '100%',
-                            padding: 0
-                        }}
-                    />
-                </Stack>
-
-                {/* COLUMN 2: Large Category Icon */}
+                {/* COLUMN 1: Large Category Icon (Leftmost) */}
                 <Pressable onPress={() => {
                     setPickingCategoryFor(item.id);
                     setCategoryModalVisible(true);
@@ -336,9 +319,9 @@ export default function BillEditScreen() {
                     <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
                 </Pressable>
 
-                {/* COLUMN 3: Name & Details */}
-                <YStack flex={1} gap="$1">
-                    {/* Item Name */}
+                {/* COLUMN 2: Name & Details (Stacked) */}
+                <YStack flex={1} gap="$2">
+                    {/* Row 1: Item Name */}
                     <TextInput
                         placeholder="Item Name"
                         value={item.name}
@@ -352,11 +335,31 @@ export default function BillEditScreen() {
                         placeholderTextColor={themeColors.textMuted}
                     />
 
-                    {/* Inputs Row: Unit Price | Discount */}
+                    {/* Row 2: Stats (Qty | Price | Discount) */}
                     <XStack alignItems="center" gap="$3">
+                        {/* Quantity */}
                         <XStack alignItems="center" gap="$1">
-                                <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
-                                <TextInput
+                            <Text fontSize={12} color={themeColors.textSecondary}>x</Text>
+                            <TextInput
+                                value={item.quantity}
+                                onChangeText={(val) => handleItemChange(index, 'quantity', val)}
+                                keyboardType="number-pad"
+                                selectTextOnFocus={true}
+                                style={{
+                                    fontSize: 14,
+                                    fontWeight: '500',
+                                    color: themeColors.primary,
+                                    minWidth: 20,
+                                    padding: 0,
+                                    textAlign: 'center'
+                                }}
+                            />
+                        </XStack>
+
+                        {/* Unit Price */}
+                        <XStack alignItems="center" gap="$1">
+                             <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
+                             <TextInput
                                 placeholder="0.00"
                                 value={item.unitPrice}
                                 onChangeText={(val) => handleItemChange(index, 'unitPrice', val)}
@@ -372,6 +375,7 @@ export default function BillEditScreen() {
                             />
                         </XStack>
 
+                        {/* Discount */}
                         <XStack alignItems="center" gap="$1">
                                 <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
                                 <TextInput
@@ -383,7 +387,7 @@ export default function BillEditScreen() {
                                 style={{
                                     fontSize: 14,
                                     color: themeColors.error, 
-                                    minWidth: 40,
+                                    minWidth: 30,
                                     padding: 0
                                 }}
                                 placeholderTextColor={themeColors.error}
@@ -392,7 +396,7 @@ export default function BillEditScreen() {
                     </XStack>
                 </YStack>
 
-                {/* COLUMN 4: Actions & Total */}
+                {/* COLUMN 3: Actions & Total */}
                 <YStack alignItems="flex-end" justifyContent="space-between" height={45}>
                     <Pressable 
                         onPress={() => handleRemoveItem(index)}

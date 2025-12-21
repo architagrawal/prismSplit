@@ -1010,38 +1010,18 @@ const BillItemRow = memo(({
         <Stack 
             borderBottomWidth={index < lastIndex ? 1 : 0}
             borderBottomColor={themeColors.border}
-            paddingVertical="$3"
+            paddingVertical="$4"
             paddingHorizontal="$3"
             backgroundColor={themeColors.surface}
         >
             <XStack gap="$3" alignItems="center">
-                {/* COLUMN 1: Quantity */}
-                <Stack width={30} justifyContent="center" alignItems="center">
-                    <TextInput
-                        placeholder="1"
-                        value={item.quantity}
-                        onChangeText={(v) => updateItem(item.id, 'quantity', v)}
-                        keyboardType="number-pad"
-                        scrollEnabled={false}
-                        selectTextOnFocus={true}
-                        style={{
-                            fontSize: 18,
-                            fontWeight: '600',
-                            color: themeColors.primary,
-                            textAlign: 'center',
-                            padding: 0,
-                            width: '100%'
-                        }}
-                    />
-                </Stack>
-
-                {/* COLUMN 2: Large Category Icon */}
+                {/* COLUMN 1: Large Category Icon (Leftmost) */}
                 <Pressable onPress={() => onPickCategory(item.id)}>
                         <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
                 </Pressable>
 
-                {/* COLUMN 3: Name & Details */}
-                <YStack flex={1} gap="$1">
+                {/* COLUMN 2: Name & Details */}
+                <YStack flex={1} gap="$2">
                     {/* Item Name */}
                     <TextInput
                         ref={(ref) => { if (nameRefs.current) nameRefs.current[index] = ref; }}
@@ -1060,8 +1040,30 @@ const BillItemRow = memo(({
                         }}
                     />
 
-                    {/* Inputs Row: Unit Price | Discount */}
+                    {/* Inputs Row: Quantity | Unit Price | Discount */}
                     <XStack alignItems="center" gap="$3">
+                        {/* Quantity */}
+                         <XStack alignItems="center" gap="$1">
+                            <Text fontSize={12} color={themeColors.textSecondary}>x</Text>
+                            <TextInput
+                                placeholder="1"
+                                value={item.quantity}
+                                onChangeText={(v) => updateItem(item.id, 'quantity', v)}
+                                keyboardType="number-pad"
+                                scrollEnabled={false}
+                                selectTextOnFocus={true}
+                                style={{
+                                    fontSize: 14,
+                                    fontWeight: '500',
+                                    color: themeColors.primary,
+                                    textAlign: 'center',
+                                    padding: 0,
+                                    minWidth: 20
+                                }}
+                            />
+                        </XStack>
+
+                        {/* Unit Price */}
                         <XStack alignItems="center" gap="$1">
                             <Text fontSize={12} color={themeColors.textSecondary}>@</Text>
                             <TextInput
@@ -1092,6 +1094,7 @@ const BillItemRow = memo(({
                             />
                         </XStack>
 
+                        {/* Discount */}
                         <XStack alignItems="center" gap="$1">
                             <Text fontSize={12} color={themeColors.textSecondary}>-</Text>
                             <TextInput
@@ -1104,8 +1107,8 @@ const BillItemRow = memo(({
                                 scrollEnabled={false}
                                 style={{
                                     fontSize: 14,
-                                    color: themeColors.error,
-                                    minWidth: 40,
+                                    color: themeColors.error, 
+                                    minWidth: 30,
                                     padding: 0
                                 }}
                             />
@@ -1113,7 +1116,7 @@ const BillItemRow = memo(({
                     </XStack>
                 </YStack>
 
-                {/* COLUMN 4: Actions & Total */}
+                {/* COLUMN 3: Actions & Total */}
                 <YStack alignItems="flex-end" justifyContent="space-between" height={45}>
                     <Pressable 
                         onPress={() => deleteItem(item.id)}
