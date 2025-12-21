@@ -23,6 +23,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { Button } from './Button';
 import { Avatar } from './Avatar';
 import { Card } from './Card';
+import { CategoryBadge } from './Badge';
 import { ConfirmDialog } from './ConfirmDialog';
 import type { User, GroupMember } from '@/types/models';
 
@@ -44,6 +45,7 @@ interface CustomSplitModalProps {
   onConfirm: (participants: SplitParticipant[]) => void;
   itemName: string;
   itemPrice: number;
+  itemCategory?: string; // Added category
   currentParticipants: SplitParticipant[];
   allMembers: GroupMember[];
   currentUserId: string;
@@ -55,6 +57,7 @@ export function CustomSplitModal({
   onConfirm,
   itemName,
   itemPrice,
+  itemCategory,
   currentParticipants,
   allMembers,
   currentUserId,
@@ -284,13 +287,16 @@ export function CustomSplitModal({
           <Pressable onPress={handleClose}>
             <X size={24} color={themeColors.textPrimary} />
           </Pressable>
-          <YStack alignItems="center">
+          <YStack alignItems="center" gap="$1">
             <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               Custom Split
             </Text>
-            <Text fontSize={14} color={themeColors.textSecondary}>
-              {itemName}
-            </Text>
+            <XStack alignItems="center" gap="$2">
+                {itemCategory && <CategoryBadge category={itemCategory} size="sm" iconOnly />}
+                <Text fontSize={14} color={themeColors.textSecondary}>
+                {itemName}
+                </Text>
+            </XStack>
           </YStack>
           <Button variant="ghost" size="sm" onPress={handleResetEqual}>
             Split Equally

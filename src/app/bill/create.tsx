@@ -7,7 +7,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { TextInput, Pressable, KeyboardAvoidingView, Platform, LayoutAnimation } from 'react-native';
+import { TextInput, Pressable, KeyboardAvoidingView, Platform, LayoutAnimation, Modal } from 'react-native';
 import { 
   X, 
   Plus, 
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Button, Card, Input, CurrencyInput, GroupImage } from '@/components/ui';
+import { Screen, Button, Card, Input, CurrencyInput, GroupImage, CategoryBadge } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 import { SplitModeSelector } from '@/components/bill/SplitModeSelector';
@@ -40,6 +40,9 @@ const categories: { key: Category; icon: string; label: string }[] = [
 
 export default function CreateBillScreen() {
   const router = useRouter();
+  // Add Item Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+
   const themeColors = useThemeColors();
   const { 
     createBill,
@@ -47,6 +50,24 @@ export default function CreateBillScreen() {
   } = useBillsStore();
   const { groups, fetchGroups, members, fetchGroupMembers } = useGroupsStore();
   const { showToast } = useUIStore();
+
+  const handleAddItem = (name: string, price: number, category: Category) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const newId = String(Date.now());
+    
+    setItems([...items, { 
+        id: newId, 
+        name, 
+        unitPrice: price.toFixed(2), 
+        discount: '', 
+        quantity: '1', 
+        locked: 'price',
+        category: category 
+    }]);
+    
+    setShowAddModal(false);
+  };
 
   const [billName, setBillName] = useState('');
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
@@ -59,7 +80,11 @@ export default function CreateBillScreen() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
   
   // Start with EMPTY items for "Simple Mode"
-  const [items, setItems] = useState<{ id: string; name: string; unitPrice: string; discount: string; quantity: string; locked?: 'price' | 'total' }[]>([]);
+  const [items, setItems] = useState<{ id: string; name: string; unitPrice: string; discount: string; quantity: string; locked?: 'price' | 'total'; category?: string }[]>([]);
+  
+  // Category Picker State
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [pickingCategoryFor, setPickingCategoryFor] = useState<string | null>(null);
   
   const [tax, setTax] = useState('');
   const [tip, setTip] = useState('');
@@ -729,6 +754,10 @@ export default function CreateBillScreen() {
                             addNewRow={addNewRow}
                             nameRefs={nameRefs}
                             priceRefs={priceRefs}
+                            onPickCategory={(itemId) => {
+                                setPickingCategoryFor(itemId);
+                                setCategoryModalVisible(true);
+                            }}
                         />
                     ))}
                     
@@ -875,6 +904,63 @@ export default function CreateBillScreen() {
           <Stack height={24} />
         </ScrollView>
       </YStack>
+       {/* Category Picker Modal */}
+       <Modal
+        animationType="fade"
+        transparent={true}
+        visible={categoryModalVisible}
+        onRequestClose={() => setCategoryModalVisible(false)}
+      >
+        <Pressable 
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+            onPress={() => setCategoryModalVisible(false)}
+        >
+            <Stack 
+                backgroundColor={themeColors.surface} 
+                borderTopLeftRadius={20} 
+                borderTopRightRadius={20}
+                paddingVertical="$5"
+                paddingHorizontal="$4"
+                gap="$4"
+                paddingBottom={Platform.OS === 'ios' ? 40 : 20}
+            >
+                <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>Select Category</Text>
+                    <Pressable onPress={() => setCategoryModalVisible(false)}>
+                        <X size={24} color={themeColors.textSecondary} />
+                    </Pressable>
+                </XStack>
+                
+                <XStack flexWrap="wrap" gap="$3" justifyContent="space-between">
+                    {categories.map((cat) => (
+                        <Pressable
+                            key={cat.key}
+                            style={{ width: '30%', marginBottom: 8 }}
+                            onPress={() => {
+                                if (pickingCategoryFor) {
+                                    updateItem(pickingCategoryFor, 'category', cat.key);
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setCategoryModalVisible(false);
+                                }
+                            }}
+                        >
+                             <Stack
+                                paddingVertical="$3"
+                                alignItems="center"
+                                borderRadius={12}
+                                backgroundColor={themeColors.surfaceElevated}
+                                borderWidth={1}
+                                borderColor={themeColors.border}
+                            >
+                                <Text fontSize={24} marginBottom="$1">{cat.icon}</Text>
+                                <Text fontSize={12} color={themeColors.textPrimary} fontWeight="500">{cat.label}</Text>
+                            </Stack>
+                        </Pressable>
+                    ))}
+                </XStack>
+            </Stack>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
@@ -888,7 +974,8 @@ const BillItemRow = memo(({
     deleteItem, 
     addNewRow,
     nameRefs,
-    priceRefs 
+    priceRefs,
+    onPickCategory
 }: {
     item: any, 
     index: number,
@@ -898,7 +985,8 @@ const BillItemRow = memo(({
     deleteItem: (id: string) => void,
     addNewRow: () => void,
     nameRefs: any,
-    priceRefs: any
+    priceRefs: any,
+    onPickCategory: (id: string) => void
 }) => {
     const unitPrice = parseFloat(item.unitPrice) || 0;
     const qty = parseInt(item.quantity) || 0;
@@ -950,6 +1038,11 @@ const BillItemRow = memo(({
                 <YStack flex={1} gap="$2">
                     {/* ROW 1: Name | Trash */}
                     <XStack alignItems="center" gap="$2">
+                        {/* Category Icon */}
+                        <Pressable onPress={() => onPickCategory(item.id)}>
+                             <CategoryBadge category={item.category || 'other'} size="sm" iconOnly />
+                        </Pressable>
+
                         <TextInput
                             ref={(ref) => { if (nameRefs.current) nameRefs.current[index] = ref; }}
                             placeholder="Item Name"

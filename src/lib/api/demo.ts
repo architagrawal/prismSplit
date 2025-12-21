@@ -803,6 +803,7 @@ export const demoBillItems: BillItemWithSplits[] = [
     price: 8.99,
     quantity: 3,
     discount: 1.50, // Display discount per item row logic? No, model says total discount for line.
+    category: 'groceries',
     sort_order: 0,
     splits: [
       { id: 's1', item_id: 'item-1', user_id: 'user-1', user: demoUsers[0], split_type: 'equal', amount: 4.5, percentage: null, color_index: 0 },
@@ -817,6 +818,7 @@ export const demoBillItems: BillItemWithSplits[] = [
     name: 'Rice 10lb bag',
     price: 18.99,
     quantity: 1,
+    category: 'groceries',
     sort_order: 1,
     splits: [
       { id: 's3', item_id: 'item-2', user_id: 'user-1', user: demoUsers[0], split_type: 'percentage', amount: 9.5, percentage: 50, color_index: 0 },
@@ -832,6 +834,7 @@ export const demoBillItems: BillItemWithSplits[] = [
     name: 'Chocolate Bars 12-pack',
     price: 12.5,
     quantity: 1,
+    category: 'groceries',
     sort_order: 2,
     splits: [
       { id: 's6', item_id: 'item-3', user_id: 'user-2', user: demoUsers[1], split_type: 'equal', amount: 12.5, percentage: null, color_index: 1 },
@@ -845,6 +848,7 @@ export const demoBillItems: BillItemWithSplits[] = [
     name: 'Paper Towels',
     price: 22.0,
     quantity: 1,
+    category: 'shopping',
     sort_order: 3,
     splits: [],
     total_claimed: 0,
@@ -856,6 +860,7 @@ export const demoBillItems: BillItemWithSplits[] = [
     name: 'Frozen Pizza 4-pack',
     price: 24.99,
     quantity: 1,
+    category: 'groceries',
     sort_order: 4,
     splits: [
       { id: 's7', item_id: 'item-5', user_id: 'user-1', user: demoUsers[0], split_type: 'equal', amount: 6.25, percentage: null, color_index: 0 },
@@ -872,6 +877,7 @@ export const demoBillItems: BillItemWithSplits[] = [
     name: 'Laundry Detergent',
     price: 19.99,
     quantity: 1,
+    category: 'shopping',
     sort_order: 5,
     splits: [
       { id: 's11', item_id: 'item-6', user_id: 'user-1', user: demoUsers[0], split_type: 'equal', amount: 5.00, percentage: null, color_index: 0 },

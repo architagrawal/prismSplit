@@ -375,10 +375,11 @@ export function BillListItem({
 
 // === Item Row (for bill items with splits) ===
 
-interface ItemRowProps {
+export interface ItemRowProps {
   name: string;
   price: number;
   quantity: number;
+  category?: string; // or Category
   participants: Array<{ userId: string; name: string; colorIndex: number; percentage: number }>;
   isSelected?: boolean;
   onPress?: () => void;
@@ -389,6 +390,7 @@ export function ItemRow({
   name,
   price,
   quantity,
+  category,
   participants,
   isSelected = false,
   onPress,
@@ -431,7 +433,10 @@ export function ItemRow({
           <Stack flex={1} gap="$1.5">
             {/* Top Row: Name and Price */}
             <Stack flexDirection="row" justifyContent="space-between" alignItems="baseline">
-              <Stack flexDirection="row" alignItems="baseline" gap="$2" flex={1}>
+              <Stack flexDirection="row" alignItems="center" gap="$2" flex={1}>
+                {category && (
+                    <CategoryBadge category={category as any} size="sm" iconOnly />
+                )}
                 <Text
                   fontSize={15}
                   fontWeight="500"

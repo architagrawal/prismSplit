@@ -93,6 +93,7 @@ export interface BillItem {
   price: number;
   quantity: number;
   discount?: number; // Total discount for this line item (not per unit)
+  category?: Category; // Optional override for item-specific category
   sort_order: number;
 }
 

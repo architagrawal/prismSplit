@@ -105,15 +105,36 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 }
 
 // === Category Badge ===
+import { categoryIcons, Category } from '@/types/models';
 
 interface CategoryBadgeProps {
   category: string;
   icon?: string;
+  size?: 'sm' | 'md';
+  iconOnly?: boolean;
 }
 
-export function CategoryBadge({ category, icon }: CategoryBadgeProps) {
+export function CategoryBadge({ category, icon, size = 'md', iconOnly = false }: CategoryBadgeProps) {
   const themeColors = useThemeColors();
   
+  // Use provided icon or lookup from dictionary
+  const displayIcon = icon || categoryIcons[category as Category] || '📦';
+  
+  if (iconOnly) {
+    return (
+        <Stack
+        width={size === 'sm' ? 20 : 28}
+        height={size === 'sm' ? 20 : 28}
+        borderRadius={size === 'sm' ? 6 : 8}
+        backgroundColor={themeColors.borderLight}
+        justifyContent="center"
+        alignItems="center"
+      >
+        <Text fontSize={size === 'sm' ? 12 : 16}>{displayIcon}</Text>
+      </Stack>
+    );
+  }
+
   return (
     <Stack
       flexDirection="row"
@@ -124,9 +145,7 @@ export function CategoryBadge({ category, icon }: CategoryBadgeProps) {
       borderRadius={6}
       gap="$1"
     >
-      {icon && (
-        <Text fontSize={12}>{icon}</Text>
-      )}
+      <Text fontSize={12}>{displayIcon}</Text>
       <Text
         color={themeColors.textSecondary}
         fontSize={12}

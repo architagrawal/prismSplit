@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { Stack, Text, XStack, YStack } from 'tamagui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Plus, Trash2, Save, ChevronDown } from 'lucide-react-native';
@@ -11,7 +11,8 @@ import {
   Button, 
   Input, 
   Card, 
-  ConfirmDialog
+  ConfirmDialog,
+  CategoryBadge
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useUIStore, useActivityStore, useAuthStore } from '@/lib/store';
@@ -25,6 +26,7 @@ interface EditItem {
   unitPrice: string;
   discount: string;
   quantity: string;
+  category?: string;
 }
 
 const categories: { key: Category; icon: string; label: string }[] = [
@@ -57,6 +59,10 @@ export default function BillEditScreen() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [taxSplitMode, setTaxSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
   const [tipSplitMode, setTipSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
+  
+  // Category Picker State
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [pickingCategoryFor, setPickingCategoryFor] = useState<string | null>(null);
 
   // Load bill data
   useEffect(() => {
@@ -84,8 +90,8 @@ export default function BillEditScreen() {
     if (id && billItems[id]) {
       const rawItems = billItems[id];
       // Aggregate items for display (reversing the explosion from store)
-      // Group by name + price + discount
-      const aggregatedMap = new Map<string, { id: string, name: string, unitPrice: number, quantity: number, discount: number }>();
+      // Group by name + price + discount + category
+      const aggregatedMap = new Map<string, { id: string, name: string, unitPrice: number, quantity: number, discount: number, category?: Category }>();
       
       // Helper to strip (1/3) suffix
       const normalizeName = (name: string) => name.replace(/\s\(\d+\/\d+\)$/, '');
@@ -96,7 +102,10 @@ export default function BillEditScreen() {
         const priceKey = item.price.toFixed(2);
         // Include discount in key to group identical items with same discount
         const discountKey = (item.discount || 0).toFixed(2);
-        const key = `${cleanName}-${priceKey}-${discountKey}`;
+        // Include category (items with different categories shouldn't be merged even if name is same)
+        const categoryKey = item.category || 'none';
+        
+        const key = `${cleanName}-${priceKey}-${discountKey}-${categoryKey}`;
         
         if (aggregatedMap.has(key)) {
             const existing = aggregatedMap.get(key)!;
@@ -112,6 +121,7 @@ export default function BillEditScreen() {
                 unitPrice: item.price,
                 quantity: item.quantity,
                 discount: item.discount || 0,
+                category: item.category,
             });
         }
       });
@@ -121,7 +131,8 @@ export default function BillEditScreen() {
           name: i.name,
           quantity: i.quantity.toString(),
           unitPrice: i.unitPrice.toFixed(2),
-          discount: i.discount.toFixed(2) === '0.00' ? '' : i.discount.toFixed(2)
+          discount: i.discount.toFixed(2) === '0.00' ? '' : i.discount.toFixed(2),
+          category: i.category,
       }));
       setItems(loadedItems);
 
@@ -129,7 +140,14 @@ export default function BillEditScreen() {
       if (autoAdd === 'true' && !autoAddProcessed.current) {
         autoAddProcessed.current = true;
         setTimeout(() => {
-            const newItem = { id: `new-${Date.now()}`, name: '', unitPrice: '', discount: '', quantity: '1' };
+            const newItem = { 
+                id: `new-${Date.now()}`, 
+                name: '', 
+                unitPrice: '', 
+                discount: '', 
+                quantity: '1',
+                category: currentBill?.category // default to bill category
+            };
             // If we have items, append. If empty, just set it.
             setItems(prev => [...prev, newItem]);
             setHasChanges(true); 
@@ -163,7 +181,14 @@ export default function BillEditScreen() {
     setHasChanges(true);
     setItems(prev => [
       ...prev,
-      { id: `new-${Date.now()}`, name: '', unitPrice: '', discount: '', quantity: '1' }
+      { 
+          id: `new-${Date.now()}`, 
+          name: '', 
+          unitPrice: '', 
+          discount: '', 
+          quantity: '1',
+          category: category // default to current bill category
+      }
     ]);
   };
 
@@ -180,7 +205,7 @@ export default function BillEditScreen() {
     }
 
     // Filter and transform to store format
-    const validItems: { name: string, price: number, quantity: number, discount?: number }[] = [];
+    const validItems: { name: string, price: number, quantity: number, discount?: number, category?: Category }[] = [];
     
     items.forEach(item => {
         const unitPrice = parseFloat(item.unitPrice) || 0;
@@ -192,7 +217,8 @@ export default function BillEditScreen() {
                 name: item.name,
                 price: unitPrice,
                 quantity: qty,
-                discount: discount > 0 ? discount : undefined
+                discount: discount > 0 ? discount : undefined,
+                category: item.category as Category // Pass category
             });
         }
     });
@@ -226,7 +252,8 @@ export default function BillEditScreen() {
         name: i.name,
         price: i.price,
         quantity: i.quantity,
-        discount: i.discount
+        discount: i.discount,
+        category: i.category as Category // Pass category
       })));
 
       
@@ -306,6 +333,13 @@ export default function BillEditScreen() {
                 <YStack flex={1} gap="$2">
                     {/* ROW 1: Name | Trash */}
                     <XStack alignItems="center" gap="$2">
+                         <Pressable onPress={() => {
+                            setPickingCategoryFor(item.id);
+                            setCategoryModalVisible(true);
+                         }}>
+                             <CategoryBadge category={item.category || 'other'} size="sm" iconOnly />
+                        </Pressable>
+
                         <TextInput
                             placeholder="Item Name"
                             value={item.name}
@@ -663,6 +697,68 @@ export default function BillEditScreen() {
           }
         ]}
       />
+
+       {/* Category Picker Modal */}
+       <Modal
+        animationType="fade"
+        transparent={true}
+        visible={categoryModalVisible}
+        onRequestClose={() => setCategoryModalVisible(false)}
+      >
+        <Pressable 
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+            onPress={() => setCategoryModalVisible(false)}
+        >
+            <Stack 
+                backgroundColor={themeColors.surface} 
+                borderTopLeftRadius={20} 
+                borderTopRightRadius={20}
+                paddingVertical="$5"
+                paddingHorizontal="$4"
+                gap="$4"
+                paddingBottom={Platform.OS === 'ios' ? 40 : 20}
+            >
+                <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>Select Category</Text>
+                    <Pressable onPress={() => setCategoryModalVisible(false)}>
+                        <X size={24} color={themeColors.textSecondary} />
+                    </Pressable>
+                </XStack>
+                
+                <XStack flexWrap="wrap" gap="$3" justifyContent="space-between">
+                    {categories.map((cat) => (
+                        <Pressable
+                            key={cat.key}
+                            style={{ width: '30%', marginBottom: 8 }}
+                            onPress={() => {
+                                if (pickingCategoryFor) {
+                                  // Update item category
+                                  const idx = items.findIndex(i => i.id === pickingCategoryFor);
+                                  if (idx !== -1) {
+                                      handleItemChange(idx, 'category', cat.key);
+                                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  }
+                                  setCategoryModalVisible(false);
+                                }
+                            }}
+                        >
+                             <Stack
+                                paddingVertical="$3"
+                                alignItems="center"
+                                borderRadius={12}
+                                backgroundColor={themeColors.surfaceElevated}
+                                borderWidth={1}
+                                borderColor={themeColors.border}
+                            >
+                                <Text fontSize={24} marginBottom="$1">{cat.icon}</Text>
+                                <Text fontSize={12} color={themeColors.textPrimary} fontWeight="500">{cat.label}</Text>
+                            </Stack>
+                        </Pressable>
+                    ))}
+                </XStack>
+            </Stack>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
