@@ -110,27 +110,58 @@ import { categoryIcons, Category } from '@/types/models';
 interface CategoryBadgeProps {
   category: string;
   icon?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   iconOnly?: boolean;
+  isSelected?: boolean;
 }
 
-export function CategoryBadge({ category, icon, size = 'md', iconOnly = false }: CategoryBadgeProps) {
+export function CategoryBadge({ category, icon, size = 'md', iconOnly = false, isSelected = false }: CategoryBadgeProps) {
   const themeColors = useThemeColors();
   
   // Use provided icon or lookup from dictionary
   const displayIcon = icon || categoryIcons[category as Category] || '📦';
   
   if (iconOnly) {
+    const sizeMap = {
+      sm: { dim: 20, fontSize: 12, radius: 6, checkSize: 10, checkPos: -2 },
+      md: { dim: 28, fontSize: 16, radius: 8, checkSize: 12, checkPos: -3 },
+      lg: { dim: 42, fontSize: 24, radius: 14, checkSize: 16, checkPos: -4 },
+      xl: { dim: 52, fontSize: 28, radius: 16, checkSize: 20, checkPos: -5 },
+    };
+    
+    // Default to md if size invalid
+    const { dim, fontSize: fSize, radius, checkSize, checkPos } = sizeMap[size as keyof typeof sizeMap] || sizeMap.md;
+
     return (
         <Stack
-        width={size === 'sm' ? 20 : 28}
-        height={size === 'sm' ? 20 : 28}
-        borderRadius={size === 'sm' ? 6 : 8}
+        width={dim}
+        height={dim}
+        borderRadius={radius}
         backgroundColor={themeColors.borderLight}
         justifyContent="center"
         alignItems="center"
+        position="relative"
       >
-        <Text fontSize={size === 'sm' ? 12 : 16}>{displayIcon}</Text>
+        <Text fontSize={fSize}>{displayIcon}</Text>
+        
+        {/* Selection Checkmark Overlay */}
+        {isSelected && (
+          <Stack
+            position="absolute"
+            bottom={checkPos}
+            right={checkPos}
+            backgroundColor={themeColors.primary}
+            width={checkSize}
+            height={checkSize}
+            borderRadius={checkSize / 2}
+            justifyContent="center"
+            alignItems="center"
+            borderWidth={1.5}
+            borderColor={themeColors.surface}
+          >
+            <Text fontSize={checkSize * 0.6} color="white" fontWeight="bold">✓</Text>
+          </Stack>
+        )}
       </Stack>
     );
   }

@@ -409,84 +409,73 @@ export function ItemRow({
   return (
     <Pressable onPress={handlePress} onLongPress={onExpand} delayLongPress={400}>
       <Stack
-        backgroundColor={isSelected ? themeColors.surfaceElevated : themeColors.surface}
+        backgroundColor={isSelected ? themeColors.surfaceElevated || '#F0F4FF' : themeColors.surface}
         borderBottomWidth={1}
         borderBottomColor={themeColors.border}
-        paddingHorizontal="$2"
-        paddingVertical="$3.5"
+        paddingHorizontal="$3"
+        paddingVertical="$3"
       >
         <Stack flexDirection="row" alignItems="center" gap="$3">
-          {/* Selection Checkbox / Indicator */}
-          <Stack
-            width={22}
-            height={22}
-            borderRadius={11}
-            borderWidth={isSelected ? 0 : 2}
-            borderColor={themeColors.border}
-            backgroundColor={isSelected ? themeColors.primary : 'transparent'}
-            justifyContent="center"
-            alignItems="center"
-          >
-            {isSelected && <Text fontSize={12} color="white">✓</Text>}
-          </Stack>
+          {/* 1. Large Category Icon - Intuitive ID */}
+          {category && (
+               <CategoryBadge 
+                  category={category as any} 
+                  size="lg" 
+                  iconOnly 
+                  isSelected={isSelected} // Pass selection state if badge needs to change
+               />
+          )}
 
-          <Stack flex={1} gap="$1.5">
-            {/* Top Row: Name and Price */}
-            <Stack flexDirection="row" justifyContent="space-between" alignItems="baseline">
-              <Stack flexDirection="row" alignItems="center" gap="$2" flex={1}>
-                {category && (
-                    <CategoryBadge category={category as any} size="sm" iconOnly />
-                )}
+          {/* 3. Name & Participants - What & Who */}
+          <Stack flex={1} gap="$1" justifyContent="center">
+             <Stack flexDirection="row" alignItems="center" gap="$1">
                 <Text
-                  fontSize={15}
-                  fontWeight="500"
+                  fontSize={16}
+                  fontWeight="600"
                   color={themeColors.textPrimary}
                   numberOfLines={1}
                 >
                   {name}
                 </Text>
                 {quantity > 1 && (
-                  <Text
-                    fontSize={12}
-                    color={themeColors.textSecondary}
-                  >
-                    x{quantity}
+                  <Text fontSize={12} color={themeColors.textSecondary}>
+                     ({quantity})
                   </Text>
                 )}
-              </Stack>
-              
-              <Text
-                fontSize={15}
-                fontWeight="600"
+             </Stack>
+             
+             {/* Participants under name */}
+             <Stack flexDirection="row" alignItems="center" minHeight={20}>
+                {participants.length > 0 ? (
+                    <AvatarGroup 
+                      users={participants.map(p => ({ name: p.name, colorIndex: p.colorIndex }))} 
+                      size="xs"
+                      max={4}
+                    />
+                ) : (
+                     <Text
+                       fontSize={12}
+                       color={isSelected ? themeColors.success : themeColors.warning}
+                       fontStyle="italic"
+                     >
+                       {isSelected ? 'Shared by you' : 'Tap to select'}
+                     </Text>
+                )}
+             </Stack>
+          </Stack>
+
+          {/* 4. Price & Split - How Much & Distribution */}
+          <Stack alignItems="flex-end" gap="$1" justifyContent="center">
+             <Text
+                fontSize={16}
+                fontWeight="700"
                 color={isSelected ? themeColors.primary : themeColors.textPrimary}
               >
                 ${totalPrice.toFixed(2)}
               </Text>
-            </Stack>
-
-            {/* Bottom Row: Compact details */}
-            <Stack flexDirection="row" alignItems="center" justifyContent="space-between" gap="$3">
-               {/* Left: Avatars */}
-               <Stack flexDirection="row" alignItems="center" gap="$2">
-                  {participants.length > 0 ? (
-                    <AvatarGroup 
-                      users={participants.map(p => ({ name: p.name, colorIndex: p.colorIndex }))} 
-                      size="xs"
-                      max={3}
-                    />
-                  ) : (
-                     <Text
-                       fontSize={11}
-                       color={isSelected ? themeColors.textMuted : themeColors.warning}
-                       fontStyle="italic"
-                     >
-                       {isSelected ? 'Select to add' : 'Tap to select'}
-                     </Text>
-                  )}
-               </Stack>
-
-               {/* Right: Split bar (Flex) */}
-               <Stack flex={1} maxWidth={120}>
+              
+              {/* Split Bar under price */}
+              <Stack width={80}>
                  <SplitBar
                     segments={participants.map(p => ({
                       userId: p.userId,
@@ -496,9 +485,9 @@ export function ItemRow({
                     height={4}
                     unclaimed={unclaimed}
                   />
-               </Stack>
-            </Stack>
+              </Stack>
           </Stack>
+
         </Stack>
       </Stack>
     </Pressable>
