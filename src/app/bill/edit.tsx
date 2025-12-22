@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { Stack, Text, XStack, YStack } from 'tamagui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { X, Plus, Trash2, Save, ChevronDown } from 'lucide-react-native';
+import { X, Plus, Trash2, Save, ChevronDown, Users, CheckCircle2, User as UserIcon } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { 
@@ -14,8 +14,9 @@ import {
   ConfirmDialog,
   CategoryBadge
 } from '@/components/ui';
+import { SimpleSplitModal, SimpleSplitType, SimpleSplitParticipant } from '@/components/bill/SimpleSplitModal';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useBillsStore, useUIStore, useActivityStore, useAuthStore } from '@/lib/store';
+import { useBillsStore, useUIStore, useActivityStore, useAuthStore, useGroupsStore } from '@/lib/store';
 import { categoryIcons, type Category, type Activity } from '@/types/models';
 
 import { SplitModeSelector } from '@/components/bill/SplitModeSelector';
@@ -50,6 +51,7 @@ export default function BillEditScreen() {
   const discountRefs = useRef<(TextInput | null)[]>([]);
   
   const { currentBill, fetchBillById, billItems, fetchBillItems, updateBill, updateBillItems, isLoading } = useBillsStore();
+  const { groups } = useGroupsStore();
   const { showToast } = useUIStore();
 
   const [title, setTitle] = useState('');
@@ -66,6 +68,14 @@ export default function BillEditScreen() {
   // Category Picker State
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [pickingCategoryFor, setPickingCategoryFor] = useState<string | null>(null);
+
+  // Simple Split State
+  const [isSimpleMode, setIsSimpleMode] = useState(false);
+  const [simpleAmount, setSimpleAmount] = useState('');
+  const [simpleSplitModalVisible, setSimpleSplitModalVisible] = useState(false);
+  const [simpleSplitMethod, setSimpleSplitMethod] = useState<SimpleSplitType>('equal');
+  const [simpleSplitParticipants, setSimpleSplitParticipants] = useState<SimpleSplitParticipant[]>([]);
+
 
   // Load bill data
   useEffect(() => {
@@ -90,75 +100,145 @@ export default function BillEditScreen() {
 
   // Populate items and handle autoAdd
   useEffect(() => {
-    if (id && billItems[id]) {
+    if (id && billItems[id] && currentBill) {
       const rawItems = billItems[id];
-      // Aggregate items for display (reversing the explosion from store)
-      // Group by name + price + discount + category
-      const aggregatedMap = new Map<string, { id: string, name: string, unitPrice: number, quantity: number, discount: number, category?: Category }>();
-      
-      // Helper to strip (1/3) suffix
-      const normalizeName = (name: string) => name.replace(/\s\(\d+\/\d+\)$/, '');
+      const selectedGroup = groups.find(g => g.id === currentBill.group_id);
+      const groupMembers = selectedGroup?.members || [];
+      const currentUserId = useAuthStore.getState().user?.id;
 
-      rawItems.forEach(item => {
-        const cleanName = normalizeName(item.name);
-        // Round price to 2 decimals to ensure key matching works for float variations
-        const priceKey = item.price.toFixed(2);
-        // Include discount in key to group identical items with same discount
-        const discountKey = (item.discount || 0).toFixed(2);
-        // Include category (items with different categories shouldn't be merged even if name is same)
-        const categoryKey = item.category || 'none';
+      // DETECT SIMPLE MODE
+      // Logic: Explicit flag OR (1 item AND no tax/tip/discount separation in basic usage)
+      // For now, allow checking is_itemized from DB or infer
+      const isSimple = currentBill.is_itemized === false || (rawItems.length === 1 && rawItems[0].name === currentBill.title);
+      setIsSimpleMode(isSimple);
+
+      if (isSimple && rawItems.length > 0) {
+          // SIMPLE MODE INITIALIZATION
+          const simpleItem = rawItems[0];
+          setSimpleAmount(simpleItem.price.toFixed(2));
+          
+          // Reconstruct Participants from Splits
+          const existingSplits = simpleItem.splits || [];
+          
+          // Determine Split Method from splits
+          // If all equal type -> 'equal'
+          // If percentage -> 'percentage'
+          // If shares -> 'shares'
+          // If amount -> 'unequal' (unless clear pattern?)
+          // actually, store doesn't save user input method explicitly on item, only strict splits. 
+          // We can infer:
+          // 1. If any split has percentage -> 'percentage'
+          // 2. If all splits are type 'equal' -> 'equal'
+          // 3. Else 'unequal' (or 'shares' if we could track it, but for now map back to amounts or keep generic?)
+          // Let's look at the first split's type to guess?
+          
+          // Better approach: defaults.
+          let detectedMethod: SimpleSplitType = 'equal';
+          if (existingSplits.some(s => s.split_type === 'percentage')) detectedMethod = 'percentage';
+          else if (existingSplits.some(s => s.split_type === 'shares' || s.split_type === 'amount')) detectedMethod = 'unequal'; // simplifies to Unequal for editing usually unless it was simple equal
+
+           // Map group members to SimpleSplitParticipant
+           const participants: SimpleSplitParticipant[] = groupMembers.map(member => {
+              const split = existingSplits.find(s => s.user_id === member.user_id);
+              const isSelected = !!split;
+              
+              return {
+                  userId: member.user_id,
+                  user: member.user,
+                  avatarUrl: member.user.avatar_url,
+                  isSelected: isSelected, // If they have a split, they are "selected"
+                  amount: split ? split.amount : 0,
+                  percentage: split ? (split.percentage || 0) : 0,
+                  shares: 1, // Default, can't easily reverse shares from amount without total context sometimes
+                  colorIndex: member.color_index
+              };
+           });
+           
+           // Refine method detection
+           const selectedParts = participants.filter(p => p.isSelected);
+           if (selectedParts.length === groupMembers.length && selectedParts.every(p => p.amount === selectedParts[0].amount)) {
+               detectedMethod = 'equal';
+           } else if (existingSplits.some(s => s.split_type === 'percentage')) {
+                detectedMethod = 'percentage';
+           } else if (existingSplits.some(s => s.split_type === 'amount')) {
+               detectedMethod = 'unequal';
+           }
+
+           setSimpleSplitMethod(detectedMethod);
+           setSimpleSplitParticipants(participants);
+           setItems([]); // Clear detailed items
+
+      } else {
+        // DETAILED MODE (Existing Logic)
         
-        const key = `${cleanName}-${priceKey}-${discountKey}-${categoryKey}`;
+        // Aggregate items for display (reversing the explosion from store)
+        // Group by name + price + discount + category
+        const aggregatedMap = new Map<string, { id: string, name: string, unitPrice: number, quantity: number, discount: number, category?: Category }>();
         
-        if (aggregatedMap.has(key)) {
-            const existing = aggregatedMap.get(key)!;
-            aggregatedMap.set(key, { 
-                ...existing, 
-                quantity: existing.quantity + item.quantity,
-                discount: existing.discount + (item.discount || 0)
-            });
-        } else {
-            aggregatedMap.set(key, {
-                id: item.id.split('-')[0] === 'collapsed' ? item.id : `agg-${key}`, // Use reliable temporary ID for editing
-                name: cleanName,
-                unitPrice: item.price,
-                quantity: item.quantity,
-                discount: item.discount || 0,
-                category: item.category,
-            });
+        // Helper to strip (1/3) suffix
+        const normalizeName = (name: string) => name.replace(/\s\(\d+\/\d+\)$/, '');
+  
+        rawItems.forEach(item => {
+          const cleanName = normalizeName(item.name);
+          // Round price to 2 decimals to ensure key matching works for float variations
+          const priceKey = item.price.toFixed(2);
+          // Include discount in key to group identical items with same discount
+          const discountKey = (item.discount || 0).toFixed(2);
+          // Include category (items with different categories shouldn't be merged even if name is same)
+          const categoryKey = item.category || 'none';
+          
+          const key = `${cleanName}-${priceKey}-${discountKey}-${categoryKey}`;
+          
+          if (aggregatedMap.has(key)) {
+              const existing = aggregatedMap.get(key)!;
+              aggregatedMap.set(key, { 
+                  ...existing, 
+                  quantity: existing.quantity + item.quantity,
+                  discount: existing.discount + (item.discount || 0)
+              });
+          } else {
+              aggregatedMap.set(key, {
+                  id: item.id.split('-')[0] === 'collapsed' ? item.id : `agg-${key}`, // Use reliable temporary ID for editing
+                  name: cleanName,
+                  unitPrice: item.price,
+                  quantity: item.quantity,
+                  discount: item.discount || 0,
+                  category: item.category,
+              });
+          }
+        });
+  
+        const loadedItems: EditItem[] = Array.from(aggregatedMap.values()).map(i => ({
+            id: i.id,
+            name: i.name,
+            quantity: i.quantity.toString(),
+            unitPrice: i.unitPrice.toFixed(2),
+            discount: i.discount.toFixed(2) === '0.00' ? '' : i.discount.toFixed(2),
+            category: i.category,
+        }));
+        setItems(loadedItems);
+  
+        // Handle autoAdd if requested and not yet processed
+        if (autoAdd === 'true' && !autoAddProcessed.current) {
+          autoAddProcessed.current = true;
+          setTimeout(() => {
+              const newItem = { 
+                  id: `new-${Date.now()}`, 
+                  name: '', 
+                  unitPrice: '', 
+                  discount: '', 
+                  quantity: '1',
+                  category: currentBill?.category // default to bill category
+              };
+              // If we have items, append. If empty, just set it.
+              setItems(prev => [...prev, newItem]);
+              setHasChanges(true); 
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }, 100);
         }
-      });
-
-      const loadedItems: EditItem[] = Array.from(aggregatedMap.values()).map(i => ({
-          id: i.id,
-          name: i.name,
-          quantity: i.quantity.toString(),
-          unitPrice: i.unitPrice.toFixed(2),
-          discount: i.discount.toFixed(2) === '0.00' ? '' : i.discount.toFixed(2),
-          category: i.category,
-      }));
-      setItems(loadedItems);
-
-      // Handle autoAdd if requested and not yet processed
-      if (autoAdd === 'true' && !autoAddProcessed.current) {
-        autoAddProcessed.current = true;
-        setTimeout(() => {
-            const newItem = { 
-                id: `new-${Date.now()}`, 
-                name: '', 
-                unitPrice: '', 
-                discount: '', 
-                quantity: '1',
-                category: currentBill?.category // default to bill category
-            };
-            // If we have items, append. If empty, just set it.
-            setItems(prev => [...prev, newItem]);
-            setHasChanges(true); 
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }, 100);
       }
     }
-  }, [id, billItems, autoAdd]);
+  }, [id, billItems, currentBill, groups, autoAdd]);
 
   // Subtotal calculation
   const subtotal = items.reduce((sum, item) => {
@@ -168,7 +248,25 @@ export default function BillEditScreen() {
       return sum + (price * qty) - discount;
   }, 0);
 
-  const total = subtotal - (parseFloat(discount) || 0) + (parseFloat(tax) || 0) + (parseFloat(tip) || 0);
+  const total = isSimpleMode 
+    ? (parseFloat(simpleAmount) || 0)
+    : (subtotal - (parseFloat(discount) || 0) + (parseFloat(tax) || 0) + (parseFloat(tip) || 0));
+
+  // Helper for "Just Me" logic
+  const resetToEqualSplit = (selectedUserIds?: string[]) => {
+      const selectedGroup = groups.find(g => g.id === currentBill?.group_id);
+      const groupMembers = selectedGroup?.members || [];
+      const updated = simpleSplitParticipants.map(p => ({
+          ...p,
+          isSelected: selectedUserIds ? selectedUserIds.includes(p.userId) : true,
+          amount: 0,
+          percentage: 0,
+          shares: 1
+      }));
+      setSimpleSplitParticipants(updated);
+      setSimpleSplitMethod('equal');
+      setHasChanges(true);
+  };
 
   const handleItemChange = (index: number, field: keyof EditItem, value: string) => {
     setHasChanges(true);
@@ -248,6 +346,7 @@ export default function BillEditScreen() {
           total_amount: total, // Recalculated total
           tax_split_mode: finalTaxSplitMode,
           tip_split_mode: finalTipSplitMode,
+          is_itemized: !isSimpleMode // Update flag if needed
         });
 
       // 2. Update Bill Items
@@ -315,14 +414,16 @@ export default function BillEditScreen() {
             paddingVertical="$4"
             backgroundColor={themeColors.surface}
         >
-            <XStack gap="$3" alignItems="center">
+            <XStack gap="$3">
                 {/* COLUMN 1: Large Category Icon (Leftmost) */}
-                <Pressable onPress={() => {
-                    setPickingCategoryFor(item.id);
-                    setCategoryModalVisible(true);
-                    }}>
-                    <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
-                </Pressable>
+                <YStack justifyContent="center">
+                    <Pressable onPress={() => {
+                        setPickingCategoryFor(item.id);
+                        setCategoryModalVisible(true);
+                        }}>
+                        <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
+                    </Pressable>
+                </YStack>
 
                 {/* COLUMN 2: Name & Details (Stacked) */}
                 <YStack flex={1} gap="$2">
@@ -438,7 +539,7 @@ export default function BillEditScreen() {
                 </YStack>
 
                 {/* COLUMN 3: Actions & Total */}
-                <YStack alignItems="flex-end" justifyContent="space-between" height={45}>
+                <YStack alignItems="flex-end" justifyContent="space-between">
                     <Pressable 
                         onPress={() => handleRemoveItem(index)}
                         hitSlop={15}
@@ -447,9 +548,11 @@ export default function BillEditScreen() {
                         <Trash2 size={18} color={themeColors.error} />
                     </Pressable>
 
-                    <Text fontSize={15} fontWeight="700" color={themeColors.textPrimary}>
-                        ${lineTotal.toFixed(2)}
-                    </Text>
+                    <XStack height={36} justifyContent="center" alignItems="center">
+                        <Text fontSize={15} fontWeight="700" color={themeColors.textPrimary}>
+                            ${lineTotal.toFixed(2)}
+                        </Text>
+                    </XStack>
                 </YStack>
             </XStack>
         </Stack>
@@ -552,7 +655,8 @@ export default function BillEditScreen() {
             </YStack>
           </Card>
 
-          {/* Items */}
+          {/* Items (Only in Detailed Mode) */}
+          {!isSimpleMode && (
           <YStack marginBottom="$4">
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$2" paddingHorizontal="$1">
               <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
@@ -594,8 +698,143 @@ export default function BillEditScreen() {
                 </YStack>
             </Card>
         </YStack>
+        )}
 
-        {/* Tax & Tip */}
+        {/* AMOUNT INPUT (Only in Simple Mode) */}
+        {isSimpleMode && (
+            <Card variant="surface" padding="$4" marginBottom="$4">
+                <YStack gap="$2">
+                    <Text fontSize={14} fontWeight="500" color={themeColors.textSecondary}>Total Amount</Text>
+                    <XStack alignItems="center" gap="$2">
+                        <Text fontSize={32} fontWeight="700" color={themeColors.textPrimary}>$</Text>
+                        <TextInput
+                            placeholder="0.00"
+                            value={simpleAmount}
+                            onChangeText={(v) => {
+                                setSimpleAmount(v);
+                                setHasChanges(true);
+                            }}
+                            keyboardType="decimal-pad"
+                            style={{
+                                fontSize: 32,
+                                fontWeight: '700',
+                                color: themeColors.primary,
+                                flex: 1,
+                                height: 50
+                            }}
+                        />
+                    </XStack>
+                </YStack>
+            </Card>
+        )}
+
+        {/* HOW TO SPLIT (Only in Simple Mode) */}
+        {isSimpleMode && (() => {
+                // Helper Logic for Highlights
+                const isAllEqual = simpleSplitMethod === 'equal' && simpleSplitParticipants.every(p => p.isSelected);
+                const activeParticipants = simpleSplitParticipants.filter(p => p.isSelected);
+                const currentUserId = useAuthStore.getState().user?.id;
+                const isJustMe = simpleSplitMethod === 'equal' && activeParticipants.length === 1 && (activeParticipants[0].userId === currentUserId || activeParticipants[0].userId === 'user-1');
+                const isCustomized = !isAllEqual && !isJustMe;
+
+                return (
+                <YStack marginBottom="$6">
+                    <Text marginLeft="$4" fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
+                        How to split?
+                    </Text>
+                    <XStack gap="$3" paddingHorizontal="$1">
+                        {/* Equal Button */}
+                        <Pressable 
+                            style={{ flex: 1 }} 
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                resetToEqualSplit(); // Resets to all selected
+                            }}
+                        >
+                            <Stack 
+                                paddingVertical="$3" 
+                                alignItems="center" 
+                                borderRadius={12} 
+                                backgroundColor={themeColors.surfaceElevated}
+                                borderWidth={2}
+                                borderColor={isAllEqual ? themeColors.primary : 'transparent'}
+                            >
+                                <Users size={24} color={isAllEqual ? themeColors.primary : themeColors.textSecondary} />
+                                <Text 
+                                    marginTop="$2" 
+                                    fontSize={14} 
+                                    fontWeight={isAllEqual ? '700' : '400'}
+                                    color={isAllEqual ? themeColors.primary : themeColors.textSecondary}
+                                >
+                                    Equal
+                                </Text>
+                            </Stack>
+                        </Pressable>
+
+                        {/* Customize Button */}
+                        <Pressable 
+                            style={{ flex: 1 }} 
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setSimpleSplitModalVisible(true);
+                            }}
+                        >
+                            <Stack 
+                                paddingVertical="$3" 
+                                alignItems="center" 
+                                borderRadius={12} 
+                                backgroundColor={themeColors.surfaceElevated}
+                                borderWidth={2}
+                                borderColor={isCustomized ? themeColors.primary : 'transparent'}
+                            >
+                                <CheckCircle2 size={24} color={isCustomized ? themeColors.primary : themeColors.textSecondary} />
+                                <Text 
+                                    marginTop="$2" 
+                                    fontSize={14} 
+                                    fontWeight={isCustomized ? '700' : '400'}
+                                    color={isCustomized ? themeColors.primary : themeColors.textSecondary}
+                                >
+                                    Customize
+                                </Text>
+                            </Stack>
+                        </Pressable>
+
+                        {/* Just Me Button */}
+                        <Pressable 
+                            style={{ flex: 1 }} 
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                const myId = useAuthStore.getState().user?.id || 'user-1';
+                                resetToEqualSplit([myId]);
+                            }}
+                        >
+                            <Stack 
+                                paddingVertical="$3" 
+                                alignItems="center" 
+                                borderRadius={12} 
+                                backgroundColor={themeColors.surfaceElevated}
+                                borderWidth={2}
+                                borderColor={isJustMe ? themeColors.primary : 'transparent'}
+                            >
+                                <UserIcon size={24} color={isJustMe ? themeColors.primary : themeColors.textSecondary} />
+                                <Text 
+                                    marginTop="$2" 
+                                    fontSize={14} 
+                                    fontWeight={isJustMe ? '700' : '400'}
+                                    color={isJustMe ? themeColors.primary : themeColors.textSecondary}
+                                >
+                                    Just Me
+                                </Text>
+                            </Stack>
+                        </Pressable>
+                         </XStack>
+                    </YStack>
+                );
+            })()}
+
+
+        {/* Tax & Tip (Only Detailed Mode) */}
+        {!isSimpleMode && (
         <Card variant="surface" marginBottom="$4">
             <YStack gap="$4">
               <XStack justifyContent="space-between" alignItems="center">
@@ -714,6 +953,7 @@ export default function BillEditScreen() {
               </XStack>
             </YStack>
         </Card>
+        )}
 
       </ScrollView>
       </KeyboardAvoidingView>
@@ -740,67 +980,82 @@ export default function BillEditScreen() {
         ]}
       />
 
-       {/* Category Picker Modal */}
-       <Modal
-        animationType="fade"
-        transparent={true}
-        visible={categoryModalVisible}
-        onRequestClose={() => setCategoryModalVisible(false)}
-      >
-        <Pressable 
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
-            onPress={() => setCategoryModalVisible(false)}
-        >
-            <Stack 
-                backgroundColor={themeColors.surface} 
-                borderTopLeftRadius={20} 
-                borderTopRightRadius={20}
-                paddingVertical="$5"
-                paddingHorizontal="$4"
-                gap="$4"
-                paddingBottom={Platform.OS === 'ios' ? 40 : 20}
-            >
-                <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>Select Category</Text>
-                    <Pressable onPress={() => setCategoryModalVisible(false)}>
-                        <X size={24} color={themeColors.textSecondary} />
-                    </Pressable>
-                </XStack>
-                
-                <XStack flexWrap="wrap" gap="$3" justifyContent="space-between">
-                    {categories.map((cat) => (
-                        <Pressable
-                            key={cat.key}
-                            style={{ width: '30%', marginBottom: 8 }}
-                            onPress={() => {
-                                if (pickingCategoryFor) {
-                                  // Update item category
-                                  const idx = items.findIndex(i => i.id === pickingCategoryFor);
-                                  if (idx !== -1) {
-                                      handleItemChange(idx, 'category', cat.key);
-                                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  }
-                                  setCategoryModalVisible(false);
-                                }
-                            }}
-                        >
-                             <Stack
-                                paddingVertical="$3"
-                                alignItems="center"
-                                borderRadius={12}
-                                backgroundColor={themeColors.surfaceElevated}
-                                borderWidth={1}
-                                borderColor={themeColors.border}
-                            >
-                                <Text fontSize={24} marginBottom="$1">{cat.icon}</Text>
-                                <Text fontSize={12} color={themeColors.textPrimary} fontWeight="500">{cat.label}</Text>
-                            </Stack>
-                        </Pressable>
-                    ))}
-                </XStack>
-            </Stack>
-        </Pressable>
-      </Modal>
+        <Modal
+         animationType="fade"
+         transparent={true}
+         visible={categoryModalVisible}
+         onRequestClose={() => setCategoryModalVisible(false)}
+       >
+         <Pressable 
+             style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+             onPress={() => setCategoryModalVisible(false)}
+         >
+             <Stack 
+                 backgroundColor={themeColors.surface} 
+                 borderTopLeftRadius={20} 
+                 borderTopRightRadius={20}
+                 paddingVertical="$5"
+                 paddingHorizontal="$4"
+                 gap="$4"
+                 paddingBottom={Platform.OS === 'ios' ? 40 : 20}
+             >
+                 <XStack justifyContent="space-between" alignItems="center">
+                     <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>Select Category</Text>
+                     <Pressable onPress={() => setCategoryModalVisible(false)}>
+                         <X size={24} color={themeColors.textSecondary} />
+                     </Pressable>
+                 </XStack>
+                 
+                 <XStack flexWrap="wrap" gap="$3" justifyContent="space-between">
+                     {categories.map((cat) => (
+                         <Pressable
+                             key={cat.key}
+                             style={{ width: '30%', marginBottom: 8 }}
+                             onPress={() => {
+                                 if (pickingCategoryFor) {
+                                   // Update item category
+                                   const idx = items.findIndex(i => i.id === pickingCategoryFor);
+                                   if (idx !== -1) {
+                                       handleItemChange(idx, 'category', cat.key);
+                                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                   }
+                                   setCategoryModalVisible(false);
+                                 }
+                             }}
+                         >
+                              <Stack
+                                 paddingVertical="$3"
+                                 alignItems="center"
+                                 borderRadius={12}
+                                 backgroundColor={themeColors.surfaceElevated}
+                                 borderWidth={1}
+                                 borderColor={themeColors.border}
+                             >
+                                 <Text fontSize={24} marginBottom="$1">{cat.icon}</Text>
+                                 <Text fontSize={12} color={themeColors.textPrimary} fontWeight="500">{cat.label}</Text>
+                             </Stack>
+                         </Pressable>
+                     ))}
+                 </XStack>
+             </Stack>
+         </Pressable>
+       </Modal>
+       
+    <SimpleSplitModal 
+        visible={simpleSplitModalVisible}
+        onClose={() => setSimpleSplitModalVisible(false)}
+        onConfirm={(participants, method) => {
+            setSimpleSplitParticipants(participants);
+            setSimpleSplitMethod(method);
+            setHasChanges(true); // Ensure save button activates
+        }}
+        totalAmount={total}
+        currency={currentBill?.group_id ? (groups.find(g => g.id === currentBill.group_id)?.currency === 'USD' ? '$' : groups.find(g => g.id === currentBill.group_id)?.currency || '$') : '$'}
+        groupMembers={groups.find(g => g.id === currentBill?.group_id)?.members || []}
+        currentUserId={useAuthStore.getState().user?.id || 'user-1'}
+        initialParticipants={simpleSplitParticipants}
+        initialMode={simpleSplitMethod}
+    />
     </Screen>
   );
 }

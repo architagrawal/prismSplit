@@ -83,7 +83,6 @@ export default function CreateBillScreen() {
 
   // New Advanced Simple Split State
   const [simpleSplitModalVisible, setSimpleSplitModalVisible] = useState(false);
-  console.log('CreateBillScreen: Render, modalVisible:', simpleSplitModalVisible);
   
   const [simpleSplitMethod, setSimpleSplitMethod] = useState<SimpleSplitType>('equal');
   const [simpleSplitParticipants, setSimpleSplitParticipants] = useState<SimpleSplitParticipant[]>([]);
@@ -1117,11 +1116,13 @@ const BillItemRow = memo(({
             paddingHorizontal="$3"
             backgroundColor={themeColors.surface}
         >
-            <XStack gap="$3" alignItems="center">
+            <XStack gap="$3">
                 {/* COLUMN 1: Large Category Icon (Leftmost) */}
-                <Pressable onPress={() => onPickCategory(item.id)}>
-                        <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
-                </Pressable>
+                <YStack justifyContent="center">
+                    <Pressable onPress={() => onPickCategory(item.id)}>
+                            <CategoryBadge category={item.category || 'other'} size="lg" iconOnly />
+                    </Pressable>
+                </YStack>
 
                 {/* COLUMN 2: Name & Details */}
                 <YStack flex={1} gap="$2">
@@ -1255,7 +1256,7 @@ const BillItemRow = memo(({
                 </YStack>
 
                 {/* COLUMN 3: Actions & Total */}
-                <YStack alignItems="flex-end" justifyContent="space-between" height={45}>
+                <YStack alignItems="flex-end" justifyContent="space-between">
                     <Pressable 
                         onPress={() => deleteItem(item.id)}
                         hitSlop={15}
@@ -1264,7 +1265,7 @@ const BillItemRow = memo(({
                          <Trash2 size={18} color={themeColors.error} />
                     </Pressable>
 
-                    <XStack alignItems="center" gap="$1">
+                    <XStack alignItems="center" height={36} justifyContent="center" gap="$1">
                         <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>$</Text>
                         <TextInput
                             value={displayTotal}
