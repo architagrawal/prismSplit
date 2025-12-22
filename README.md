@@ -91,3 +91,14 @@ npm install --save-dev @types/react @types/react-native
 4. Build out feature modules in `app/src/features/` for bills, groups, and splits
 5. Document contributor workflow in `docs/onboarding/` (setup, development, testing)
 6. Add component designs and prototypes to `design/` folder
+
+## License & Usage
+
+**Source Available**: This project is open for contribution but is **NOT Open Source**.
+
+Copyright (c) 2025-Present Archit Agrawal. All Rights Reserved.
+
+- **You may**: View the code, fork it to submit Pull Requests to this repository.
+- **You may NOT**: Use it commercially, redistribute it, host it, or deploy it under a different name.
+
+See [LICENSE](LICENSE) for full legal details.

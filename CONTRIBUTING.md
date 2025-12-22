@@ -162,7 +162,7 @@ See `docs/architecture/folder-structure.md` for organization guidelines.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the project's license.
+By contributing, you agree that your contributions will be licensed under the project's [LICENSE](LICENSE), assigning rights to the project owner/s as specified therein.
 
 ---
 
