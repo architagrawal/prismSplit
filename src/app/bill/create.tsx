@@ -7,7 +7,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { TextInput, Pressable, KeyboardAvoidingView, Platform, LayoutAnimation, Modal } from 'react-native';
+import { TextInput, Pressable, KeyboardAvoidingView, Platform, LayoutAnimation, Modal, Alert } from 'react-native';
 import { 
   X, 
   Plus, 
@@ -16,7 +16,7 @@ import {
   Receipt,
   RotateCcw,
   Users,
-  User,
+  User as UserIcon,
   CheckCircle2
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -25,7 +25,8 @@ import { Screen, Button, Card, Input, CurrencyInput, GroupImage, CategoryBadge }
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 import { SplitModeSelector } from '@/components/bill/SplitModeSelector';
-import { categoryIcons, type Category } from '@/types/models';
+import { categoryIcons, type Category, type User as UserModel, type GroupMember } from '@/types/models';
+import { SimpleSplitModal, type SimpleSplitType, type SimpleSplitParticipant } from '@/components/bill/SimpleSplitModal';
 
 const categories: { key: Category; icon: string; label: string }[] = [
   { key: 'dining', icon: '🍔', label: 'Dining' },
@@ -76,8 +77,18 @@ export default function CreateBillScreen() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('dining');
   
   // Split Logic
-  const [splitType, setSplitType] = useState<'equal' | 'select' | 'me'>('equal');
+  // Split Logic
+  const [splitType, setSplitType] = useState<'equal' | 'select' | 'me'>('equal'); // Legacy UI state, keeping for generic mode tracking if needed, but primary logic will move to simpleSplit* variables
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+
+  // New Advanced Simple Split State
+  const [simpleSplitModalVisible, setSimpleSplitModalVisible] = useState(false);
+  console.log('CreateBillScreen: Render, modalVisible:', simpleSplitModalVisible);
+  
+  const [simpleSplitMethod, setSimpleSplitMethod] = useState<SimpleSplitType>('equal');
+  const [simpleSplitParticipants, setSimpleSplitParticipants] = useState<SimpleSplitParticipant[]>([]);
+  
+
   
   // Start with EMPTY items for "Simple Mode"
   const [items, setItems] = useState<{ id: string; name: string; unitPrice: string; discount: string; quantity: string; locked?: 'price' | 'total'; category?: string }[]>([]);
@@ -104,6 +115,70 @@ export default function CreateBillScreen() {
   const selectedGroup = groups[selectedGroupIndex] || groups[0];
   const groupMembers = selectedGroup ? (members[selectedGroup.id] || []) : [];
 
+    // New Advanced Simple Split State Logic (Moved here to access groupMembers)
+  const resetToEqualSplit = (subsetIds?: Set<string>) => {
+      // Default: All selected for Equal
+      const defaults = groupMembers.map(m => ({
+          userId: m.user_id,
+          user: m.user,
+          colorIndex: m.color_index,
+          percentage: 0,
+          amount: 0,
+          shares: 1,
+          isSelected: subsetIds ? subsetIds.has(m.user_id) : true,
+          locked: false
+      }));
+      // Initial calc
+      const total = parseFloat(simpleAmount) || 0;
+      const count = subsetIds ? subsetIds.size : groupMembers.length;
+      if (count > 0) {
+          const perPerson = total / count;
+          defaults.forEach(p => {
+              if (p.isSelected) {
+                  p.amount = perPerson;
+                  p.percentage = 100/count;
+              }
+          });
+      }
+      setSimpleSplitParticipants(defaults);
+      setSimpleSplitMethod('equal');
+  };
+
+  // Logic to sync simpleSplitParticipants when group changes or initially
+  useEffect(() => {
+     if (groupMembers.length > 0 && simpleSplitParticipants.length === 0) {
+         // Initialize as all equal
+         resetToEqualSplit();
+     }
+  }, [groupMembers]);
+
+  // Update amounts when simpleAmount changes
+  useEffect(() => {
+     if (simpleSplitParticipants.length > 0) {
+         const total = parseFloat(simpleAmount) || 0;
+         if (simpleSplitMethod === 'equal') {
+            const selected = simpleSplitParticipants.filter(p => p.isSelected);
+            if (selected.length > 0) {
+                const perPerson = total / selected.length;
+                const pct = 100 / selected.length;
+                setSimpleSplitParticipants(prev => prev.map(p => 
+                    p.isSelected ? { ...p, amount: perPerson, percentage: pct } : { ...p, amount: 0, percentage: 0 }
+                ));
+            }
+         } else if (simpleSplitMethod === 'shares') {
+             // Recalc shares
+            const totalShares = simpleSplitParticipants.reduce((sum, p) => sum + (p.shares || 1), 0);
+            if (totalShares > 0) {
+                setSimpleSplitParticipants(prev => prev.map(p => ({
+                    ...p,
+                    amount: ((p.shares || 1) / totalShares) * total,
+                    percentage: ((p.shares || 1) / totalShares) * 100
+                })));
+            }
+         }
+     }
+  }, [simpleAmount]);
+
   useEffect(() => {
       if (selectedGroup?.id) {
           fetchGroupMembers(selectedGroup.id);
@@ -111,13 +186,24 @@ export default function CreateBillScreen() {
   }, [selectedGroup?.id]);
 
   const toggleMember = (id: string) => {
-      const newSet = new Set(selectedMemberIds);
-      if (newSet.has(id)) {
-          newSet.delete(id);
-      } else {
-          newSet.add(id);
-      }
-      setSelectedMemberIds(newSet);
+      // This is now legacy or just for "Just Me" logic if relevant
+      // Updating `simpleSplitParticipants` is better
+       const updated = simpleSplitParticipants.map(p => 
+          p.userId === id ? { ...p, isSelected: !p.isSelected } : p
+      );
+      // Recalc equal split
+       const total = parseFloat(simpleAmount) || 0;
+       const selected = updated.filter(p => p.isSelected);
+       const count = selected.length;
+       if (count > 0) {
+           const perPerson = total/count;
+           setSimpleSplitParticipants(updated.map(p => {
+               if (p.isSelected) return { ...p, amount: perPerson, percentage: 100/count };
+               return { ...p, amount: 0, percentage: 0 };
+           }));
+       } else {
+           setSimpleSplitParticipants(updated.map(p => ({ ...p, amount: 0, percentage: 0 })));
+       }
   };
 
 
@@ -254,32 +340,48 @@ export default function CreateBillScreen() {
 
       // Determine participants
       if (isSimpleMode) {
-          if (splitType === 'equal') {
-              // All group members
-              participantIds = groupMembers.map(m => m.user_id);
-          } else if (splitType === 'select') {
-              participantIds = Array.from(selectedMemberIds);
-              if (participantIds.length === 0) {
-                  showToast({ type: 'error', message: 'Please select at least one person' });
-                  return;
-              }
-          } else if (splitType === 'me') {
-              participantIds = ['current-user']; // Or get from auth store
+          // Use simpleSplitParticipants to determine who is involved
+          // If All Equal, implies everyone involved? Or just those selected?
+          // simpleSplitParticipants contains EVERYONE but with isSelected or amounts.
+          // We filter for those with amount > 0 or isSelected
+          participantIds = simpleSplitParticipants
+              .filter(p => (simpleSplitMethod === 'equal' ? p.isSelected : p.amount > 0 || p.percentage > 0 || (p.shares ?? 0) > 0))
+              .map(p => p.userId);
+          
+          if (participantIds.length === 0) {
+              showToast({ type: 'error', message: 'Please select at least one person' });
+              return;
           }
       } else {
           // Detailed Mode: Default to all group members effectively (or handle via splits)
-          // The user specifically asked to IGNORE the simple split selection here.
           participantIds = groupMembers.map(m => m.user_id);
       }
 
       if (isSimpleMode) {
           // SIMPLE MODE: Create 1 item from the top-level inputs
+          // If we have custom splits (Unequal / Percent / Shares), we should attach them to this item.
+          // Even for Equal, we can attach splits to be explicit.
+          
+          const simpleSplits: any[] = simpleSplitParticipants
+            .filter(p => (simpleSplitMethod === 'equal' ? p.isSelected : p.amount > 0 || p.percentage > 0 || (p.shares ?? 0) > 0))
+            .map((p, idx) => ({
+                id: `split-${Date.now()}-${idx}`,
+                item_id: 'simple-1',
+                user_id: p.userId,
+                user: p.user,
+                split_type: simpleSplitMethod === 'shares' ? 'shares' : simpleSplitMethod === 'percentage' ? 'percentage' : 'amount', // 'equal' maps to amount usually or handled by backend, but here let's map to amount for clarity if we have explicit amounts
+                amount: p.amount,
+                percentage: p.percentage,
+                color_index: p.colorIndex
+            }));
+
           finalItems = [{
               id: 'simple-1',
               name: billName,
               price: finalTotal,
               quantity: 1,
-              discount: 0
+              discount: 0,
+              splits: simpleSplits
           }];
           // No tax/tip/discount separation in simple mode (it's all inclusive or ignored for now)
       } else {
@@ -354,6 +456,7 @@ export default function CreateBillScreen() {
 
 
   return (
+    <>
     <Screen keyboardAvoiding>
       <YStack flex={1}>
         {/* Header */}
@@ -534,7 +637,15 @@ export default function CreateBillScreen() {
           </Card>
 
             {/* How to Split? (Only in Simple Mode) */}
-            {isSimpleMode && (
+            {/* How to Split? (Only in Simple Mode) */}
+            {isSimpleMode && (() => {
+                // Helper Logic for Highlights
+                const isAllEqual = simpleSplitMethod === 'equal' && simpleSplitParticipants.every(p => p.isSelected);
+                const activeParticipants = simpleSplitParticipants.filter(p => p.isSelected);
+                const isJustMe = simpleSplitMethod === 'equal' && activeParticipants.length === 1 && (activeParticipants[0].userId === 'user-1' || activeParticipants[0].userId === 'current-user');
+                const isCustomized = !isAllEqual && !isJustMe;
+
+                return (
                 <YStack marginBottom="$6">
                     <Text marginLeft="$4" fontSize={14} fontWeight="500" color={themeColors.textSecondary} marginBottom="$2">
                         How to split?
@@ -545,7 +656,7 @@ export default function CreateBillScreen() {
                         <Pressable 
                             onPress={() => {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setSplitType('equal');
+                                resetToEqualSplit(); // Reset logic handles setting method to 'equal'
                             }}
                             style={{ flex: 1 }}
                         >
@@ -554,26 +665,31 @@ export default function CreateBillScreen() {
                                 alignItems="center"
                                 borderRadius={12}
                                 backgroundColor={themeColors.surfaceElevated}
+                                backgroundColor={themeColors.surfaceElevated}
                                 borderWidth={2}
-                                borderColor={splitType === 'equal' ? themeColors.primary : 'transparent'}
+                                borderColor={isAllEqual ? themeColors.primary : 'transparent'}
                             >
-                                <Users size={24} color={splitType === 'equal' ? themeColors.primary : themeColors.textSecondary} />
+                                <Users size={24} color={isAllEqual ? themeColors.primary : themeColors.textSecondary} />
                                 <Text 
                                     marginTop="$2" 
                                     fontSize={14} 
-                                    fontWeight={splitType === 'equal' ? '700' : '400'}
-                                    color={splitType === 'equal' ? themeColors.primary : themeColors.textSecondary}
+                                    fontWeight={isAllEqual ? '700' : '400'}
+                                    color={isAllEqual ? themeColors.primary : themeColors.textSecondary}
                                 >
                                     Equal
                                 </Text>
                             </Stack>
                         </Pressable>
 
-                        {/* SELECT */}
+                        {/* CUSTOMIZE (Opens Modal) */}
                         <Pressable 
                             onPress={() => {
+                                console.log('CreateBillScreen: Customize button pressed');
+                                // Alert.alert('Debug', 'Customize Pressed'); // Uncomment if needed, but logging first.
+                                // Actually, user said nothing happens. Let's use Alert to be 100% sure.
+                                // Alert.alert('Debug', 'Opening Modal...');
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setSplitType('select');
+                                setSimpleSplitModalVisible(true);
                             }}
                             style={{ flex: 1 }}
                         >
@@ -582,17 +698,18 @@ export default function CreateBillScreen() {
                                 alignItems="center"
                                 borderRadius={12}
                                 backgroundColor={themeColors.surfaceElevated}
+                                backgroundColor={themeColors.surfaceElevated}
                                 borderWidth={2}
-                                borderColor={splitType === 'select' ? themeColors.primary : 'transparent'}
+                                borderColor={isCustomized ? themeColors.primary : 'transparent'}
                             >
-                                <CheckCircle2 size={24} color={splitType === 'select' ? themeColors.primary : themeColors.textSecondary} />
+                                <CheckCircle2 size={24} color={isCustomized ? themeColors.primary : themeColors.textSecondary} />
                                 <Text 
                                     marginTop="$2" 
                                     fontSize={14} 
-                                    fontWeight={splitType === 'select' ? '700' : '400'}
-                                    color={splitType === 'select' ? themeColors.primary : themeColors.textSecondary}
+                                    fontWeight={isCustomized ? '700' : '400'}
+                                    color={isCustomized ? themeColors.primary : themeColors.textSecondary}
                                 >
-                                    Select
+                                    Customize
                                 </Text>
                             </Stack>
                         </Pressable>
@@ -601,7 +718,27 @@ export default function CreateBillScreen() {
                         <Pressable 
                             onPress={() => {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setSplitType('me');
+                                // Set only current user logic
+                                resetToEqualSplit(new Set(['current-user'])); // Assuming we have current user ID? 
+                                // Actually we need the REAL user ID.
+                                // groupMembers has user_id.
+                                // We need to know "my" user ID. 
+                                // `useBillsStore` implementation uses 'current-user' as payer ID mock.
+                                // But `groupMembers` usually has real UUIDs.
+                                // For now, let's assume `demoGroupMembers` has a specific ID or we use the first one if we don't know?
+                                // Let's check `current-user` existence in members lists.
+                                // In demo.ts, current user is 'user-1' usually.
+                                // Let's try to match 'You'.
+                                const myMember = groupMembers.find(m => m.user.full_name === 'You' || m.user_id === 'user-1');
+                                if (myMember) {
+                                    resetToEqualSplit(new Set([myMember.user_id]));
+                                } else {
+                                    // Fallback: Select just the first one? Or show toast?
+                                    // Ideally we'd have `useAuthStore` to get current User ID.
+                                    // For now, let's disable or select first.
+                                     const firstId = groupMembers[0]?.user_id;
+                                     if(firstId) resetToEqualSplit(new Set([firstId]));
+                                }
                             }}
                             style={{ flex: 1 }}
                         >
@@ -611,14 +748,14 @@ export default function CreateBillScreen() {
                                 borderRadius={12}
                                 backgroundColor={themeColors.surfaceElevated}
                                 borderWidth={2}
-                                borderColor={splitType === 'me' ? themeColors.primary : 'transparent'}
+                                borderColor={isJustMe ? themeColors.primary : 'transparent'}
                             >
-                                <User size={24} color={splitType === 'me' ? themeColors.primary : themeColors.textSecondary} />
+                                <UserIcon size={24} color={isJustMe ? themeColors.primary : themeColors.textSecondary} />
                                 <Text 
                                     marginTop="$2" 
                                     fontSize={14} 
-                                    fontWeight={splitType === 'me' ? '700' : '400'}
-                                    color={splitType === 'me' ? themeColors.primary : themeColors.textSecondary}
+                                    fontWeight={isJustMe ? '700' : '400'}
+                                    color={isJustMe ? themeColors.primary : themeColors.textSecondary}
                                 >
                                     Just Me
                                 </Text>
@@ -626,74 +763,17 @@ export default function CreateBillScreen() {
                         </Pressable>
                     </XStack>
                     
-                    {/* Member Selection List */}
-                    {splitType === 'select' && (
-                        <YStack marginTop="$3" paddingHorizontal="$4" gap="$2">
-                            <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
-                                Select People
-                            </Text>
-                            <YStack backgroundColor={themeColors.surface} borderRadius={12} overflow="hidden">
-                                {groupMembers.map((member, index) => {
-                                    const isSelected = selectedMemberIds.has(member.user_id);
-                                    return (
-                                        <Pressable 
-                                            key={member.id} 
-                                            onPress={() => {
-                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                toggleMember(member.user_id);
-                                            }}
-                                        >
-                                            <XStack 
-                                                alignItems="center" 
-                                                padding="$3" 
-                                                gap="$3"
-                                                borderBottomWidth={index < groupMembers.length - 1 ? 1 : 0}
-                                                borderBottomColor={themeColors.border}
-                                                backgroundColor={isSelected ? `${themeColors.primary}10` : 'transparent'}
-                                            >
-                                                <Stack 
-                                                    width={24} 
-                                                    height={24} 
-                                                    borderRadius={12} 
-                                                    borderWidth={2} 
-                                                    borderColor={isSelected ? themeColors.primary : themeColors.textMuted}
-                                                    alignItems="center" 
-                                                    justifyContent="center"
-                                                    backgroundColor={isSelected ? themeColors.primary : 'transparent'}
-                                                >
-                                                    {isSelected && <CheckCircle2 size={16} color="white" />}
-                                                </Stack>
-                                                
-                                                <Stack 
-                                                    width={32} 
-                                                    height={32} 
-                                                    borderRadius={16} 
-                                                    backgroundColor={themeColors.surfaceElevated} 
-                                                    alignItems="center" 
-                                                    justifyContent="center"
-                                                    overflow="hidden"
-                                                >
-                                                    {/* In a real app, use Image component. Using emoji/text for demo if avatar missing */}
-                                                    {member.user.avatar_url ? (
-                                                        // This would be an Image, but for now just a placeholder logic or use user initials
-                                                        <Text fontSize={14}>{member.user.full_name[0]}</Text>
-                                                    ) : (
-                                                         <User size={16} color={themeColors.textSecondary} />
-                                                    )}
-                                                </Stack>
-                                                
-                                                <Text fontSize={16} color={themeColors.textPrimary}>
-                                                    {member.user.full_name}
-                                                </Text>
-                                            </XStack>
-                                        </Pressable>
-                                    );
-                                })}
-                            </YStack>
-                        </YStack>
+                    {/* Summary of Custom Split */}
+                    {simpleSplitMethod !== 'equal' && (
+                         <YStack marginTop="$3" marginHorizontal="$4" padding="$3" backgroundColor={themeColors.primary + '10'} borderRadius={10}>
+                             <Text fontSize={14} color={themeColors.textPrimary}>
+                                 Split by {simpleSplitMethod}: {simpleSplitParticipants.filter(p => p.amount > 0).length} people involved.
+                             </Text>
+                         </YStack>
                     )}
                 </YStack>
-            )}
+                );
+            })()}
 
             {/* Detailed Mode: Split Info */}
             {!isSimpleMode && (
@@ -966,6 +1046,21 @@ export default function CreateBillScreen() {
         </Pressable>
       </Modal>
     </Screen>
+    <SimpleSplitModal
+        visible={simpleSplitModalVisible}
+        onClose={() => setSimpleSplitModalVisible(false)}
+        onConfirm={(participants, method) => {
+            setSimpleSplitParticipants(participants);
+            setSimpleSplitMethod(method);
+        }}
+        totalAmount={finalTotal}
+        currency={selectedGroup?.currency === 'USD' ? '$' : selectedGroup?.currency || '$'}
+        groupMembers={groupMembers}
+        currentUserId="user-1" 
+        initialParticipants={simpleSplitParticipants}
+        initialMode={simpleSplitMethod}
+    />
+    </>
   );
 }
 

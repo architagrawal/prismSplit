@@ -140,7 +140,7 @@ export default function SettleSelectScreen() {
       {/* Info Card */}
       <YStack paddingHorizontal="$4" paddingBottom="$4">
          <Card variant="surface" padding="$3">
-            <XStack gap="$3" alignItems="start">
+            <XStack gap="$3" alignItems="flex-start">
                <Scale size={20} color={themeColors.textSecondary} style={{ marginTop: 2 }} />
                <YStack flex={1} gap="$1">
                   <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>

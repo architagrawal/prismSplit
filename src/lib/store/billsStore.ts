@@ -21,6 +21,8 @@ interface BillDraft {
     quantity: number;
     discount?: number;
     category?: Category;
+    splits?: ItemSplit[];
+    locked?: 'price' | 'total';
   }>;
   tax: number;
   tip: number;
