@@ -7,7 +7,8 @@
 import { create } from 'zustand';
 
 import type { Bill, BillItem, ItemSplit, Category, BillItemWithSplits } from '@/types/models';
-import { demoBills, demoBillItems, demoGroupMembers } from '@/lib/api/demo';
+import { demoBills, demoBillItems, demoGroupMembers, demoUsers, demoActivities } from '@/lib/api/demo';
+import { useActivityStore } from './activityStore';
 
 interface BillDraft {
   title: string;
@@ -58,6 +59,9 @@ interface BillsState {
 
   // Self-select actions
   toggleItemSelection: (itemId: string) => void;
+
+  // Payments
+  recordPayment: (groupId: string, payerId: string, receiverId: string, amount: number) => Promise<boolean>;
   confirmSelections: (billId: string) => Promise<void>;
   clearSelections: () => void;
   
@@ -411,6 +415,68 @@ export const useBillsStore = create<BillsState>((set, get) => ({
       set({ selectedItems: new Set() });
     } catch (error) {
       set({ error: 'Failed to save selections' });
+    }
+  },
+
+  // Record a payment
+  recordPayment: async (groupId: string, payerId: string, receiverId: string, amount: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
+
+      // 1. Create Payment Bill
+      const payer = demoUsers.find(u => u.id === payerId)!;
+      const receiver = demoUsers.find(u => u.id === receiverId)!;
+      
+      const paymentBill: Bill = {
+        id: `pay_${Date.now()}`,
+        group_id: groupId,
+        title: `Settlement to ${receiver?.full_name || 'User'}`,
+        total_amount: amount,
+        tax_amount: 0,
+        tip_amount: 0,
+        discount_amount: 0,
+        category: 'transfer',
+        bill_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        payer: { id: payerId, full_name: payer?.full_name || 'You' },
+        paid_by: payerId,
+        participant_avatars: receiver ? [receiver.id] : [],
+        your_share: payerId === 'current_user' ? amount : 0, 
+        is_itemized: false
+      };
+
+      // 2. Add to local state
+      const { bills } = get();
+      set({ 
+        bills: [paymentBill, ...bills],
+        isLoading: false 
+      });
+
+      // 3. Log Activity
+      useActivityStore.getState().addActivity({
+        id: `act_${Date.now()}`,
+        group_id: groupId,
+        group: { id: groupId, name: 'Group', emoji: '👥' }, // Placeholder, real app would fetch
+        user_id: payerId,
+        user: payer, 
+        type: 'payment',
+        entity_id: paymentBill.id,
+        entity_type: 'settlement',
+        metadata: {
+           amount: amount,
+           receiver_name: receiver?.full_name || 'User',
+           receiver_id: receiverId
+        },
+        created_at: new Date().toISOString()
+      });
+
+      return true;
+
+    } catch (error) {
+      console.error(error);
+      set({ error: 'Failed to record payment', isLoading: false });
+      return false;
     }
   },
 

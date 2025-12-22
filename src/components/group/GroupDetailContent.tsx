@@ -7,7 +7,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { Pressable, RefreshControl, SectionList } from 'react-native';
+import { 
+  Pressable, 
+  RefreshControl, 
+  SectionList,
+} from 'react-native';
 import { 
   ArrowLeft, 
   Settings, 
@@ -15,7 +19,17 @@ import {
   Plus,
   SendHorizontal,
   Eye,
-  EyeClosed
+  EyeClosed,
+  Calendar,
+  Receipt,
+  ShoppingBag,
+  TrendingUp,
+  Scale,
+  ScrollText,
+  Info,
+  PieChart,
+  Bell,
+  WandSparkles,
 } from 'lucide-react-native';
 
 import { 
@@ -25,10 +39,11 @@ import {
   BalanceBadge,
   Button,
   GroupImage,
-  AnimatedSearchBar
+  AnimatedSearchBar,
+  ActivityListItem,
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useGroupsStore, useBillsStore, useAuthStore } from '@/lib/store';
+import { useGroupsStore, useBillsStore, useAuthStore, useActivityStore } from '@/lib/store';
 import { demoGroupMembers, demoBalances } from '@/lib/api/demo';
 import { categoryIcons } from '@/types/models';
 import type { Group, GroupMember, Bill } from '@/types/models';
@@ -44,9 +59,11 @@ export function GroupDetailContent({
 }: GroupDetailContentProps) {
   const router = useRouter();
   const themeColors = useThemeColors();
-  const [activeTab, setActiveTab] = useState<'bills' | 'balances'>('bills');
+  const [activeTab, setActiveTab] = useState<'bills' | 'balances' | 'logs' | 'info' | 'charts'>('bills');
   const [myViewOnly, setMyViewOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+
 
   const { 
     currentGroup, 
@@ -61,6 +78,12 @@ export function GroupDetailContent({
     isLoading: billsLoading, 
     fetchBillsByGroup 
   } = useBillsStore();
+
+  const { 
+    activities, 
+    isLoading: activitiesLoading, 
+    fetchActivitiesByGroup 
+  } = useActivityStore();
 
   const { user } = useAuthStore();
 
@@ -168,6 +191,7 @@ export function GroupDetailContent({
       fetchGroupById(groupId);
       fetchGroupMembers(groupId);
       fetchBillsByGroup(groupId);
+      fetchActivitiesByGroup(groupId);
     }
   }, [groupId]);
 
@@ -181,8 +205,26 @@ export function GroupDetailContent({
       fetchGroupById(groupId);
       fetchGroupMembers(groupId);
       fetchBillsByGroup(groupId);
+      fetchActivitiesByGroup(groupId);
     }
   };
+
+  // Calculate debts (Moved here to fix Hook Order)
+  const myDebts = useMemo(() => {
+    const groupMembers = demoGroupMembers[groupId] || [];
+    const memberIds = new Set(groupMembers.map(m => m.user_id));
+    return demoBalances.filter(b => b.balance < 0 && memberIds.has(b.user_id));
+  }, [groupId]);
+
+  const peopleWhoOweMe = useMemo(() => {
+    const groupMembers = demoGroupMembers[groupId] || [];
+    const memberIds = new Set(groupMembers.map(m => m.user_id));
+    return demoBalances.filter(b => b.balance > 0 && memberIds.has(b.user_id));
+  }, [groupId]);
+
+  const hasBalances = myDebts.length > 0 || peopleWhoOweMe.length > 0 || (group?.your_balance ?? 0) !== 0;
+
+
 
   if (!group) {
     return (
@@ -193,49 +235,55 @@ export function GroupDetailContent({
   }
 
   // Tab toggle UI - extracted to avoid type narrowing issues
+  // Tab toggle UI - Horizontal Chips (Rounded Rects)
   const tabsUI = (
-    <XStack 
-      backgroundColor={themeColors.surfaceElevated}
-      borderRadius={10}
-      padding="$0.5"
-    >
-      <Pressable 
-        style={{ flex: 1 }}
-        onPress={() => setActiveTab('bills')}
+    <Stack  marginTop="$1">
+      <ScrollView 
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}
       >
-        <Stack
-          paddingVertical="$2"
-          borderRadius={10}
-          backgroundColor={activeTab === 'bills' ? themeColors.surface : 'transparent'}
-          alignItems="center"
-        >
-          <Text 
-            fontWeight={activeTab === 'bills' ? '600' : '400'}
-            color={activeTab === 'bills' ? themeColors.textPrimary : themeColors.textSecondary}
-          >
-            Bills
-          </Text>
-        </Stack>
-      </Pressable>
-      <Pressable 
-        style={{ flex: 1 }}
-        onPress={() => setActiveTab('balances')}
-      >
-        <Stack
-          paddingVertical="$2"
-          borderRadius={10}
-          backgroundColor={activeTab === 'balances' ? themeColors.surface : 'transparent'}
-          alignItems="center"
-        >
-          <Text 
-            fontWeight={activeTab === 'balances' ? '600' : '400'}
-            color={activeTab === 'balances' ? themeColors.textPrimary : themeColors.textSecondary}
-          >
-            Balances
-          </Text>
-        </Stack>
-      </Pressable>
-    </XStack>
+        {[
+          { id: 'bills', label: 'Bills', icon: Receipt },
+          { id: 'balances', label: 'Balances', icon: Scale },
+          { id: 'logs', label: 'Logs', icon: ScrollText },
+          { id: 'info', label: 'Info', icon: Info },
+          { id: 'charts', label: 'Charts', icon: PieChart },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <Pressable 
+              key={tab.id}
+              onPress={() => setActiveTab(tab.id as any)}
+            >
+              <XStack
+                alignItems="center"
+                justifyContent="center"
+                paddingVertical="$2.5"
+                paddingHorizontal="$3.5"
+                borderRadius={14}
+                backgroundColor={isActive ? themeColors.primary : themeColors.surfaceElevated}
+                gap="$2"
+              >
+                <Icon 
+                  size={18} 
+                  color={isActive ? 'white' : themeColors.textSecondary} 
+                  strokeWidth={2.5}
+                />
+                <Text 
+                  fontSize={14}
+                  fontWeight="600"
+                  color={isActive ? 'white' : themeColors.textSecondary}
+                >
+                  {tab.label}
+                </Text>
+              </XStack>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </Stack>
   );
 
   // Header content rendered for both tabs - using useMemo to prevent remounting
@@ -307,6 +355,11 @@ export function GroupDetailContent({
     </Stack>
   );
 
+  // Move these up to prevent hook order error
+  // They were previously below the if(!group) return
+  const balanceRowContent = null; 
+  // (We'll re-add the balanceRow variable definition down there, but the hooks must be up top)
+
   // Balance Row Component
   const balanceRow = (
     <XStack 
@@ -324,21 +377,41 @@ export function GroupDetailContent({
         justifyContent="space-between"
         flex={1}
       >
-        <XStack alignItems="center" gap="$2">
-          <Text fontSize={12} color={themeColors.textSecondary}>Balance:</Text>
-          <BalanceBadge amount={group.your_balance ?? 0} size="md" />
-        </XStack>
-        {(group.your_balance ?? 0) !== 0 && (
-          <Button
-            variant={group.your_balance! < 0 ? 'primary' : 'outlined'}
-            size="sm"
-            icon={<SendHorizontal size={14} color={group.your_balance! < 0 ? 'white' : themeColors.primary} />}
-            onPress={() => {
-              router.push(`/group/settings?id=${groupId}` as any);
-            }}
-          >
-            Settle Up
-          </Button>
+        {Math.abs(group?.your_balance ?? 0) < 0.01 ? (
+          <XStack flex={1} alignItems="center" justifyContent="center" height={60}>
+             <Text fontSize={14} color={themeColors.textSecondary} fontWeight="600">
+               You are all settled up!
+             </Text>
+          </XStack>
+        ) : (
+          <>
+            <YStack flex={1} marginRight="$4" justifyContent="center">
+              <Text fontSize={13} color={themeColors.textSecondary} fontWeight="500">
+                {(group?.your_balance ?? 0) >= 0 ? 'Overall, you get' : 'Overall, you give'}
+              </Text>
+              <Text 
+                fontSize={20} 
+                fontWeight="700" 
+                color={(group?.your_balance ?? 0) >= 0 ? themeColors.success : themeColors.error}
+              >
+                {/* Format currency manually for now or use Intl */}
+                {group?.currency === 'USD' ? '$' : group?.currency} {Math.abs(group?.your_balance ?? 0).toFixed(2)}
+              </Text>
+            </YStack>
+            
+            {hasBalances && (
+              <Button
+                variant="outlined" 
+                size="sm"
+                icon={<WandSparkles size={16} color={themeColors.primary} />}
+                onPress={() => {
+                  router.push(`/settle/select?groupId=${groupId}` as any);
+                }}
+              >
+                Settle
+              </Button>
+            )}
+          </>
         )}
       </XStack>
     </XStack>
@@ -390,7 +463,7 @@ export function GroupDetailContent({
       <Stack zIndex={10} backgroundColor={themeColors.background}>
         {headerContent}
         {balanceRow}
-        <Stack paddingHorizontal="$4" paddingBottom="$2">
+        <Stack paddingBottom="$3">
           {tabsUI}
         </Stack>
       </Stack>
@@ -499,79 +572,217 @@ export function GroupDetailContent({
             </YStack>
           }
         />
-        ) : (
+        ) : activeTab === 'balances' ? (
           <ScrollView
             refreshControl={
               <RefreshControl refreshing={isLoading || billsLoading} onRefresh={onRefresh} />
             }
             showsVerticalScrollIndicator={false}
+
           >
             <YStack paddingHorizontal="$4" paddingBottom="$8" paddingTop="$4">
-              {groupMembers.map((member: GroupMember, index: number) => {
-                // Get balance from demo data (mocking store)
-                const balanceObj = demoBalances.find(b => b.user_id === member.user_id);
-                const balance = balanceObj ? balanceObj.balance : 0;
+              {filteredGroupedBills.flatMap(m => m.days).flatMap(d => d.bills).length === 0 ? (
+                <Text fontSize={16} color={themeColors.textSecondary} textAlign="center" marginTop="$8">
+                  No balances to settle
+                </Text>
+              ) : (
+                groupMembers.map((member: GroupMember, index: number) => {
+                  // Get balance from demo data (mocking store)
+                  const balanceObj = demoBalances.find(b => b.user_id === member.user_id);
+                  const balance = balanceObj ? balanceObj.balance : 0;
 
-                // Calculate participation metrics
-                const participationCount = bills.filter(bill => {
-                  const isPayer = bill.payer.id === member.user_id;
-                  // In demo data, participant_avatars contains user IDs
-                  const isParticipant = bill.participant_avatars?.includes(member.user_id);
-                  return isPayer || isParticipant;
-                }).length;
+                  // Calculate participation metrics
+                  const participationCount = bills.filter(bill => {
+                    const isPayer = bill.payer.id === member.user_id;
+                    // In demo data, participant_avatars contains user IDs
+                    const isParticipant = bill.participant_avatars?.includes(member.user_id);
+                    return isPayer || isParticipant;
+                  }).length;
 
-                return (
-                <XStack 
-                  key={member.id} 
-                  alignItems="center" 
-                  gap="$3"
-                  paddingVertical="$3"
-                  borderBottomWidth={index === groupMembers.length - 1 ? 0 : 1}
-                  borderBottomColor={themeColors.border}
-                >
-                  <Avatar
-                    name={member.user.full_name}
-                    colorIndex={member.color_index}
-                    size="md"
-                  />
-                  <YStack flex={1}>
-                    <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
-                      {member.user.full_name}
-                    </Text>
-                    <Text fontSize={12} color={themeColors.textSecondary}>
-                      Involved in {participationCount} expense{participationCount === 1 ? '' : 's'}
-                    </Text>
-                  </YStack>
-                  
-                  {/* Stacked Balance Display */}
-                  <YStack alignItems="flex-end" justifyContent="center">
-                    {balance !== 0 ? (
-                      <>
-                        <Text fontSize={11} color={themeColors.textMuted}>
-                          {balance > 0 ? 'you get' : 'you give'}
-                        </Text>
-                        <Text 
-                          fontSize={16} 
-                          fontWeight="700" 
-                          color={balance > 0 ? themeColors.success : themeColors.error}
-                        >
-                          ${Math.abs(balance).toFixed(2)}
-                        </Text>
-                      </>
-                    ) : (
-                      <Text 
-                        fontSize={14} 
-                        fontWeight="500" 
-                        color={themeColors.textMuted}
-                      >
-                        Settled
+                  return (
+                  <XStack 
+                    key={member.id} 
+                    alignItems="center" 
+                    gap="$3"
+                    paddingVertical="$3"
+                    borderBottomWidth={index === groupMembers.length - 1 ? 0 : 1}
+                    borderBottomColor={themeColors.border}
+                  >
+                    <Avatar
+                      name={member.user.full_name}
+                      colorIndex={member.color_index}
+                      size="md"
+                    />
+                    <YStack flex={1}>
+                      <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
+                        {member.user.full_name}
                       </Text>
-                    )}
-                  </YStack>
-                </XStack>
-              );
-              })}
+                      <Text fontSize={12} color={themeColors.textSecondary}>
+                        Involved in {participationCount} expense{participationCount === 1 ? '' : 's'}
+                      </Text>
+                    </YStack>
+                    
+                    {/* Stacked Balance Display */}
+                    <YStack alignItems="flex-end" justifyContent="center">
+                      {balance !== 0 ? (
+                        <>
+                          <Text fontSize={11} color={themeColors.textMuted}>
+                            {balance > 0 ? 'you get' : 'you give'}
+                          </Text>
+                          <Text 
+                            fontSize={16} 
+                            fontWeight="700" 
+                            color={balance > 0 ? themeColors.success : themeColors.error}
+                          >
+                            ${Math.abs(balance).toFixed(2)}
+                          </Text>
+                        </>
+                      ) : (
+                        <Text 
+                          fontSize={14} 
+                          fontWeight="500" 
+                          color={themeColors.textMuted}
+                        >
+                          Settled
+                        </Text>
+                      )}
+                    </YStack>
+                  </XStack>
+                );
+              }))}
             </YStack>
+          </ScrollView>
+
+        ) : activeTab === 'logs' ? (
+          <ScrollView
+            refreshControl={
+              <RefreshControl refreshing={isLoading || activitiesLoading} onRefresh={onRefresh} />
+            }
+            showsVerticalScrollIndicator={false}
+
+          >
+            <YStack paddingHorizontal="$4" paddingBottom="$8" paddingTop="$4">
+              {activities.length === 0 ? (
+                <Text fontSize={16} color={themeColors.textSecondary} textAlign="center" marginTop="$8">
+                  No activity yet
+                </Text>
+              ) : (
+                activities.map((activity) => (
+                  <ActivityListItem 
+                    key={activity.id} 
+                    activity={activity} 
+                    showGroup={false}
+                  />
+                ))
+              )}
+            </YStack>
+          </ScrollView>
+
+        ) : activeTab === 'info' ? (
+          <ScrollView
+             refreshControl={ <RefreshControl refreshing={isLoading || billsLoading} onRefresh={onRefresh} /> }
+             showsVerticalScrollIndicator={false}
+          >
+            <YStack paddingHorizontal="$4" paddingBottom="$8" paddingTop="$4" gap="$4">
+               {/* Stats Cards */}
+               <YStack gap="$3">
+                  {/* Created At */}
+                  <Stack backgroundColor={themeColors.surface} padding="$4" borderRadius={12} borderWidth={1} borderColor={themeColors.border}>
+                     <XStack alignItems="center" gap="$3" marginBottom="$2">
+                        <Stack padding="$2" borderRadius={8} backgroundColor={themeColors.surfaceElevated}>
+                           <Calendar size={20} color={themeColors.primary} />
+                        </Stack>
+                        <Text fontSize={14} color={themeColors.textSecondary} fontWeight="500">Created On</Text>
+                     </XStack>
+                     <Text fontSize={20} fontWeight="700" color={themeColors.textPrimary}>
+                        {new Date(group.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                     </Text>
+                  </Stack>
+
+                  <XStack gap="$3">
+                      {/* Total Bills Cost */}
+                      <Stack flex={1} backgroundColor={themeColors.surface} padding="$4" borderRadius={12} borderWidth={1} borderColor={themeColors.border}>
+                         <XStack alignItems="center" gap="$2" marginBottom="$2">
+                            <Stack padding="$1.5" borderRadius={6} backgroundColor={themeColors.surfaceElevated}>
+                               <TrendingUp size={16} color={themeColors.success} />
+                            </Stack>
+                            <Text fontSize={12} color={themeColors.textSecondary} fontWeight="500">Total Spent</Text>
+                         </XStack>
+                         <Text fontSize={18} fontWeight="700" color={themeColors.textPrimary} adjustsFontSizeToFit numberOfLines={1}>
+                            ${bills.reduce((sum, b) => sum + b.total_amount, 0).toFixed(2)}
+                         </Text>
+                      </Stack>
+
+                      {/* Your Contribution */}
+                      <Stack flex={1} backgroundColor={themeColors.surface} padding="$4" borderRadius={12} borderWidth={1} borderColor={themeColors.border}>
+                         <XStack alignItems="center" gap="$2" marginBottom="$2">
+                            <Stack padding="$1.5" borderRadius={6} backgroundColor={themeColors.surfaceElevated}>
+                               <Receipt size={16} color={themeColors.info} />
+                            </Stack>
+                            <Text fontSize={12} color={themeColors.textSecondary} fontWeight="500">You Paid</Text>
+                         </XStack>
+                         <Text fontSize={18} fontWeight="700" color={themeColors.primary} adjustsFontSizeToFit numberOfLines={1}>
+                             ${bills.reduce((sum, b) => sum + (b.payer.id === user?.id ? b.total_amount : 0), 0).toFixed(2)}
+                         </Text>
+                         <Text fontSize={10} color={themeColors.textSecondary}>
+                            (Total Outflow)
+                         </Text>
+                      </Stack>
+                  </XStack>
+
+                  <XStack gap="$3">
+                      {/* Itemized Bills Count */}
+                      <Stack flex={1} backgroundColor={themeColors.surface} padding="$4" borderRadius={12} borderWidth={1} borderColor={themeColors.border}>
+                         <XStack alignItems="center" gap="$2" marginBottom="$2">
+                            <Stack padding="$1.5" borderRadius={6} backgroundColor={themeColors.surfaceElevated}>
+                               <Receipt size={16} color={themeColors.warning} />
+                            </Stack>
+                            <Text fontSize={12} color={themeColors.textSecondary} fontWeight="500">Itemized Bills</Text>
+                         </XStack>
+                         <Text fontSize={18} fontWeight="700" color={themeColors.textPrimary}>
+                            {bills.filter(b => b.is_itemized || ((b as any).item_count || 0) > 0).length}
+                         </Text>
+                      </Stack>
+
+                      {/* Total Items */}
+                      <Stack flex={1} backgroundColor={themeColors.surface} padding="$4" borderRadius={12} borderWidth={1} borderColor={themeColors.border}>
+                         <XStack alignItems="center" gap="$2" marginBottom="$2">
+                            <Stack padding="$1.5" borderRadius={6} backgroundColor={themeColors.surfaceElevated}>
+                               <ShoppingBag size={16} color={themeColors.error} />
+                            </Stack>
+                            <Text fontSize={12} color={themeColors.textSecondary} fontWeight="500">Total Items</Text>
+                         </XStack>
+                         <Text fontSize={18} fontWeight="700" color={themeColors.textPrimary}>
+                            {bills.reduce((sum, b) => sum + ((b as any).item_count || 0), 0)}
+                         </Text>
+                      </Stack>
+                  </XStack>
+               </YStack>
+
+               {/* Your Share Summary */}
+               <Stack backgroundColor={themeColors.surface} padding="$4" borderRadius={12} borderWidth={1} borderColor={themeColors.border}>
+                   <Text fontSize={14} color={themeColors.textSecondary} fontWeight="500" marginBottom="$2">Your Net Expense</Text>
+                   <Text fontSize={24} fontWeight="700" color={themeColors.textPrimary}>
+                      ${bills.reduce((sum, b) => sum + (b.your_share || 0), 0).toFixed(2)}
+                   </Text>
+                   <Text fontSize={12} color={themeColors.textMuted} marginTop="$1">
+                      Total cost incurred by you in this group
+                   </Text>
+               </Stack>
+
+            </YStack>
+          </ScrollView>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+
+          >
+             <YStack paddingHorizontal="$4" paddingVertical="$10" alignItems="center" justifyContent="center" height={300}>
+                <PieChart size={48} color={themeColors.textMuted} />
+                <Text color={themeColors.textMuted} marginTop="$4" fontSize={16}>
+                  Charts coming soon...
+                </Text>
+             </YStack>
           </ScrollView>
         )}
       </Stack>

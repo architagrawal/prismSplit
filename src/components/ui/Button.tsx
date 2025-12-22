@@ -62,7 +62,7 @@ export function Button({
         disabled={disabled || loading}
         style={({ pressed }) => [
           styles.buttonBase,
-          { height: sizeStyle.height, paddingHorizontal: sizeStyle.paddingHorizontal },
+          { height: sizeStyle.height }, // Remove padding here, move to content
           fullWidth && styles.fullWidth,
           disabled && styles.disabled,
           pressed && styles.pressed,
@@ -72,7 +72,11 @@ export function Button({
           colors={[themeColors.primary, themeColors.secondary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={[styles.gradient, { borderRadius: 12 }]}
+          style={[
+             styles.gradient, 
+             { borderRadius: 12, paddingHorizontal: sizeStyle.paddingHorizontal },
+             fullWidth && { width: '100%' }
+          ]}
         >
           <Stack flexDirection="row" alignItems="center" gap="$2">
             {icon && iconPosition === 'left' && icon}
@@ -168,10 +172,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   gradient: {
-    flex: 1,
+    // flex: 1, // Removed to allow auto-width
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+    // width: '100%',
     height: '100%',
   },
   fullWidth: {

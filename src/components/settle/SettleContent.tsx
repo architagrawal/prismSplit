@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Stack, Text, YStack, XStack } from 'tamagui';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
 import { ArrowLeft, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { Screen, Card, Avatar, Button, CurrencyInput } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { demoUsers, demoBalances } from '@/lib/api/demo';
+import { useBillsStore, useAuthStore } from '@/lib/store';
 
 interface SettleContentProps {
   userId: string;
@@ -26,23 +27,35 @@ export function SettleContent({
 }: SettleContentProps) {
   const router = useRouter();
   const themeColors = useThemeColors();
+  const { groupId } = useLocalSearchParams<{ groupId: string }>();
+  const { recordPayment, isLoading } = useBillsStore();
+  const { user: currentUser } = useAuthStore();
   
   // Find the person to settle with
   const person = demoUsers.find(u => u.id === userId) || demoUsers[1];
-  const balance = demoBalances.find(b => b.user_id === userId);
+  
+  // Get real balance if possible, or fallback to demo
+  const balance = demoBalances.find(b => b.user_id === userId); // TODO: Use real balance store
   const amountOwed = balance?.balance || 0;
   
   const [amount, setAmount] = useState(Math.abs(amountOwed).toFixed(2));
   const [settled, setSettled] = useState(false);
 
-  const handleSettle = () => {
+  const handleSettle = async () => {
+    if (!currentUser || !groupId) return;
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSettled(true);
     
-    // Auto navigate back after showing success
-    setTimeout(() => {
-      router.back();
-    }, 1500);
+    // Call Store Action
+    const success = await recordPayment(groupId, currentUser.id, userId, parseFloat(amount));
+    
+    if (success) {
+      setSettled(true);
+      // Auto navigate back after showing success
+      setTimeout(() => {
+        router.back();
+      }, 1500);
+    }
   };
 
   if (settled) {
@@ -102,7 +115,7 @@ export function SettleContent({
               {person.full_name}
             </Text>
             <Text fontSize={14} color={themeColors.textSecondary}>
-              {amountOwed < 0 ? 'You owe' : 'Owes you'} ${Math.abs(amountOwed).toFixed(2)}
+              Paying for shared expenses
             </Text>
           </YStack>
         </YStack>
@@ -143,6 +156,7 @@ export function SettleContent({
                   fontWeight="500" 
                   color={amount === quickAmount.toFixed(2) ? themeColors.primary : themeColors.textSecondary}
                   textAlign="center"
+                  numberOfLines={1}
                 >
                   ${quickAmount.toFixed(0)}
                 </Text>
@@ -172,9 +186,9 @@ export function SettleContent({
         size="lg"
         fullWidth
         onPress={handleSettle}
-        disabled={!amount || parseFloat(amount) <= 0}
+        disabled={!amount || parseFloat(amount) <= 0 || isLoading}
       >
-        Record ${parseFloat(amount || '0').toFixed(2)} Payment
+        {isLoading ? 'Recording...' : `Record ${parseFloat(amount || '0').toFixed(2)} Payment`}
       </Button>
     </YStack>
   );

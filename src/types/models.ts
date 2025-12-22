@@ -52,6 +52,7 @@ export type Category =
   | 'entertainment'
   | 'travel'
   | 'shopping'
+  | 'transfer'
   | 'other';
 
 // No bill status - bills are instantly visible to group when saved
@@ -145,6 +146,7 @@ export type ActivityType =
   | 'bill_finalized'
   | 'item_selected'
   | 'settlement_created'
+  | 'payment'
   | 'member_joined';
 
 export interface Activity {
@@ -187,6 +189,7 @@ export const categoryIcons: Record<Category, string> = {
   entertainment: '🎮',
   travel: '✈️',
   shopping: '🛍️',
+  transfer: '💸',
   other: '📦',
 };
 

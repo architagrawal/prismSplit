@@ -22,7 +22,7 @@ export { ToastContainer } from './Toast';
 export { Screen, ScreenHeader } from './Screen';
 
 // List components
-export { GroupListItem, BillListItem, ItemRow } from './ListItem';
+export { GroupListItem, BillListItem, ItemRow, ActivityListItem } from './ListItem';
 export { GroupImage } from './GroupImage';
 
 // Modals

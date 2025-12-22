@@ -275,13 +275,8 @@ export function BillListItem({
             </Text>
             {itemCount > 1 && (
               <Text fontSize={11} color={themeColors.textMuted}>
-                {itemCount} items {hasDiscount && '• Discount applied'}
+                {itemCount} items
               </Text>
-            )}
-            {!itemCount && hasDiscount && (
-               <Text fontSize={11} color={themeColors.success}>
-                 Discount applied
-               </Text>
             )}
           </Stack>
           
@@ -489,6 +484,199 @@ export function ItemRow({
           </Stack>
 
         </Stack>
+      </Stack>
+    </Pressable>
+  );
+}
+
+// === Activity List Item ===
+
+import { Receipt, CheckCircle, UserPlus, MousePointer } from 'lucide-react-native';
+import type { Activity, ActivityType } from '@/types/models';
+
+interface ActivityListItemProps {
+  activity: Activity;
+  showGroup?: boolean; // Whether to show group info (false for group detail view)
+  onPress?: () => void;
+}
+
+export function ActivityListItem({
+  activity,
+  showGroup = true,
+  onPress,
+}: ActivityListItemProps) {
+  const themeColors = useThemeColors();
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress?.();
+  };
+
+  // Activity icons
+  const getActivityIcon = (type: ActivityType) => {
+    switch (type) {
+      case 'bill_created':
+      case 'bill_shared':
+      case 'bill_finalized':
+        return <Receipt size={18} color={themeColors.primary} />;
+      case 'settlement_created':
+        return <CheckCircle size={18} color={themeColors.success} />;
+      case 'member_joined':
+        return <UserPlus size={18} color={themeColors.info} />;
+      case 'item_selected':
+        return <MousePointer size={18} color={themeColors.warning} />;
+      default:
+        return <Receipt size={18} color={themeColors.textSecondary} />;
+    }
+  };
+
+  // Helper to get dynamic description
+  const getActivityDescription = (activity: Activity) => {
+    const meta = activity.metadata || {};
+    
+    switch (activity.type) {
+      case 'bill_created':
+        return meta.title ? `Created a bill "${meta.title}"` : 'Created a bill';
+      case 'bill_shared':
+        return meta.title ? `Shared a bill "${meta.title}"` : 'Shared a bill';
+      case 'bill_finalized':
+        return meta.title ? `Finalized bill "${meta.title}"` : 'Finalized a bill';
+      case 'item_selected':
+        const billTitle = meta.bill_title ? ` in "${meta.bill_title}"` : '';
+        return meta.item_name ? `Selected "${meta.item_name}"${billTitle}` : 'Selected items';
+      case 'settlement_created':
+        return meta.to_user ? `Settled up with ${meta.to_user}` : 'Settled up';
+      case 'member_joined':
+        return 'Joined the group';
+      default:
+        return 'New activity';
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[date.getMonth()];
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 becomes 12
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${hours}:${minutes} ${ampm}`;
+  };
+
+  return (
+    <Pressable 
+      onPress={handlePress}
+    >
+      <Stack 
+        flexDirection="row"
+        alignItems="center" 
+        gap="$3"
+        paddingVertical="$3"
+        borderBottomWidth={1}
+        borderBottomColor={themeColors.border}
+      >
+        {/* Left: Icon or Group Image */}
+        {showGroup ? (
+         <Stack alignItems="center" gap="$1">
+           <Stack position="relative">
+             <GroupImage groupId={activity.group.id} size="md" />
+             {/* Activity Icon Badge - centered on group image */}
+             <Stack
+               position="absolute"
+               top={0}
+               left={0}
+               right={0}
+               bottom={0}
+               justifyContent="center"
+               alignItems="center"
+             >
+               <Stack
+                 width={32}
+                 height={32}
+                 borderRadius={16}
+                 backgroundColor={themeColors.surface}
+                 justifyContent="center"
+                 alignItems="center"
+                 shadowColor="#000"
+                 shadowOffset={{ width: 0, height: 2 }}
+                 shadowOpacity={0.35}
+                 shadowRadius={4}
+                 borderWidth={2}
+                 borderColor={themeColors.background}
+               >
+                 {getActivityIcon(activity.type)}
+               </Stack>
+             </Stack>
+           </Stack>
+           <Text fontSize={13} color={themeColors.textMuted} numberOfLines={1}>
+             {activity.group.name}
+           </Text>
+         </Stack>
+        ) : (
+          <Stack
+            width={40}
+            height={40}
+            borderRadius={20}
+            backgroundColor={themeColors.surfaceElevated}
+            justifyContent="center"
+            alignItems="center"
+          >
+            {getActivityIcon(activity.type)}
+          </Stack>
+        )}
+        
+        {/* Center: Activity Details */}
+        <Stack flex={1} gap="$1">
+          <Text fontSize={15} fontWeight="600" color={themeColors.textPrimary}>
+            {getActivityDescription(activity)}
+          </Text>
+          <Stack flexDirection="row" alignItems="center" gap="$2">
+            <Avatar
+              name={activity.user.full_name}
+              imageUrl={activity.user.avatar_url}
+              colorIndex={activity.user.color_index ?? 0}
+              size="xs"
+            />
+            <Text fontSize={13} color={themeColors.textSecondary}>
+              {activity.user.full_name}
+            </Text>
+          </Stack>
+          <Text fontSize={12} color={themeColors.textMuted}>
+            {formatTime(activity.created_at)}
+          </Text>
+        </Stack>
+        
+        {/* Right: Share Amount (Mocked mostly) */}
+        {(() => {
+          // Get share amount from activity metadata
+          const amount = (activity.metadata?.your_share as number) || 
+                        (activity.metadata?.amount as number);
+          
+          if (!amount) return null;
+
+          const isPositive = activity.type === 'settlement_created' || 
+                            (activity.metadata?.direction === 'receive');
+          
+          return (
+            <Stack alignItems="flex-end" justifyContent="center">
+              <Text fontSize={11} color={themeColors.textMuted}>
+                {isPositive ? 'you get' : 'you give'}
+              </Text>
+              <Text 
+                fontSize={16} 
+                fontWeight="700" 
+                color={isPositive ? themeColors.success : themeColors.error}
+              >
+                ${amount.toFixed(2)}
+              </Text>
+            </Stack>
+          );
+        })()}
       </Stack>
     </Pressable>
   );
