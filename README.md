@@ -1,104 +1,87 @@
 # PrismSplit
 
-PrismSplit is a frontend-first, Expo-powered bill-splitting experience that stays open-source and mobile-first. This repo is purely UI/mechanics—backend services such as Supabase are consumed, not implemented here.
+**The bill-splitting app that keeps friendships intact.**  
+PrismSplit is a mobile-first, offline-ready bill splitter built for speed and transparency. It’s strictly frontend—no backend logic to maintain, just pure React Native performance powered by Expo.
 
-## Repository layout
+## 📱 Showcase
 
-- `app/` — The Expo-managed application lives here. All source code, routes, assets, and configs are organized inside this directory.
+*(Screenshots coming soon)*  
+> We are actively designing the visual experience. Check back for a gallery of our "Home", "Bill Details", and "Smart Split" flows.
 
-  - `app/` — Expo Router file-based routing directory
-    - `(auth)/` — Authentication screens (login, signup)
-    - `(tabs)/` — Tab-based navigation (home, groups, profile)
-    - `group/[id].tsx` — Dynamic group detail route
-    - `bill/[id].tsx` — Dynamic bill detail route
-    - `_layout.tsx` — Root layout wrapper
-    - `index.tsx` — App entry point
-  - `src/` — Application source code
-    - `components/` — Reusable UI components
-      - `ui/` — Tamagui-based primitive components
-      - `forms/` — Form components (AddItem, SplitForm)
-      - `shared/` — Shared components (Header, Avatar, Button)
-    - `features/` — Feature-specific modules (bills, groups, splits, profile)
-    - `store/` — Zustand state management stores
-    - `hooks/` — Custom React hooks (Supabase, realtime, forms)
-    - `lib/` — Utilities, helpers, and Supabase client setup
-    - `types/` — TypeScript type definitions and interfaces
-    - `constants/` — Theme tokens, colors, spacing, config values
-    - `schemas/` — Zod validation schemas for forms
-  - `assets/` — Static assets (images, fonts, icons)
-  - `config/` — Configuration files (Tamagui config, environment settings)
-  - `tests/` — Jest/Expo Test Utils specs for critical flows
-  - `.env.example` — Environment variable template
-  - `app.json` — Expo configuration
-  - `package.json` — Dependencies and scripts
-  - `tsconfig.json` — TypeScript configuration
+## ✨ Features
 
-- `ideas/` — Brainstorms, user stories, experiments, and rough UX flows before they land in `app/`.
-- `design/` — Visual assets, brand guide, Tamagui tokens, prototypes, and motion direction.
-- `docs/` — Architecture decisions, onboarding for contributors, and how the frontend interacts with Supabase (auth, items, realtime). Use Markdown or MDX so it can live in the repo site.
-- `showcase/` — Screenshots, release notes, web promo copy, and any embedded demo links for the app.
+- **🚀 Offline Logic**: Calculate splits, debts, and totals instantly without a server.
+- **💸 Smart Splits**: "Equal", "Exact Amounts", "Percentages", or "Shares"—handle any scenario.
+- **👥 Dynamic Groups**: Manage multiple friend groups with ease.
+- **🎨 Native Feel**: Built with Tamagui for smooth animations and a premium dark-mode aesthetic.
+- **🔒 Private by Design**: Your data lives on your device (with optional Supabase sync).
 
-Feel free to add more folders such as `scripts/` or `ci/` later if tooling (build/test) is introduced.
+## 🛠 Tech Stack
 
-## Tech stack guidance
+- **Framework**: [Expo SDK 54](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction/)
+- **UI System**: [Tamagui](https://tamagui.dev) + Lucide Icons
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **Forms**: React Hook Form + Zod Validation
+- **Engine**: React Native 0.81 (New Architecture enabled)
 
-- **Expo (managed)** for shared code across Android/iOS/Web plus Expo Router for clean navigation.
-- **TypeScript + Tamagui** for type-safe, design-system-aligned UI that renders beautifully everywhere.
-- **Zustand** handles lightweight global state (current group, balances, user context).
-- **React Hook Form + Zod** keeps the add-item workflow predictable and validated.
-- **Supabase services** (Auth, Realtime, Storage, Edge Functions) are consumed via the frontend; you can keep queries in `app/src/api` or `hooks`.
-- **Lucide React Native** for consistent icons.
-- **Sentry** or equivalent error monitoring from the Expo app if you enable JS tracking.
+## 📂 Project Structure
 
-The stack is appropriate for the goals you listed. As the repo is frontend-only, just keep backend credentials in `.env` files (excluded from Git) and document any required Supabase schema/roles in `docs/`.
+Verified layout as of 2025:
 
-## Project initialization
+- **`src/`** — **Project Root** (contains `package.json` and source)
+  - `app/` — **Routing Root**. All screens live here (file-based routing).
+    - `(tabs)/` — Main tab navigation (Bills, Groups, Profile).
+    - `bill/[id].tsx` — Detailed bill editing and splitting.
+  - `components/`
+    - `ui/` — Base design system tokens (Buttons, Cards, Inputs).
+  - `features/` — Domain logic for Bills, Groups, and Users.
+  - `lib/` — Core utilities (Supabase client, calculations).
+  - `store/` — Global state definitions.
+- `showcase/` — Marketing assets and screenshots.
+- `docs/` — Architecture decisions and guides.
+- `design/` — Figma assets and tokens.
 
-### Setting up the Expo app
+## 🚀 Getting Started
+
+PrismSplit uses a `src` folder for the main application code.
+
+### 1. Setup
 
 ```bash
-cd app
-npx create-expo-app@latest . --template blank-typescript
+# Clone the repo
+git clone https://github.com/architagrawal/prismSplit.git
+cd prismSplit
+
+# Enter the source directory
+cd src
+
+# Install dependencies
+npm install
 ```
 
-### Install core dependencies
+### 2. Run the App
 
 ```bash
-# UI & Navigation
-npm install tamagui @tamagui/config expo-router lucide-react-native
+# Start the Expo development server
+npm start
 
-# State & Forms
-npm install zustand react-hook-form zod @hookform/resolvers
-
-# Supabase (frontend client only)
-npm install @supabase/supabase-js
-
-# Development
-npm install --save-dev @types/react @types/react-native
+# Tips:
+# - Press 'a' to open on Android Emulator
+# - Press 'i' to open on iOS Simulator
+# - Press 'w' to open in Web Browser
 ```
 
-### Configure environment
+## 🤝 Contributing
 
-1. Copy `.env.example` to `.env`
-2. Add your Supabase URL and anon key
-3. Update `app.json` with your app name and configuration
+We welcome contributions! Please check `CONTRIBUTING.md` for guidelines.  
+To run tests (if available): `npm test` inside the `src` folder.
 
-## Next steps
+## 📄 License
 
-1. Complete Tamagui theme configuration in `app/config/tamagui.config.ts`
-2. Set up Supabase client in `app/src/lib/supabase.ts` with your credentials
-3. Create component library in `app/src/components/ui/` using Tamagui primitives
-4. Build out feature modules in `app/src/features/` for bills, groups, and splits
-5. Document contributor workflow in `docs/onboarding/` (setup, development, testing)
-6. Add component designs and prototypes to `design/` folder
-
-## License & Usage
-
-**Source Available**: This project is open for contribution but is **NOT Open Source**.
-
+**Source Available**: This project is open for contribution but is **NOT Open Source**.  
 Copyright (c) 2025-Present Archit Agrawal. All Rights Reserved.
 
-- **You may**: View the code, fork it to submit Pull Requests to this repository.
-- **You may NOT**: Use it commercially, redistribute it, host it, or deploy it under a different name.
+- **Allowed**: Viewing code, forking for PRs, learning.
+- **Forbidden**: Commercial use, redistribution, deploying as your own service.
 
-See [LICENSE](LICENSE) for full legal details.
+See [LICENSE](LICENSE) for full details.
