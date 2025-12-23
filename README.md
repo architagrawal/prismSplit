@@ -22,7 +22,7 @@ PrismSplit is a mobile-first, offline-ready bill splitter built for speed and tr
 > **Deep dive**: itemized splitting and custom shares.
 
 <p align="center">
-  <img src="showcase/screenshots/V1 App/createExpense/create-expense-04.jpg" width="30%" alt="Add Items" />
+  <img src="showcase/screenshots/V1 App/createExpense/create-expense-06.jpg" width="30%" alt="Add Items" />
   <img src="showcase/screenshots/V1 App/GroupsPge/selectItems/select-items-02.jpg" width="30%" alt="Select Items" />
   <img src="showcase/screenshots/V1 App/GroupsPge/selectItems/select-items-05.jpg" width="30%" alt="Custom Splits" />
 </p>
