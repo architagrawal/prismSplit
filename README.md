@@ -5,8 +5,19 @@ PrismSplit is a mobile-first, offline-ready bill splitter built for speed and tr
 
 ## 📱 Showcase
 
-*(Screenshots coming soon)*  
-> We are actively designing the visual experience. Check back for a gallery of our "Home", "Bill Details", and "Smart Split" flows.
+<p align="center">
+  <img src="showcase/screenshots/V1 App/Landing/landing-06.jpg" width="30%" alt="Landing Screen" />
+  <img src="showcase/screenshots/V1 App/HomePage/home-page-01.jpg" width="30%" alt="Home Screen" />
+  <img src="showcase/screenshots/V1 App/GroupsPge/groups-list-01.jpg" width="30%" alt="Groups List" />
+</p>
+
+> **Experience the flow**: create groups, split bills, and track expenses offline.
+
+<p align="center">
+  <img src="showcase/screenshots/V1 App/GroupsPge/EditBill/edit-bill-01.jpg" width="30%" alt="Edit Bill" />
+  <img src="showcase/screenshots/V1 App/createExpense/create-expense-01.jpg" width="30%" alt="Create Expense" />
+  <img src="showcase/screenshots/V1 App/Activitypage/activity-page-01.jpg" width="30%" alt="Activity Page" />
+</p>
 
 ## ✨ Features
 
