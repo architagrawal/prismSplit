@@ -3,6 +3,15 @@
 **The bill-splitting app that keeps friendships intact.**  
 PrismSplit is a mobile-first, offline-ready bill splitter built for speed and transparency. It’s strictly frontend—no backend logic to maintain, just pure React Native performance powered by Expo.
 
+> [!CAUTION]
+> **🚧 Status: Work in Progress**
+> 
+> This project is currently in **Active Development**.
+> - **Frontend**: Core UI/UX is built, but some features are pending implementation.
+> - **Backend**: Development has started, but valid API connections are **not yet integrated**.
+> - **Data**: The app currently uses **mock/placeholder data** for demonstration.
+> - **Auth**: Not connected to a provider. **Enter any random email and password** to log in.
+
 ## 📱 Showcase
 
 <p align="center">
@@ -89,6 +98,26 @@ npm start
 # - Press 'i' to open on iOS Simulator
 # - Press 'w' to open in Web Browser
 ```
+
+## 📦 Building for Release
+
+To generate an APK for manual installation (or GitHub Releases):
+
+```bash
+# Install EAS CLI if you haven't
+npm install -g eas-cli
+
+# Login to your Expo account
+eas login
+
+# Build the APK locally (uses your own PC's compute)
+eas build -p android --profile preview --local
+```
+
+> **Note**: Local builds require you to have [Java (OpenJDK 17)](https://adoptium.net/) and the [Android SDK](https://developer.android.com/studio) installed and configured on your machine.
+
+
+The command will output a download link for the `.apk` file. You can then upload this file to the [GitHub Releases](https://github.com/architagrawal/prismSplit/releases) page.
 
 ## 🤝 Contributing
 

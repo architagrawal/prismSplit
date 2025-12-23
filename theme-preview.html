@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrismSplit: Extended Blue‑Purple Palette</title>
+    <style>
+        body, html { margin:0; padding:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; min-height:100vh; }
+        .split-container { display:flex; width:100%; min-height:100vh; }
+        .pane { flex:1; padding:40px; display:flex; flex-direction:column; gap:30px; }
+        .pane.light { background:#FEFDFB; color:#1C1917; border-right:1px solid #ddd; }
+        .pane.dark  { background:#09090B; color:#FAFAFA; }
+        h1 { font-size:28px; margin-bottom:20px; font-weight:800; letter-spacing:-0.5px; height:40px; }
+        p.intro { font-size:16px; opacity:0.7; line-height:1.5; margin-bottom:30px; height:48px; }
+        .variant-card { display:flex; flex-direction:column; gap:16px; background:rgba(125,125,125,0.05); padding:24px; border-radius:16px; border:1px solid rgba(125,125,125,0.1); margin-bottom:20px; }
+        .color-header { display:flex; justify-content:space-between; align-items:center; }
+        .variant-name { font-size:18px; font-weight:700; }
+        .variant-hex { font-family:monospace; opacity:0.6; }
+        .variant-note { font-size:12px; opacity:0.6; margin-top:-8px; }
+        .btn { width:100%; padding:14px; border-radius:10px; border:none; font-weight:600; font-size:15px; cursor:pointer; color:#fff; margin-bottom:8px; }
+        .btn-surface { width:100%; padding:12px; border-radius:8px; border:2px solid currentColor; background:transparent; font-weight:600; cursor:pointer; }
+        /* ---- COLORS ---- */
+        .bg-slate { background:#6A5ACD; } .text-slate { color:#6A5ACD; }
+        .bg-royal { background:#7B68EE; } .text-royal { color:#7B68EE; }
+        .bg-bright-blurple { background:#6C63FF; } .text-bright-blurple { color:#6C63FF; }
+        .bg-iris { background:#5B4FCF; } .text-iris { color:#5B4FCF; }
+        .bg-lavender-blue { background:#8B7FFF; } .text-lavender-blue { color:#8B7FFF; }
+        .bg-blue { background:#2563EB; } .text-blue { color:#2563EB; }
+        .bg-purple { background:#9333EA; } .text-purple { color:#9333EA; }
+        /* extra shades */
+        .bg-indigo { background:#4B0082; } .text-indigo { color:#4B0082; }
+        .bg-magenta { background:#FF00FF; } .text-magenta { color:#FF00FF; }
+        .bg-deepsea { background:#006994; } .text-deepsea { color:#006994; }
+        .bg-goldenrod { background:#DAA520; } .text-goldenrod { color:#DAA520; }
+        /* periwinkle & purple-blue */
+        .bg-mix-periwinkle { background:#7682EA; } .text-mix-periwinkle { color:#7682EA; }
+        .bg-twilight-lavender { background:#857DB1; } .text-twilight-lavender { color:#857DB1; }
+        .bg-deep-serenity { background:#585285; } .text-deep-serenity { color:#585285; }
+        .bg-majorelle { background:#6050DC; } .text-majorelle { color:#6050DC; }
+        .bg-cool-mist { background:#8C9EFF; } .text-cool-mist { color:#8C9EFF; }
+        /* dark variants */
+        /* Dark variant overrides removed – using same colors as Light mode */
+            .friend-label { font-size:12px; opacity:0.7; margin-top:8px; display:flex; align-items:center; gap:4px; }
+        .friend-label .icon { font-size:14px; }
+        /* Friends label handled via inline span, pseudo-element removed */
+    </style>
+</head>
+<body>
+    <div class="split-container">
+        <!-- LIGHT MODE -->
+        <div class="pane light">
+            <h1>Light Mode</h1>
+            <p class="intro">Extended palette – compare each shade side‑by‑side.</p>
+
+            <!-- Existing 7 shades -->
+            <div class="variant-card"><div class="color-header"><span class="variant-name">1. Slate Blue</span><span class="variant-hex">#6A5ACD</span></div><p class="variant-note">Balanced purple‑blue</p><button class="btn bg-slate">Primary</button><button class="btn-surface text-slate">Secondary</button><span class="friend-label" style="color:#6A5ACD; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">2. Royal Purple</span><span class="variant-hex">#7B68EE</span></div><p class="variant-note">Slightly lighter, more purple</p><button class="btn bg-royal">Primary</button><button class="btn-surface text-royal">Secondary</button><span class="friend-label" style="color:#7B68EE; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">3. Bright Blurple</span><span class="variant-hex">#6C63FF</span></div><p class="variant-note">Neon‑like, tech‑forward</p><button class="btn bg-bright-blurple">Primary</button><button class="btn-surface text-bright-blurple">Secondary</button><span class="friend-label" style="color:#6C63FF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">4. Deep Iris</span><span class="variant-hex">#5B4FCF</span></div><p class="variant-note">Darker, more serious</p><button class="btn bg-iris">Primary</button><button class="btn-surface text-iris">Secondary</button><span class="friend-label" style="color:#5B4FCF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">5. Soft Lavender Blue</span><span class="variant-hex">#8B7FFF</span></div><p class="variant-note">Lighter, friendlier</p><button class="btn bg-lavender-blue">Primary</button><button class="btn-surface text-lavender-blue">Secondary</button><span class="friend-label" style="color:#8B7FFF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">6. Vivid Blue</span><span class="variant-hex">#2563EB</span></div><p class="variant-note">More blue, less purple</p><button class="btn bg-blue">Primary</button><button class="btn-surface text-blue">Secondary</button><span class="friend-label" style="color:#2563EB; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">7. Electric Violet</span><span class="variant-hex">#9333EA</span></div><p class="variant-note">More purple, less blue</p><button class="btn bg-purple">Primary</button><button class="btn-surface text-purple">Secondary</button><span class="friend-label" style="color:#9333EA; font-size:1.2rem;">Friends</span></div>
+
+            <!-- Additional shades -->
+            <h2>Additional Light Shades</h2>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">8. Indigo</span><span class="variant-hex">#4B0082</span></div><p class="variant-note">Deep indigo for premium feel</p><button class="btn bg-indigo">Primary</button><button class="btn-surface text-indigo">Secondary</button><span class="friend-label" style="color:#4B0082; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">9. Magenta</span><span class="variant-hex">#FF00FF</span></div><p class="variant-note">Vibrant magenta accent</p><button class="btn bg-magenta">Primary</button><button class="btn-surface text-magenta">Secondary</button><span class="friend-label" style="color:#FF00FF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">10. Deep Sea Blue</span><span class="variant-hex">#006994</span></div><p class="variant-note">Calm deep‑sea tone</p><button class="btn bg-deepsea">Primary</button><button class="btn-surface text-deepsea">Secondary</button><span class="friend-label" style="color:#006994; font-size:1.2rem;">Friends</span></div>
+                <div class="variant-card"><div class="color-header"><span class="variant-name">11. Goldenrod</span><span class="variant-hex">#DAA520</span></div><p class="variant-note">Warm golden accent</p><button class="btn bg-goldenrod">Primary</button><button class="btn-surface text-goldenrod">Secondary</button><span class="friend-label" style="color:#DAA520; font-size:1.2rem;">Friends</span></div>
+            
+            <h2>Periwinkle & Purple-Blue</h2>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">12. True Periwinkle</span><span class="variant-hex">#7682EA</span></div><p class="variant-note">Delicate blend of blue & purple</p><button class="btn bg-mix-periwinkle">Primary</button><button class="btn-surface text-mix-periwinkle">Secondary</button><span class="friend-label" style="color:#7682EA; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">13. Twilight Lavender</span><span class="variant-hex">#857DB1</span></div><p class="variant-note">Muted, sophisticated depth</p><button class="btn bg-twilight-lavender">Primary</button><button class="btn-surface text-twilight-lavender">Secondary</button><span class="friend-label" style="color:#857DB1; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">14. Deep Serenity</span><span class="variant-hex">#585285</span></div><p class="variant-note">Calm, mysterious dark tone</p><button class="btn bg-deep-serenity">Primary</button><button class="btn-surface text-deep-serenity">Secondary</button><span class="friend-label" style="color:#585285; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">15. Majorelle Blue</span><span class="variant-hex">#6050DC</span></div><p class="variant-note">Vibrant, intense purple-blue</p><button class="btn bg-majorelle">Primary</button><button class="btn-surface text-majorelle">Secondary</button><span class="friend-label" style="color:#6050DC; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">16. Cool Mist</span><span class="variant-hex">#8C9EFF</span></div><p class="variant-note">Lighter, ethereal tranquillity</p><button class="btn bg-cool-mist">Primary</button><button class="btn-surface text-cool-mist">Secondary</button><span class="friend-label" style="color:#8C9EFF; font-size:1.2rem;">Friends</span></div>
+        </div>
+
+        <!-- DARK MODE -->
+        <div class="pane dark">
+            <h1>Dark Mode</h1>
+            <p class="intro">Neon pops on deep black.</p>
+
+            <!-- Existing 7 shades (lightened) -->
+            <div class="variant-card"><div class="color-header"><span class="variant-name">1. Slate Blue</span><span class="variant-hex">#8B7FFF</span></div><p class="variant-note">Lightened for dark mode</p><button class="btn bg-slate">Primary</button><button class="btn-surface text-slate">Secondary</button><span class="friend-label" style="color:#6A5ACD; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">2. Royal Purple</span><span class="variant-hex">#9D8EFF</span></div><p class="variant-note">Lightened for dark mode</p><button class="btn bg-royal">Primary</button><button class="btn-surface text-royal">Secondary</button><span class="friend-label" style="color:#7B68EE; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">3. Bright Blurple</span><span class="variant-hex">#8B82FF</span></div><p class="variant-note">Lightened for dark mode</p><button class="btn bg-bright-blurple">Primary</button><button class="btn-surface text-bright-blurple">Secondary</button><span class="friend-label" style="color:#6C63FF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">4. Deep Iris</span><span class="variant-hex">#7C70E5</span></div><p class="variant-note">Lightened for dark mode</p><button class="btn bg-iris">Primary</button><button class="btn-surface text-iris">Secondary</button><span class="friend-label" style="color:#5B4FCF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">5. Soft Lavender Blue</span><span class="variant-hex">#A99FFF</span></div><p class="variant-note">Lightened for dark mode</p><button class="btn bg-lavender-blue">Primary</button><button class="btn-surface text-lavender-blue">Secondary</button><span class="friend-label" style="color:#8B7FFF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">6. Vivid Blue</span><span class="variant-hex">#3B82F6</span></div><p class="variant-note">Lightened for dark mode</p><button class="btn bg-blue">Primary</button><button class="btn-surface text-blue">Secondary</button><span class="friend-label" style="color:#2563EB; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">7. Electric Violet</span><span class="variant-hex">#A855F7</span></div><p class="variant-note">Lightened for dark mode</p><button class="btn bg-purple">Primary</button><button class="btn-surface text-purple">Secondary</button><span class="friend-label" style="color:#9333EA; font-size:1.2rem;">Friends</span></div>
+
+            <!-- Additional dark shades -->
+            <h2>Additional Dark Shades</h2>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">8. Indigo (Dark)</span><span class="variant-hex">#5D0FA3</span></div><p class="variant-note">Lighter indigo for dark bg</p><button class="btn bg-indigo">Primary</button><button class="btn-surface text-indigo">Secondary</button><span class="friend-label" style="color:#4B0082; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">9. Magenta (Dark)</span><span class="variant-hex">#FF66FF</span></div><p class="variant-note">Soft magenta for dark mode</p><button class="btn bg-magenta">Primary</button><button class="btn-surface text-magenta">Secondary</button><span class="friend-label" style="color:#FF00FF; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">10. Deep Sea Blue (Dark)</span><span class="variant-hex">#0099CC</span></div><p class="variant-note">Bright teal for dark bg</p><button class="btn bg-deepsea">Primary</button><button class="btn-surface text-deepsea">Secondary</button><span class="friend-label" style="color:#006994; font-size:1.2rem;">Friends</span></div>
+                <div class="variant-card"><div class="color-header"><span class="variant-name">11. Goldenrod (Dark)</span><span class="variant-hex">#E6B800</span></div><p class="variant-note">Warm gold for dark mode</p><button class="btn bg-goldenrod">Primary</button><button class="btn-surface text-goldenrod">Secondary</button><span class="friend-label" style="color:#DAA520; font-size:1.2rem;">Friends</span></div>
+            
+            <h2>Periwinkle & Purple-Blue</h2>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">12. True Periwinkle</span><span class="variant-hex">#7682EA</span></div><p class="variant-note">Delicate blend of blue & purple</p><button class="btn bg-mix-periwinkle">Primary</button><button class="btn-surface text-mix-periwinkle">Secondary</button><span class="friend-label" style="color:#7682EA; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">13. Twilight Lavender</span><span class="variant-hex">#857DB1</span></div><p class="variant-note">Muted, sophisticated depth</p><button class="btn bg-twilight-lavender">Primary</button><button class="btn-surface text-twilight-lavender">Secondary</button><span class="friend-label" style="color:#857DB1; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">14. Deep Serenity</span><span class="variant-hex">#585285</span></div><p class="variant-note">Calm, mysterious dark tone</p><button class="btn bg-deep-serenity">Primary</button><button class="btn-surface text-deep-serenity">Secondary</button><span class="friend-label" style="color:#585285; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">15. Majorelle Blue</span><span class="variant-hex">#6050DC</span></div><p class="variant-note">Vibrant, intense purple-blue</p><button class="btn bg-majorelle">Primary</button><button class="btn-surface text-majorelle">Secondary</button><span class="friend-label" style="color:#6050DC; font-size:1.2rem;">Friends</span></div>
+            <div class="variant-card"><div class="color-header"><span class="variant-name">16. Cool Mist</span><span class="variant-hex">#8C9EFF</span></div><p class="variant-note">Lighter, ethereal tranquillity</p><button class="btn bg-cool-mist">Primary</button><button class="btn-surface text-cool-mist">Secondary</button><span class="friend-label" style="color:#8C9EFF; font-size:1.2rem;">Friends</span></div>
+        </div>
+    </div>
+</body>
+</html>
