@@ -39,7 +39,7 @@
     "expo-web-browser": "~15.0.10",
     "lucide-react-native": "^0.560.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react-dom": "19.2.3",
     "react-hook-form": "^7.68.0",
     "react-native": "0.81.5",
     "react-native-encrypted-storage": "^4.0.3",
