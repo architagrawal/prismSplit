@@ -14,7 +14,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/native": "^7.1.8",
-    "@shopify/flash-list": "^2.0.2",
+    "@shopify/flash-list": "^2.2.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tamagui/config": "^1.139.3",
     "@tamagui/metro-plugin": "^1.139.3",
