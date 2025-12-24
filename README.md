@@ -1,135 +1,183 @@
 # PrismSplit
 
-**The bill-splitting app that keeps friendships intact.**  
-PrismSplit is a mobile-first, offline-ready bill splitter built for speed and transparency. It’s strictly frontend—no backend logic to maintain, just pure React Native performance powered by Expo.
+<div align="center">
+  <!-- Replace with your actual logo or keep text -->
+  <h1>💸 PrismSplit</h1>
+  <p>
+    <strong>Refracting hassle and bringing color to group expenses. Trips, groceries, dinners—everyone picks their items, everyone pays their share. Simple.</strong>
+  </p>
+  <p>
+    <a href="#-tech-stack">Tech Stack</a> • 
+    <a href="#-architecture">Architecture</a> • 
+    <a href="#-getting-started">Getting Started</a> • 
+    <a href="#-contributing">Contributing</a>
+  </p>
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen)]()
+  [![Framework](https://img.shields.io/badge/Built_with-Expo_SDK_54-000.svg?logo=expo)]()
+</div>
 
-> [!CAUTION]
-> **🚧 Status: Work in Progress**
-> 
-> This project is currently in **Active Development**.
-> - **Frontend**: Core UI/UX is built, but some features are pending implementation.
-> - **Backend**: Development has started, but valid API connections are **not yet integrated**.
-> - **Data**: The app currently uses **mock/placeholder data** for demonstration.
-> - **Auth**: Not connected to a provider. **Enter any random email and password** to log in.
+<br />
+
+**PrismSplit** is a mobile-first bill splitting app built for speed, transparency, and trust. It features real-time sync with **Supabase PostgreSQL**, secure authentication, and a premium UI experience.
+
+Designed as a **Portfolio Showcase** for modern React Native architecture.
+
+---
 
 ## 📱 Showcase
 
 <p align="center">
-  <img src="showcase/screenshots/V1 App/Landing/landing-06.jpg" width="30%" alt="Landing Screen" />
-  <img src="showcase/screenshots/V1 App/HomePage/home-page-01.jpg" width="30%" alt="Home Screen" />
-  <img src="showcase/screenshots/V1 App/GroupsPge/groups-list-01.jpg" width="30%" alt="Groups List" />
+  <img src="showcase/screenshots/V1 App/Landing/landing-06.jpg" width="28%" alt="Landing Screen" style="border-radius: 12px; margin-right: 10px;" />
+  <img src="showcase/screenshots/V1 App/HomePage/home-page-01.jpg" width="28%" alt="Home Screen" style="border-radius: 12px; margin-right: 10px;" />
+  <img src="showcase/screenshots/V1 App/GroupsPge/groups-list-01.jpg" width="28%" alt="Groups List" style="border-radius: 12px;" />
 </p>
-
-> **Experience the flow**: create groups, split bills, and track expenses offline.
-
-<p align="center">
-  <img src="showcase/screenshots/V1 App/GroupsPge/EditBill/edit-bill-01.jpg" width="30%" alt="Edit Bill" />
-  <img src="showcase/screenshots/V1 App/createExpense/create-expense-01.jpg" width="30%" alt="Create Expense" />
-  <img src="showcase/screenshots/V1 App/Activitypage/activity-page-01.jpg" width="30%" alt="Activity Page" />
-</p>
-
-> **Deep dive**: itemized splitting and custom shares.
-
-<p align="center">
-  <img src="showcase/screenshots/V1 App/createExpense/create-expense-06.jpg" width="30%" alt="Add Items" />
-  <img src="showcase/screenshots/V1 App/GroupsPge/selectItems/select-items-02.jpg" width="30%" alt="Select Items" />
-  <img src="showcase/screenshots/V1 App/GroupsPge/selectItems/select-items-05.jpg" width="30%" alt="Custom Splits" />
-</p>
-
-## ✨ Features
-
-- **🚀 Offline Logic**: Calculate splits, debts, and totals instantly without a server.
-- **💸 Smart Splits**: "Equal", "Exact Amounts", "Percentages", or "Shares"—handle any scenario.
-- **👥 Dynamic Groups**: Manage multiple friend groups with ease.
-- **🎨 Native Feel**: Built with Tamagui for smooth animations and a premium dark-mode aesthetic.
-- **🔒 Private by Design**: Your data lives on your device (with optional Supabase sync).
 
 ## 🛠 Tech Stack
 
-- **Framework**: [Expo SDK 54](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction/)
-- **UI System**: [Tamagui](https://tamagui.dev) + Lucide Icons
-- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
-- **Forms**: React Hook Form + Zod Validation
-- **Engine**: React Native 0.81 (New Architecture enabled)
+Built with the "Golden Stack" for 2025 mobile development:
 
-## 📂 Project Structure
+| Layer | Technology | Why? |
+| :--- | :--- | :--- |
+| **Framework** | **Expo SDK 54** (React Native) | Fast iteration, robust native modules, new architecture enabled. |
+| **Logic** | **TypeScript** | Strict type safety shared between Frontend & Backend. |
+| **State** | **Zustand** | Minimalist, highly performant global state management. |
+| **Auth & Storage** | **react-native-encrypted-storage** | Secure auth token storage with Android Keystore/iOS Keychain. |
+| **Backend** | **Supabase** (PostgreSQL) | Relational integrity, Row Level Security (RLS), and Realtime subs. |
+| **UI System** | **Tamagui** | High-performance styling with compiler optimization. |
+| **Validation** | **Zod** | Runtime schema validation for all API inputs. |
 
-Verified layout as of 2025:
+## 📐 Architecture
 
-- **`src/`** — **Project Root** (contains `package.json` and source)
-  - `app/` — **Routing Root**. All screens live here (file-based routing).
-    - `(tabs)/` — Main tab navigation (Bills, Groups, Profile).
-    - `bill/[id].tsx` — Detailed bill editing and splitting.
-  - `components/`
-    - `ui/` — Base design system tokens (Buttons, Cards, Inputs).
-  - `features/` — Domain logic for Bills, Groups, and Users.
-  - `lib/` — Core utilities (Supabase client, calculations).
-  - `store/` — Global state definitions.
-- `showcase/` — Marketing assets and screenshots.
-- `docs/` — Architecture decisions and guides.
-- `design/` — Figma assets and tokens.
+### Supabase-Powered Backend
+
+PrismSplit uses **Supabase** as the primary backend:
+
+1. **PostgreSQL Database**: All data (users, groups, bills, splits) stored with full relational integrity.
+2. **Row Level Security (RLS)**: Enforced policies ensure users can only access their own data.
+3. **SECURITY DEFINER Functions**: Complex multi-table operations (like group/bill creation) use RPC functions.
+4. **Real-time Subscriptions**: (Coming Soon) Live updates when group members make changes.
+
+```mermaid
+graph LR
+    A[User Action] --> B[Zustand Store]
+    B --> C[Supabase Client]
+    C --> D[PostgreSQL + RLS]
+    D --> E[Real-time Updates]
+```
+
+## ✨ Key Features
+
+- **🔐 Secure Authentication**: Email/password auth with encrypted token storage.
+- **👥 Group Management**: Create groups, invite members, manage expenses together.
+- **💸 Complex Splitting**: Supports "Equal", "Exact Amounts", "Percentages", and item-level splits.
+- **📱 Item-by-Item Selection**: Tap items you consumed, automatically calculates your share.
+- **🔐 Row Level Security**: Database policies ensure users can *only* access data they own or share.
+- **🎨 Premium UX**: Haptic feedback, fluid animations (Reanimated), and Dark Mode by default.
+- **🧾 Receipt Parsing (Planned)**: AI-powered scanning to auto-itemize receipts.
 
 ## 🚀 Getting Started
 
-PrismSplit uses a `src` folder for the main application code.
+### Prerequisites
 
-### 1. Setup
+- Node.js >= 18
+- Java JDK 17 (for Android builds)
+- Android Studio with SDK & NDK (for Android)
+- Supabase Account (Free Tier)
+
+### 1. Clone & Install
 
 ```bash
-# Clone the repo
-git clone https://github.com/architagrawal/prismSplit.git
-cd prismSplit
-
-# Enter the source directory
-cd src
-
-# Install dependencies
+git clone https://github.com/architagrawal/prismsplit.git
+cd prismsplit/Frontend/src
 npm install
 ```
 
-### 2. Run the App
+### 2. Supabase Setup
 
-```bash
-# Start the Expo development server
-npm start
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Run the schema migration in SQL Editor:
+   ```sql
+   -- Copy contents from Backend/supabase/migrations/20241223_initial_schema.sql
+   ```
+3. Note your **Project URL** and **Anon Key** from Settings > API
 
-# Tips:
-# - Press 'a' to open on Android Emulator
-# - Press 'i' to open on iOS Simulator
-# - Press 'w' to open in Web Browser
+### 3. Environment Setup
+
+Create a `.env` file in `Frontend/src/`:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_KEY=your-anon-key-here
 ```
 
-## 📦 Building for Release
+### 4. Run the App
 
-To generate an APK for manual installation (or GitHub Releases):
-
+**Development (Expo Go):**
 ```bash
-# Install EAS CLI if you haven't
-npm install -g eas-cli
-
-# Login to your Expo account
-eas login
-
-# Build the APK locally (uses your own PC's compute)
-eas build -p android --profile preview --local
+npx expo start
 ```
 
-> **Note**: Local builds require you to have [Java (OpenJDK 17)](https://adoptium.net/) and the [Android SDK](https://developer.android.com/studio) installed and configured on your machine.
+**Android Device/Emulator:**
+```bash
+# Set Java 17 (Windows PowerShell)
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
 
+npx expo run:android
+```
 
-The command will output a download link for the `.apk` file. You can then upload this file to the [GitHub Releases](https://github.com/architagrawal/prismSplit/releases) page.
+**iOS Simulator:**
+```bash
+npx expo run:ios
+```
+
+## 📁 Project Structure
+
+```
+PrismSplit/
+├── Frontend/
+│   └── src/
+│       ├── app/              # Expo Router screens
+│       ├── components/       # Reusable UI components
+│       ├── lib/
+│       │   ├── store/        # Zustand stores (auth, bills, groups)
+│       │   └── supabase.ts   # Supabase client config
+│       ├── theme/            # Tamagui tokens & themes
+│       └── types/            # TypeScript models
+└── Backend/
+    └── supabase/
+        ├── migrations/       # Database schema
+        └── functions/        # Edge Functions (planned)
+```
+
+## 🔐 Security Notes
+
+- **Never commit `.env` files** - Contains your Supabase keys
+- **Anon key is safe for clients** - Row Level Security protects data
+- **Service role key is secret** - Never expose in frontend code
 
 ## 🤝 Contributing
 
-We welcome contributions! Please check `CONTRIBUTING.md` for guidelines.  
-To run tests (if available): `npm test` inside the `src` folder.
+This project is Open Source under the **MIT License**.
+PRs are welcome! Please check `CONTRIBUTING.md` for guidelines.
+
+### Quick Start for Contributors
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes
+4. Test on Android/iOS
+5. Submit a PR
 
 ## 📄 License
 
-**Source Available**: This project is open for contribution but is **NOT Open Source**.  
-Copyright (c) 2025-Present Archit Agrawal. All Rights Reserved.
+**MIT License** - See [LICENSE](LICENSE) for details.
 
-- **Allowed**: Viewing code, forking for PRs, learning.
-- **Forbidden**: Commercial use, redistribution, deploying as your own service.
+Copyright (c) 2025-Present Archit Agrawal.
 
-See [LICENSE](LICENSE) for full details.
+---
+
+<div align="center">
+  <p>Built with ❤️ using React Native, Expo, and Supabase</p>
+</div>

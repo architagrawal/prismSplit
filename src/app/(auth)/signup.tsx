@@ -29,19 +29,36 @@ export default function SignupScreen() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
+    // Name validation
     if (!fullName.trim()) {
       newErrors.fullName = 'Name is required';
+    } else if (fullName.trim().length < 2) {
+      newErrors.fullName = 'Name must be at least 2 characters';
     }
+    
+    // Email validation
     if (!email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Invalid email format';
     }
+    
+    // Password strength validation
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    } else {
+      const issues: string[] = [];
+      if (password.length < 8) issues.push('8+ characters');
+      if (!/[A-Z]/.test(password)) issues.push('uppercase');
+      if (!/[a-z]/.test(password)) issues.push('lowercase');
+      if (!/[0-9]/.test(password)) issues.push('number');
+      
+      if (issues.length > 0) {
+        newErrors.password = `Missing: ${issues.join(', ')}`;
+      }
     }
+    
+    // Confirm password
     if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
@@ -157,6 +174,57 @@ export default function SignupScreen() {
               </Stack>
             }
           />
+          
+          {/* Password Requirements */}
+          <YStack gap="$1" marginTop="$-2" paddingHorizontal="$1">
+            <Text fontSize={11} color={themeColors.textMuted} marginBottom="$1">
+              Password requirements:
+            </Text>
+            <Stack flexDirection="row" alignItems="center" gap="$2">
+              <Stack 
+                width={6} 
+                height={6} 
+                borderRadius={3} 
+                backgroundColor={password.length >= 8 ? themeColors.success : themeColors.textMuted} 
+              />
+              <Text fontSize={11} color={password.length >= 8 ? themeColors.success : themeColors.textMuted}>
+                At least 8 characters
+              </Text>
+            </Stack>
+            <Stack flexDirection="row" alignItems="center" gap="$2">
+              <Stack 
+                width={6} 
+                height={6} 
+                borderRadius={3} 
+                backgroundColor={/[A-Z]/.test(password) ? themeColors.success : themeColors.textMuted} 
+              />
+              <Text fontSize={11} color={/[A-Z]/.test(password) ? themeColors.success : themeColors.textMuted}>
+                One uppercase letter
+              </Text>
+            </Stack>
+            <Stack flexDirection="row" alignItems="center" gap="$2">
+              <Stack 
+                width={6} 
+                height={6} 
+                borderRadius={3} 
+                backgroundColor={/[a-z]/.test(password) ? themeColors.success : themeColors.textMuted} 
+              />
+              <Text fontSize={11} color={/[a-z]/.test(password) ? themeColors.success : themeColors.textMuted}>
+                One lowercase letter
+              </Text>
+            </Stack>
+            <Stack flexDirection="row" alignItems="center" gap="$2">
+              <Stack 
+                width={6} 
+                height={6} 
+                borderRadius={3} 
+                backgroundColor={/[0-9]/.test(password) ? themeColors.success : themeColors.textMuted} 
+              />
+              <Text fontSize={11} color={/[0-9]/.test(password) ? themeColors.success : themeColors.textMuted}>
+                One number
+              </Text>
+            </Stack>
+          </YStack>
 
           <Input
             label="Confirm Password"

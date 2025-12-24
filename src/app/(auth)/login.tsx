@@ -26,9 +26,14 @@ export default function LoginScreen() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
+    // Email validation
     if (!email.trim()) {
       newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
+    
+    // Password validation
     if (!password) {
       newErrors.password = 'Password is required';
     }
@@ -43,8 +48,24 @@ export default function LoginScreen() {
     try {
       await login(email, password);
       router.replace('/(tabs)');
-    } catch (error) {
-      setErrors({ email: 'Invalid credentials' });
+    } catch (error: any) {
+      // Map Supabase error messages to user-friendly messages
+      const errorMessage = error?.message?.toLowerCase() || '';
+      
+      if (errorMessage.includes('invalid login credentials') || 
+          errorMessage.includes('invalid email or password')) {
+        setErrors({ general: 'Incorrect email or password. Please try again.' });
+      } else if (errorMessage.includes('email not confirmed')) {
+        setErrors({ general: 'Please check your email and confirm your account.' });
+      } else if (errorMessage.includes('too many requests')) {
+        setErrors({ general: 'Too many login attempts. Please wait a moment.' });
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        setErrors({ general: 'Network error. Please check your connection.' });
+      } else if (errorMessage.includes('validation')) {
+        setErrors({ general: error.message });
+      } else {
+        setErrors({ general: 'Login failed. Please try again.' });
+      }
     }
   };
 
@@ -131,6 +152,20 @@ export default function LoginScreen() {
             </Text>
           </Stack>
         </YStack>
+
+        {/* General Error Message */}
+        {errors.general && (
+          <Stack 
+            backgroundColor="rgba(239, 68, 68, 0.1)" 
+            padding="$3" 
+            borderRadius="$3"
+            marginTop="$3"
+          >
+            <Text color={themeColors.error} fontSize={14} textAlign="center">
+              {errors.general}
+            </Text>
+          </Stack>
+        )}
 
         {/* Submit */}
         <YStack marginTop="$5" gap="$3">

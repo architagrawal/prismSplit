@@ -986,7 +986,7 @@ export default function BillDetailScreen() {
                         name={item.name}
                         price={item.price}
                         quantity={item.quantity}
-                        category={item.category}
+                        category={item.category || bill.category}
                         participants={segments.map(s => ({
                         userId: s.userId,
                         name: s.userId === (user?.id || 'current-user') 
@@ -998,8 +998,9 @@ export default function BillDetailScreen() {
                         isSelected={isSelected}
                         onPress={() => {
                           if (item.isCollapsed && item.collapsedIds) {
+                            // Toggle only ONE item from the collapsed group (first one)
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            item.collapsedIds.forEach(id => handleToggle(id));
+                            handleToggle(item.collapsedIds[0]);
                           } else {
                             handleToggle(item.id);
                           }

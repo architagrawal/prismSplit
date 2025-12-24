@@ -311,7 +311,7 @@ export function GroupDetailContent({
               {group.name}
             </Text>
             <Text fontSize={12} color={themeColors.textSecondary}>
-              {group.member_count} members • {group.currency}
+              {groupMembers.length} members • {group.currency}
             </Text>
           </YStack>
         </XStack>

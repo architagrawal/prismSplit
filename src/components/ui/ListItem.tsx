@@ -434,7 +434,7 @@ export function ItemRow({
                 </Text>
                 {quantity > 1 && (
                   <Text fontSize={12} color={themeColors.textSecondary}>
-                     ({quantity})
+                     × {quantity}
                   </Text>
                 )}
              </Stack>

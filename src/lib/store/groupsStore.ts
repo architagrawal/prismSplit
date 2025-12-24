@@ -2,12 +2,12 @@
  * PrismSplit Groups Store
  * 
  * Manages groups, members, and group-related state.
+ * Connected to Supabase for persistent storage.
  */
 
 import { create } from 'zustand';
-
+import { supabase, ensureSession } from '@/lib/supabase';
 import type { Group, GroupMember, Currency } from '@/types/models';
-import { demoGroups, demoGroupMembers } from '@/lib/api/demo';
 
 interface GroupsState {
   // State
@@ -42,10 +42,50 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      set({ groups: demoGroups, isLoading: false });
-    } catch (error) {
-      set({ error: 'Failed to fetch groups', isLoading: false });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        set({ groups: [], isLoading: false });
+        return;
+      }
+
+      // Get groups where user is a member, with member count
+      const { data, error } = await supabase
+        .from('group_members')
+        .select(`
+          group:groups (
+            id,
+            name,
+            emoji,
+            currency,
+            invite_code,
+            created_by,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Transform to Group format
+      const groups: Group[] = (data || [])
+        .filter((d: any) => d.group !== null)
+        .map((d: any) => ({
+          id: d.group.id,
+          name: d.group.name,
+          emoji: d.group.emoji,
+          currency: d.group.currency,
+          invite_code: d.group.invite_code,
+          member_count: 0, // Will be fetched separately if needed
+          your_balance: 0, // Calculated on demand
+          created_at: d.group.created_at,
+          updated_at: d.group.updated_at,
+        }));
+
+      set({ groups, isLoading: false });
+    } catch (error: any) {
+      console.error('Failed to fetch groups:', error);
+      set({ error: error.message || 'Failed to fetch groups', isLoading: false });
     }
   },
 
@@ -54,27 +94,77 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const group = demoGroups.find(g => g.id === id);
-      if (group) {
-        set({ currentGroup: group, isLoading: false });
-      } else {
-        set({ error: 'Group not found', isLoading: false });
-      }
-    } catch (error) {
-      set({ error: 'Failed to fetch group', isLoading: false });
+      const { data, error } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      const group: Group = {
+        id: data.id,
+        name: data.name,
+        emoji: data.emoji,
+        currency: data.currency,
+        invite_code: data.invite_code,
+        member_count: 0,
+        your_balance: 0,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      };
+
+      set({ currentGroup: group, isLoading: false });
+    } catch (error: any) {
+      console.error('Failed to fetch group:', error);
+      set({ error: error.message || 'Group not found', isLoading: false });
     }
   },
 
   // Fetch members for a group
   fetchGroupMembers: async (groupId: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const groupMembers = demoGroupMembers[groupId] || [];
-      set(state => ({
-        members: { ...state.members, [groupId]: groupMembers }
+      const { data, error } = await supabase
+        .from('group_members')
+        .select(`
+          id,
+          role,
+          color_index,
+          joined_at,
+          user_id,
+          user:profiles (
+            id,
+            full_name,
+            avatar_url,
+            email
+          )
+        `)
+        .eq('group_id', groupId);
+
+      if (error) throw error;
+
+      const members: GroupMember[] = (data || []).map((m: any) => ({
+        id: m.id,
+        group_id: groupId,
+        user_id: m.user_id,
+        role: m.role,
+        color_index: m.color_index,
+        joined_at: m.joined_at,
+        balance: 0, // Calculated on demand
+        user: {
+          id: m.user?.id || m.user_id,
+          full_name: m.user?.full_name || 'Unknown',
+          avatar_url: m.user?.avatar_url || null,
+          email: m.user?.email || '',
+          color_index: m.user?.color_index || 0,
+          created_at: m.user?.created_at || new Date().toISOString(),
+        },
       }));
-    } catch (error) {
+
+      set(state => ({
+        members: { ...state.members, [groupId]: members }
+      }));
+    } catch (error: any) {
       console.error('Failed to fetch members:', error);
     }
   },
@@ -84,28 +174,50 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Ensure session is loaded before making database request
+      await ensureSession();
       
-      const newGroup: Group = {
-        id: `group-${Date.now()}`,
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Generate invite code
+      const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      // Use RPC function to create group (bypasses RLS timing issues)
+      const { data: newGroupId, error: rpcError } = await supabase.rpc(
+        'create_group_for_user',
+        {
+          p_name: name,
+          p_emoji: emoji,
+          p_currency: currency,
+          p_invite_code: inviteCode,
+          p_user_id: user.id,
+        }
+      );
+
+      if (rpcError) throw rpcError;
+
+      const group: Group = {
+        id: newGroupId,
         name,
         emoji,
         currency,
+        invite_code: inviteCode,
         member_count: 1,
         your_balance: 0,
-        invite_code: Math.random().toString(36).substring(2, 8).toUpperCase(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      
+
       set(state => ({
-        groups: [newGroup, ...state.groups],
+        groups: [group, ...state.groups],
         isLoading: false,
       }));
-      
-      return newGroup;
-    } catch (error) {
-      set({ error: 'Failed to create group', isLoading: false });
+
+      return group;
+    } catch (error: any) {
+      console.error('Failed to create group:', error);
+      set({ error: error.message || 'Failed to create group', isLoading: false });
       throw error;
     }
   },
@@ -113,8 +225,17 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
   // Update group
   updateGroup: async (id: string, updates: Partial<Group>) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      const { error } = await supabase
+        .from('groups')
+        .update({
+          name: updates.name,
+          emoji: updates.emoji,
+          currency: updates.currency,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
       set(state => ({
         groups: state.groups.map(g => 
           g.id === id ? { ...g, ...updates, updated_at: new Date().toISOString() } : g
@@ -123,36 +244,53 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
           ? { ...state.currentGroup, ...updates, updated_at: new Date().toISOString() }
           : state.currentGroup,
       }));
-    } catch (error) {
-      set({ error: 'Failed to update group' });
+    } catch (error: any) {
+      console.error('Failed to update group:', error);
+      set({ error: error.message || 'Failed to update group' });
     }
   },
 
-  // Delete group
+  // Delete group (admin only)
   deleteGroup: async (id: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       set(state => ({
         groups: state.groups.filter(g => g.id !== id),
         currentGroup: state.currentGroup?.id === id ? null : state.currentGroup,
       }));
-    } catch (error) {
-      set({ error: 'Failed to delete group' });
+    } catch (error: any) {
+      console.error('Failed to delete group:', error);
+      set({ error: error.message || 'Failed to delete group' });
     }
   },
 
   // Leave group
   leaveGroup: async (id: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
       set(state => ({
         groups: state.groups.filter(g => g.id !== id),
         currentGroup: state.currentGroup?.id === id ? null : state.currentGroup,
       }));
-    } catch (error) {
-      set({ error: 'Failed to leave group' });
+    } catch (error: any) {
+      console.error('Failed to leave group:', error);
+      set({ error: error.message || 'Failed to leave group' });
     }
   },
 
@@ -161,21 +299,66 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo, return first group
-      const group = demoGroups[0];
-      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Find group by invite code
+      const { data: groupData, error: findError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('invite_code', code.toUpperCase())
+        .single();
+
+      if (findError || !groupData) {
+        throw new Error('Invalid invite code');
+      }
+
+      // Check if already a member
+      const { data: existingMember } = await supabase
+        .from('group_members')
+        .select('id')
+        .eq('group_id', groupData.id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingMember) {
+        throw new Error('Already a member of this group');
+      }
+
+      // Add user as member
+      const { error: joinError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: groupData.id,
+          user_id: user.id,
+          role: 'member',
+        });
+
+      if (joinError) throw joinError;
+
+      const group: Group = {
+        id: groupData.id,
+        name: groupData.name,
+        emoji: groupData.emoji,
+        currency: groupData.currency,
+        invite_code: groupData.invite_code,
+        member_count: 0,
+        your_balance: 0,
+        created_at: groupData.created_at,
+        updated_at: groupData.updated_at,
+      };
+
       set(state => ({
         groups: state.groups.some(g => g.id === group.id) 
           ? state.groups 
           : [group, ...state.groups],
         isLoading: false,
       }));
-      
+
       return group;
-    } catch (error) {
-      set({ error: 'Invalid invite code', isLoading: false });
+    } catch (error: any) {
+      console.error('Failed to join group:', error);
+      set({ error: error.message || 'Invalid invite code', isLoading: false });
       throw error;
     }
   },
