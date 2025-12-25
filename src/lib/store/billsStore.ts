@@ -603,7 +603,7 @@ export const useBillsStore = create<BillsState>((set, get) => ({
   // Confirm item selections
   confirmSelections: async (billId: string) => {
     // TODO: Implement - update splits based on selectedItems
-    console.log('Confirming selections for bill:', billId);
+   // console.log('Confirming selections for bill:', billId);
     get().clearSelections();
   },
 

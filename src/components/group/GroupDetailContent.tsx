@@ -487,7 +487,7 @@ export function GroupDetailContent({
             }
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerStyle={{ paddingBottom: 100 }}
             ListHeaderComponent={filtersUI}
             renderSectionHeader={({ section }) => (
             <XStack

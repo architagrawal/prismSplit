@@ -193,7 +193,7 @@ export default function HomeScreen() {
 
           {/* Top Groups */}
           {groups.slice(0, 5).map(g => (
-             <Pressable key={g.id} onPress={() => router.push(`/(tabs)/groups/${g.id}` as any)}>
+             <Pressable key={g.id} onPress={() => router.push(`/group/${g.id}` as any)}>
                 <YStack alignItems="center" gap="$2" width={70}>
                    <Stack width={56} height={56} borderRadius={28} overflow="hidden" borderWidth={2} borderColor={themeColors.border}>
                       <GroupImage groupId={g.id} size="lg" />

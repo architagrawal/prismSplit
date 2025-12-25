@@ -67,7 +67,7 @@ export async function initializeSession(): Promise<Session | null> {
       return null;
     }
     sessionInitialized = true;
-    console.log('Session initialized:', data.session?.user?.email || 'No session');
+    // console.log('Session initialized:', data.session?.user?.email || 'No session');
     return data.session;
   } catch (error) {
     console.error('Session initialization error:', error);

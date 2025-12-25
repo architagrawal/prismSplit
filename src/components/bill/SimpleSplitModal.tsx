@@ -64,7 +64,7 @@ export function SimpleSplitModal({
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  console.log('SimpleSplitModal: Render, visible:', visible);
+  // console.log('SimpleSplitModal: Render, visible:', visible);
 
   // Initialize
   useEffect(() => {

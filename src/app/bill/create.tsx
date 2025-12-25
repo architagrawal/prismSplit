@@ -664,7 +664,6 @@ export default function CreateBillScreen() {
                                 alignItems="center"
                                 borderRadius={12}
                                 backgroundColor={themeColors.surfaceElevated}
-                                backgroundColor={themeColors.surfaceElevated}
                                 borderWidth={2}
                                 borderColor={isAllEqual ? themeColors.primary : 'transparent'}
                             >
@@ -683,7 +682,7 @@ export default function CreateBillScreen() {
                         {/* CUSTOMIZE (Opens Modal) */}
                         <Pressable 
                             onPress={() => {
-                                console.log('CreateBillScreen: Customize button pressed');
+                                // console.log('CreateBillScreen: Customize button pressed');
                                 // Alert.alert('Debug', 'Customize Pressed'); // Uncomment if needed, but logging first.
                                 // Actually, user said nothing happens. Let's use Alert to be 100% sure.
                                 // Alert.alert('Debug', 'Opening Modal...');
@@ -696,7 +695,6 @@ export default function CreateBillScreen() {
                                 paddingVertical="$3"
                                 alignItems="center"
                                 borderRadius={12}
-                                backgroundColor={themeColors.surfaceElevated}
                                 backgroundColor={themeColors.surfaceElevated}
                                 borderWidth={2}
                                 borderColor={isCustomized ? themeColors.primary : 'transparent'}
