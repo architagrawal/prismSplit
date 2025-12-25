@@ -3,10 +3,12 @@
  * 
  * 5-tab navigation: Home, Groups, FAB, Friends, Account
  * Center FAB with expandable menu
+ * Includes authentication guard to redirect unauthenticated users
  */
 
 import React, { useState } from 'react';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, useRouter, Redirect } from 'expo-router';
+import { useAuthStore } from '@/lib/store';
 import { Pressable, StyleSheet, Animated, View } from 'react-native';
 import { Stack, Text, YStack } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -253,6 +255,19 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const themeColors = useThemeColors();
   const bottomPadding = Math.max(insets.bottom, 8);
+  
+  // Authentication guard - redirect to auth flow if not logged in
+  const { isAuthenticated, hasOnboarded, _hasHydrated } = useAuthStore();
+  
+  // Wait for persisted state to load before making redirect decisions
+  if (!_hasHydrated) {
+    return null; // Show nothing while loading persisted state
+  }
+  
+  if (!isAuthenticated) {
+    // User is not logged in, redirect to welcome/login
+    return <Redirect href="/(auth)/welcome" />;
+  }
   
   return (
     <View style={{ flex: 1 }}>

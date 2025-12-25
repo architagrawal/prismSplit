@@ -81,7 +81,7 @@ export default function ActivityScreen() {
     if (activity.entity_type === 'bill') {
       router.push(`/bill/${activity.entity_id}`);
     } else if (activity.entity_type === 'group') {
-      router.push(`/group/${activity.group.id}`);
+      router.push(`/(tabs)/groups/${activity.group.id}`);
     }
   };
 

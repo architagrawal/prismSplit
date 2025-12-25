@@ -18,6 +18,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   hasOnboarded: boolean;
+  _hasHydrated: boolean; // Tracks if persisted state has loaded
 
   // Actions
   login: (email: string, password: string) => Promise<void>;
@@ -27,6 +28,7 @@ interface AuthState {
   setOnboarded: () => void;
   updateProfile: (updates: Partial<User>) => void;
   refreshSession: () => Promise<void>;
+  setHasHydrated: (state: boolean) => void;
 }
 
 // Helper to map Supabase User to App User
@@ -49,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       hasOnboarded: false,
+      _hasHydrated: false,
 
       // Login with email/password
       login: async (email: string, password: string) => {
@@ -169,7 +172,12 @@ export const useAuthStore = create<AuthState>()(
         } else {
            // set({ user: null, isAuthenticated: false });
         }
-      }
+      },
+
+      // Set hydration state (called when persisted state is loaded)
+      setHasHydrated: (state: boolean) => {
+        set({ _hasHydrated: state });
+      },
     }),
     {
       name: 'auth-storage',
@@ -179,6 +187,9 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         hasOnboarded: state.hasOnboarded,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

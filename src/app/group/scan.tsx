@@ -52,7 +52,7 @@ export default function QRScannerScreen() {
     try {
       const group = await joinGroup(inviteCode.toUpperCase());
       showToast({ type: 'success', message: `Joined ${group.name}!` });
-      router.replace(`/group/${group.id}` as any);
+      router.replace(`/(tabs)/groups/${group.id}` as any);
     } catch (error) {
       showToast({ type: 'error', message: 'Invalid QR code' });
       setScanned(false);
