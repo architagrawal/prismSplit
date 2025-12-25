@@ -13,28 +13,34 @@ import * as Haptics from 'expo-haptics';
 
 import { Screen, Button, Card } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useGroupsStore, useUIStore } from '@/lib/store';
 
 export default function JoinGroupScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const [code, setCode] = useState('');
-  const [loading, setLoading] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [joinedGroupName, setJoinedGroupName] = useState('');
+  
+  const { joinGroup, isLoading, error } = useGroupsStore();
+  const { showToast } = useUIStore();
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (code.length < 6) return;
     
-    setLoading(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const group = await joinGroup(code.toUpperCase());
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setJoinedGroupName(group.name);
       setJoined(true);
       
       setTimeout(() => {
-        router.replace('/(tabs)/groups' as any);
+        router.replace(`/group/${group.id}` as any);
       }, 1500);
-    }, 1000);
+    } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      showToast({ type: 'error', message: err.message || 'Invalid invite code' });
+    }
   };
 
   if (joined) {
@@ -56,7 +62,7 @@ export default function JoinGroupScreen() {
               You're In!
             </Text>
             <Text fontSize={16} color={themeColors.textSecondary} textAlign="center">
-              You've joined the group. Redirecting...
+              You've joined {joinedGroupName}. Redirecting...
             </Text>
           </YStack>
         </YStack>
@@ -93,7 +99,7 @@ export default function JoinGroupScreen() {
         <YStack alignItems="center" gap="$3">
           <TextInput
             value={code}
-            onChangeText={(text) => setCode(text.toUpperCase().slice(0, 6))}
+            onChangeText={(text: string) => setCode(text.toUpperCase().slice(0, 6))}
             placeholder="XXXXXX"
             placeholderTextColor={themeColors.textMuted}
             maxLength={6}
@@ -134,7 +140,7 @@ export default function JoinGroupScreen() {
         variant="primary"
         size="lg"
         fullWidth
-        loading={loading}
+        loading={isLoading}
         disabled={code.length < 6}
         onPress={handleJoin}
       >

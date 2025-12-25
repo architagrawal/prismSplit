@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { demoBalances } from '@/lib/api/demo'; // Using demo data for logic simulation
-import { useActivityStore } from '@/lib/store';
+import { useActivityStore, useBalancesStore } from '@/lib/store';
 
 export type FocusState = 'debt' | 'lender' | 'zen';
 
@@ -22,11 +21,24 @@ export function useSmartFeed() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const { activities } = useActivityStore();
+  const { friendBalances, netBalance: storeNetBalance, fetchAllBalances, isLoading } = useBalancesStore();
+
+  // Fetch balances on mount
+  useEffect(() => {
+    fetchAllBalances();
+  }, []);
+
+  // Convert friendBalances to array for calculations
+  const balancesArray = useMemo(() => {
+    return Object.values(friendBalances);
+  }, [friendBalances]);
 
   // 1. Calculate Focus State
   const { focusState, netBalance, totalOwed, totalOwing } = useMemo(() => {
-    const owed = demoBalances.filter(b => b.balance > 0).reduce((sum, b) => sum + b.balance, 0);
-    const owing = demoBalances.filter(b => b.balance < 0).reduce((sum, b) => sum + Math.abs(b.balance), 0);
+    // Positive balance = they owe you (you're owed)
+    // Negative balance = you owe them (you're owing)
+    const owed = balancesArray.filter(b => b.balance > 0).reduce((sum, b) => sum + b.balance, 0);
+    const owing = balancesArray.filter(b => b.balance < 0).reduce((sum, b) => sum + Math.abs(b.balance), 0);
     
     let state: FocusState = 'zen';
     if (owing > owed * 1.1 && owing > 20) state = 'debt';
@@ -38,24 +50,24 @@ export function useSmartFeed() {
       totalOwed: owed,
       totalOwing: owing 
     };
-  }, []);
+  }, [balancesArray]);
 
   // 2. Generate Smart Feed Items
   const feedItems = useMemo(() => {
     const items: SmartFeedItem[] = [];
 
     // Rule A: Urgent Debt (High Priority)
-    const significantDebts = demoBalances.filter(b => b.balance < -10).sort((a, b) => a.balance - b.balance);
+    const significantDebts = balancesArray.filter(b => b.balance < -10).sort((a, b) => a.balance - b.balance);
     if (significantDebts.length > 0) {
       const topDebt = significantDebts[0];
       items.push({
-        id: `debt-${topDebt.user_id}`,
+        id: `debt-${topDebt.userId}`,
         type: 'urgent',
-        title: `Settle up with ${topDebt.user.full_name}`,
+        title: `Settle up with ${topDebt.name}`,
         subtitle: `You owe $${Math.abs(topDebt.balance).toFixed(2)}. Clear this to get back to Zen.`,
         actionLabel: 'Pay Now',
         actionType: 'modal',
-        actionPayload: topDebt.user_id,
+        actionPayload: topDebt.userId,
         iconName: 'alert-circle',
         color: themeColors.error
       });
@@ -63,19 +75,21 @@ export function useSmartFeed() {
 
     // Rule B: Pending Bill Review (Action)
     if (activities.length > 0) {
-       // Find a bill creation activity if possible, otherwise mock one efficiently
+       // Find a bill creation activity if possible
        const billActivity = activities.find(a => a.type === 'bill_created');
-       items.push({
-         id: 'review-bill-mock',
-         type: 'action',
-         title: billActivity ? `Review "${billActivity.group.name}"` : 'Review "Sunday Brunch"',
-         subtitle: billActivity ? `${billActivity.user.full_name} added a bill.` : 'Sarah added a new bill. Please confirm your share.',
-         actionLabel: 'Review',
-         actionType: 'navigate',
-         actionPayload: '/bill/bill-1', // Linking to demo bill 1 for now
-         iconName: 'check-circle',
-         color: themeColors.primary
-       });
+       if (billActivity) {
+         items.push({
+           id: `review-bill-${billActivity.entity_id}`,
+           type: 'action',
+           title: `Review "${billActivity.group.name}"`,
+           subtitle: `${billActivity.user.full_name} added a bill.`,
+           actionLabel: 'Review',
+           actionType: 'navigate',
+           actionPayload: `/bill/${billActivity.entity_id}`,
+           iconName: 'check-circle',
+           color: themeColors.primary
+         });
+       }
     }
 
     // Rule C: Insights (Positive Reinforcement)
@@ -84,14 +98,14 @@ export function useSmartFeed() {
         id: 'insight-lender',
         type: 'insight',
         title: 'You are the Bank 🏦',
-        subtitle: `You're carrying ${totalOwed > 0 ? ((totalOwed / (totalOwed + 10)) * 100).toFixed(0) : 0}% of the group interaction.`,
+        subtitle: `You're owed $${totalOwed.toFixed(2)} across all groups.`,
         actionLabel: 'Remind All',
         actionType: 'toast',
         actionPayload: 'Friendly reminders sent! 📨',
         iconName: 'zap',
         color: themeColors.secondary
       });
-    } else if (focusState === 'zen') {
+    } else if (focusState === 'zen' && balancesArray.length === 0) {
       items.push({
         id: 'insight-zen',
         type: 'insight',
@@ -103,13 +117,14 @@ export function useSmartFeed() {
     }
 
     return items;
-  }, [focusState, totalOwed, activities, themeColors]);
+  }, [focusState, totalOwed, activities, themeColors, balancesArray]);
 
   return {
     focusState,
     netBalance,
     feedItems,
     totalOwed,
-    totalOwing
+    totalOwing,
+    isLoading
   };
 }

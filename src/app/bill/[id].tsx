@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Pressable, RefreshControl, Platform, UIManager, Animated } from 'react-native';
+import { Pressable, RefreshControl, Platform, UIManager, Animated, type RefreshControlProps } from 'react-native';
 import { ArrowLeft, Share2, Settings2, Plus, Pencil, Trash2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Reanimated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -31,6 +31,12 @@ import type { BillItemWithSplits } from '@/types/models';
 
 // Enable LayoutAnimation on Android
 
+
+
+const AnimatedView: any = Animated.View;
+
+// Fix for React 19 JSX element class type mismatch
+const PlatformRefreshControl = RefreshControl as unknown as React.FC<RefreshControlProps>;
 
 export default function BillDetailScreen() {
   const router = useRouter();
@@ -222,7 +228,7 @@ export default function BillDetailScreen() {
     });
 
     return (
-      <Animated.View
+      <AnimatedView
         style={{
           width: 56,
           justifyContent: 'center',
@@ -246,7 +252,7 @@ export default function BillDetailScreen() {
         >
           <Trash2 size={20} color="white" />
         </Pressable>
-      </Animated.View>
+      </AnimatedView>
     );
   };
 
@@ -264,15 +270,17 @@ export default function BillDetailScreen() {
 
   // Pre-populate selections from existing splits where current user participates
   useEffect(() => {
-    if (!initialized && user) {
+    if (!initialized && user && storeItems && storeItems.length > 0) {
       // Check each item to see if current user is already in the split
       const preSelectedIds: string[] = [];
-      demoBillItems.forEach(item => {
-        const userAlreadyInSplit = item.splits.some(s => s.user_id === user.id);
+      (storeItems as BillItemWithSplits[]).forEach(item => {
+        const userAlreadyInSplit = item.splits?.some((s: any) => s.user_id === user.id);
         if (userAlreadyInSplit) {
           preSelectedIds.push(item.id);
         }
       });
+      
+      console.log('Pre-selecting items where user has splits:', preSelectedIds);
       
       // Add pre-selected items to store
       preSelectedIds.forEach(itemId => {
@@ -283,7 +291,7 @@ export default function BillDetailScreen() {
       
       setInitialized(true);
     }
-  }, [user, initialized]);
+  }, [user, initialized, storeItems]);
 
   const bill = currentBill;
   const allMembers = bill ? (demoGroupMembers[bill.group_id] || []) : [];
@@ -692,7 +700,7 @@ export default function BillDetailScreen() {
       <ScrollView
         flex={1}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <PlatformRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
         onScrollBeginDrag={() => {

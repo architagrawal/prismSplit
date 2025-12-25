@@ -4,7 +4,11 @@
  * Standalone version with back button navigation and tab bar overlay.
  */
 
-import { View } from 'react-native';
+import React from 'react';
+import { View as RNView, ViewProps } from 'react-native';
+
+// Fix for React 19 / RN 0.81 type mismatch where View is seen as missing 'props'
+const View = RNView as unknown as React.ComponentType<ViewProps>;
 import { useLocalSearchParams } from 'expo-router';
 import { Screen } from '@/components/ui';
 import { GroupDetailContent } from '@/components/group/GroupDetailContent';

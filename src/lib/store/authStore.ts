@@ -148,17 +148,30 @@ export const useAuthStore = create<AuthState>()(
         set({ hasOnboarded: true });
       },
 
-      // Update user profile
-      updateProfile: (updates: Partial<User>) => {
+      // Update user profile (syncs to Supabase)
+      updateProfile: async (updates: Partial<User>) => {
         const { user } = get();
-        if (user) {
-          set({ user: { ...user, ...updates } });
-          // TODO: Sync to Supabase
-          /*
-          supabase.auth.updateUser({
-            data: { ...updates }
-          });
-          */
+        if (!user) return;
+
+        // Update local state immediately
+        set({ user: { ...user, ...updates } });
+
+        try {
+          // Sync to Supabase profiles table
+          const { error } = await supabase
+            .from('profiles')
+            .update({
+              full_name: updates.full_name,
+              avatar_url: updates.avatar_url,
+              color_index: updates.color_index,
+            })
+            .eq('id', user.id);
+
+          if (error) {
+            console.error('Failed to sync profile to Supabase:', error);
+          }
+        } catch (error) {
+          console.error('Profile sync error:', error);
         }
       },
 

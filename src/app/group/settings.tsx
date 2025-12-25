@@ -2,7 +2,7 @@
  * PrismSplit Group Settings Screen
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Stack, Text, YStack, XStack } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable, Alert } from 'react-native';
@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Avatar, Button, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { demoGroups, demoGroupMembers, currentUser } from '@/lib/api/demo';
+import { useGroupsStore, useAuthStore } from '@/lib/store';
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -67,9 +67,21 @@ export default function GroupSettingsScreen() {
   const themeColors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const group = demoGroups.find(g => g.id === id) || demoGroups[0];
-  const members = demoGroupMembers[group.id] || [];
-  const isAdmin = members.find(m => m.user_id === currentUser.id)?.role === 'admin';
+  const { currentGroup, members, fetchGroupById, fetchGroupMembers, leaveGroup, deleteGroup } = useGroupsStore();
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (id) {
+      fetchGroupById(id);
+      fetchGroupMembers(id);
+    }
+  }, [id]);
+
+  const group = currentGroup;
+  const groupMembers = members[id || ''] || [];
+  const memberCount = groupMembers.length;
+  const currentMember = groupMembers.find(m => m.user_id === user?.id);
+  const isAdmin = currentMember?.role === 'admin';
 
   const handleLeave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -81,7 +93,12 @@ export default function GroupSettingsScreen() {
         { 
           text: 'Leave', 
           style: 'destructive',
-          onPress: () => router.replace('/(tabs)/groups' as any)
+          onPress: async () => {
+            if (id) {
+              await leaveGroup(id);
+              router.replace('/(tabs)/groups' as any);
+            }
+          }
         },
       ]
     );
@@ -97,11 +114,26 @@ export default function GroupSettingsScreen() {
         { 
           text: 'Delete', 
           style: 'destructive',
-          onPress: () => router.replace('/(tabs)/groups' as any)
+          onPress: async () => {
+            if (id) {
+              await deleteGroup(id);
+              router.replace('/(tabs)/groups' as any);
+            }
+          }
         },
       ]
     );
   };
+
+  if (!group) {
+    return (
+      <Screen>
+        <YStack flex={1} justifyContent="center" alignItems="center">
+          <Text color={themeColors.textSecondary}>Loading...</Text>
+        </YStack>
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>
@@ -125,7 +157,7 @@ export default function GroupSettingsScreen() {
               {group.name}
             </Text>
             <Text fontSize={14} color={themeColors.textSecondary}>
-              {group.member_count} members • {group.currency}
+              {memberCount} member{memberCount !== 1 ? 's' : ''} • {group.currency}
             </Text>
           </YStack>
           {isAdmin && (
@@ -156,7 +188,7 @@ export default function GroupSettingsScreen() {
         </XStack>
         
         <Card variant="surface">
-          {members.map((member, index) => (
+          {groupMembers.map((member, index) => (
             <XStack 
               key={member.id}
               alignItems="center"
@@ -175,7 +207,7 @@ export default function GroupSettingsScreen() {
                   <Text fontSize={16} fontWeight="500" color={themeColors.textPrimary}>
                     {member.user.full_name}
                   </Text>
-                  {member.user_id === currentUser.id && (
+                  {member.user_id === user?.id && (
                     <Text fontSize={12} color={themeColors.textMuted}>(You)</Text>
                   )}
                 </XStack>

@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
-import { RefreshControl, Pressable } from 'react-native';
+import { RefreshControl, Pressable, type RefreshControlProps } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Receipt, CheckCircle, UserPlus, MousePointer } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -15,6 +15,9 @@ import { Screen, Card, Avatar, GroupImage, AnimatedSearchBar } from '@/component
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useActivityStore } from '@/lib/store';
 import type { Activity, ActivityType } from '@/types/models';
+
+// Fix for React 19 JSX element class type mismatch
+const PlatformRefreshControl = RefreshControl as unknown as React.FC<RefreshControlProps>;
 
 // Helper to get dynamic description
 const getActivityDescription = (activity: Activity) => {
@@ -116,7 +119,7 @@ export default function ActivityScreen() {
     <Screen padded={false}>
       <ScrollView
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
+          <PlatformRefreshControl refreshing={isLoading} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"

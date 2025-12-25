@@ -5,7 +5,7 @@
  * Emoji removed - uses auto-generated group images.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { Screen, Card, Button, Input, ConfirmDialog, GroupImage } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
-import { demoGroups } from '@/lib/api/demo';
+import type { Currency } from '@/types/models';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
@@ -24,14 +24,29 @@ export default function EditGroupScreen() {
   const themeColors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useUIStore();
+  const { currentGroup, fetchGroupById, updateGroup } = useGroupsStore();
   
-  const group = demoGroups.find(g => g.id === id) || demoGroups[0];
-  
-  const [name, setName] = useState(group.name);
-  const [selectedCurrency, setSelectedCurrency] = useState(group.currency);
+  const [name, setName] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      fetchGroupById(id);
+    }
+  }, [id]);
+
+  // Initialize form with current group data
+  useEffect(() => {
+    if (currentGroup && !initialized) {
+      setName(currentGroup.name);
+      setSelectedCurrency(currentGroup.currency);
+      setInitialized(true);
+    }
+  }, [currentGroup, initialized]);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -39,11 +54,15 @@ export default function EditGroupScreen() {
       return;
     }
     
+    if (!id) return;
+    
     setIsSaving(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await updateGroup(id, { 
+      name: name.trim(), 
+      currency: selectedCurrency as Currency 
+    });
     
     showToast({ type: 'success', message: 'Group updated!' });
     setIsSaving(false);
@@ -57,6 +76,16 @@ export default function EditGroupScreen() {
       router.back();
     }
   };
+
+  if (!currentGroup) {
+    return (
+      <Screen>
+        <YStack flex={1} justifyContent="center" alignItems="center">
+          <Text color={themeColors.textSecondary}>Loading...</Text>
+        </YStack>
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll keyboardAvoiding>
@@ -74,7 +103,7 @@ export default function EditGroupScreen() {
       {/* Preview */}
       <Card variant="elevated" marginBottom="$6">
         <YStack alignItems="center" gap="$3">
-          <GroupImage groupId={group.id} size="xl" />
+          <GroupImage groupId={id || ''} size="xl" />
           <YStack alignItems="center">
             <Text fontSize={18} fontWeight="600" color={themeColors.textPrimary}>
               {name || 'Group Name'}

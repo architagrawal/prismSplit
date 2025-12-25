@@ -600,11 +600,110 @@ export const useBillsStore = create<BillsState>((set, get) => ({
     }
   },
 
-  // Confirm item selections
+  // Confirm item selections - writes splits to Supabase
   confirmSelections: async (billId: string) => {
-    // TODO: Implement - update splits based on selectedItems
-   // console.log('Confirming selections for bill:', billId);
-    get().clearSelections();
+    const { selectedItems, billItems } = get();
+    
+    console.log('confirmSelections called with billId:', billId);
+    console.log('selectedItems:', Array.from(selectedItems));
+    
+    if (selectedItems.size === 0) {
+      console.log('No items selected, clearing');
+      get().clearSelections();
+      return;
+    }
+
+    try {
+      await ensureSession();
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      console.log('Current user:', user.id);
+
+      const items = billItems[billId] || [];
+      console.log('Bill items count:', items.length);
+      
+      const splitsToInsert: { item_id: string; user_id: string; split_type: string; amount: number; percentage: number }[] = [];
+
+      // Process each selected item
+      for (const selectedId of selectedItems) {
+        console.log('Processing selectedId:', selectedId);
+        
+        // Find the item in our items list
+        const item = items.find(i => i.id === selectedId);
+        
+        if (!item) {
+          console.log('Item not found for selectedId:', selectedId);
+          continue;
+        }
+
+        console.log('Found item:', item.id, item.name, item.price);
+
+        // For exploded items (format: uuid_index), extract the original UUID
+        // UUIDs are in format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        // Exploded format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx_0
+        let dbItemId = item.id;
+        if (item.id.match(/_\d+$/)) {
+          // Ends with _number, so extract everything before the last _number
+          dbItemId = item.id.replace(/_\d+$/, '');
+          console.log('Extracted original item ID:', dbItemId);
+        }
+
+        // Calculate the user's share (full unit price for self-select mode)
+        const unitPrice = item.price;
+        
+        splitsToInsert.push({
+          item_id: dbItemId,
+          user_id: user.id,
+          split_type: 'equal',
+          amount: unitPrice,
+          percentage: 100,
+        });
+      }
+
+      console.log('Splits to insert:', splitsToInsert);
+
+      if (splitsToInsert.length > 0) {
+        // First, delete any existing splits for this user on these items
+        const itemIds = [...new Set(splitsToInsert.map(s => s.item_id))];
+        console.log('Deleting existing splits for items:', itemIds);
+        
+        const { error: deleteError } = await supabase
+          .from('item_splits')
+          .delete()
+          .eq('user_id', user.id)
+          .in('item_id', itemIds);
+
+        if (deleteError) {
+          console.error('Delete error:', deleteError);
+        }
+
+        // Then insert new splits
+        console.log('Inserting new splits...');
+        const { data, error } = await supabase
+          .from('item_splits')
+          .insert(splitsToInsert)
+          .select();
+
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        
+        console.log('Splits inserted successfully:', data);
+      }
+
+      // Refetch bill items to get updated splits
+      await get().fetchBillItems(billId);
+      get().clearSelections();
+      
+      console.log('confirmSelections completed successfully');
+      
+    } catch (error: any) {
+      console.error('Failed to confirm selections:', error);
+      console.error('Error details:', error.message, error.details, error.hint);
+    }
   },
 
   // Clear selections

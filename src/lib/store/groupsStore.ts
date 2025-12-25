@@ -180,8 +180,35 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Generate invite code
-      const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      // Generate unique invite code
+      let inviteCode = '';
+      let isUnique = false;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (!isUnique && attempts < maxAttempts) {
+        // Generate a random 6-character alphanumeric code
+        inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        // Check if code already exists
+        const { data: existing, error: checkError } = await supabase
+          .from('groups')
+          .select('id')
+          .eq('invite_code', inviteCode)
+          .maybeSingle();
+        
+        if (checkError) {
+          console.error('Error checking invite code:', checkError);
+        }
+        
+        // If no existing group with this code, it's unique
+        isUnique = !existing;
+        attempts++;
+      }
+      
+      if (!isUnique) {
+        throw new Error('Failed to generate unique invite code');
+      }
 
       // Use RPC function to create group (bypasses RLS timing issues)
       const { data: newGroupId, error: rpcError } = await supabase.rpc(

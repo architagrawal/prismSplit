@@ -43,8 +43,8 @@ import {
   ActivityListItem,
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useGroupsStore, useBillsStore, useAuthStore, useActivityStore } from '@/lib/store';
-import { demoGroupMembers, demoBalances } from '@/lib/api/demo';
+import { useGroupsStore, useBillsStore, useAuthStore, useActivityStore, useBalancesStore } from '@/lib/store';
+import { demoGroupMembers } from '@/lib/api/demo';
 import { categoryIcons } from '@/types/models';
 import type { Group, GroupMember, Bill } from '@/types/models';
 
@@ -86,6 +86,12 @@ export function GroupDetailContent({
   } = useActivityStore();
 
   const { user } = useAuthStore();
+
+  const {
+    groupBalances,
+    fetchBalancesForGroup,
+    isLoading: balancesLoading
+  } = useBalancesStore();
 
   // Group bills by Month/Year, then by Day
   const groupedBills = useMemo(() => {
@@ -195,6 +201,13 @@ export function GroupDetailContent({
     }
   }, [groupId]);
 
+  // Fetch balances when group changes
+  useEffect(() => {
+    if (groupId) {
+      fetchBalancesForGroup(groupId);
+    }
+  }, [groupId]);
+
 
 
   const group = currentGroup;
@@ -206,21 +219,37 @@ export function GroupDetailContent({
       fetchGroupMembers(groupId);
       fetchBillsByGroup(groupId);
       fetchActivitiesByGroup(groupId);
+      fetchBalancesForGroup(groupId);
     }
   };
 
-  // Calculate debts (Moved here to fix Hook Order)
+  // Get balances from store for this group
+  const groupBalance = groupBalances[groupId] || null;
+
+  // Calculate debts from real balance data
   const myDebts = useMemo(() => {
-    const groupMembers = demoGroupMembers[groupId] || [];
-    const memberIds = new Set(groupMembers.map(m => m.user_id));
-    return demoBalances.filter(b => b.balance < 0 && memberIds.has(b.user_id));
-  }, [groupId]);
+    if (!groupBalance) return [];
+    return Object.entries(groupBalance.withFriends)
+      .filter(([_, data]) => data.balance < 0)
+      .map(([userId, data]) => ({
+        userId,
+        name: data.name,
+        colorIndex: data.colorIndex,
+        balance: data.balance
+      }));
+  }, [groupBalance]);
 
   const peopleWhoOweMe = useMemo(() => {
-    const groupMembers = demoGroupMembers[groupId] || [];
-    const memberIds = new Set(groupMembers.map(m => m.user_id));
-    return demoBalances.filter(b => b.balance > 0 && memberIds.has(b.user_id));
-  }, [groupId]);
+    if (!groupBalance) return [];
+    return Object.entries(groupBalance.withFriends)
+      .filter(([_, data]) => data.balance > 0)
+      .map(([userId, data]) => ({
+        userId,
+        name: data.name,
+        colorIndex: data.colorIndex,
+        balance: data.balance
+      }));
+  }, [groupBalance]);
 
   const hasBalances = myDebts.length > 0 || peopleWhoOweMe.length > 0 || (group?.your_balance ?? 0) !== 0;
 
@@ -587,9 +616,9 @@ export function GroupDetailContent({
                 </Text>
               ) : (
                 groupMembers.map((member: GroupMember, index: number) => {
-                  // Get balance from demo data (mocking store)
-                  const balanceObj = demoBalances.find(b => b.user_id === member.user_id);
-                  const balance = balanceObj ? balanceObj.balance : 0;
+                  // Get balance from store for this member
+                  const memberBalanceData = groupBalance?.withFriends[member.user_id];
+                  const balance = memberBalanceData?.balance || 0;
 
                   // Calculate participation metrics
                   const participationCount = bills.filter(bill => {

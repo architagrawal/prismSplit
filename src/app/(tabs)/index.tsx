@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView, Sheet } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { RefreshControl, Pressable, Modal } from 'react-native';
+import { RefreshControl, Pressable, Modal, type RefreshControlProps, type ModalProps } from 'react-native';
 import { 
   AlertCircle,
   CheckCircle,
@@ -33,6 +33,10 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore, useGroupsStore, useActivityStore, useUIStore } from '@/lib/store';
 import { useSmartFeed, SmartFeedItem } from '@/hooks/useSmartFeed';
 import { SettleContent } from '@/components/settle/SettleContent';
+
+// Fix for React 19 JSX element class type mismatch
+const PlatformRefreshControl = RefreshControl as unknown as React.FC<RefreshControlProps>;
+const PlatformModal = Modal as unknown as React.FC<ModalProps>;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -244,7 +248,7 @@ export default function HomeScreen() {
   return (
     <Screen scroll padded={false}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={groupsLoading || activitiesLoading} onRefresh={onRefresh} />}
+        refreshControl={<PlatformRefreshControl refreshing={groupsLoading || activitiesLoading} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
@@ -280,7 +284,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Settle Modal */}
-      <Modal
+      <PlatformModal
         visible={settleModalVisible}
         animationType="slide"
         presentationStyle="pageSheet"
@@ -296,7 +300,7 @@ export default function HomeScreen() {
            </XStack>
            <SettleContent userId={selectedSettleUserId} showBackButton={false} />
         </Stack>
-      </Modal>
+      </PlatformModal>
     </Screen>
   );
 }

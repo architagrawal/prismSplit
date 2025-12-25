@@ -13,8 +13,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Screen, Card, Avatar, Button, CurrencyInput } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { demoUsers, demoBalances } from '@/lib/api/demo';
-import { useBillsStore, useAuthStore } from '@/lib/store';
+import { useBillsStore, useAuthStore, useBalancesStore } from '@/lib/store';
 
 interface SettleContentProps {
   userId: string;
@@ -30,13 +29,19 @@ export function SettleContent({
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const { recordPayment, isLoading } = useBillsStore();
   const { user: currentUser } = useAuthStore();
+  const { friendBalances, groupBalances } = useBalancesStore();
   
-  // Find the person to settle with
-  const person = demoUsers.find(u => u.id === userId) || demoUsers[1];
+  // Get real balance for this user
+  const friendBalance = friendBalances[userId];
   
-  // Get real balance if possible, or fallback to demo
-  const balance = demoBalances.find(b => b.user_id === userId); // TODO: Use real balance store
+  // If groupId is specified, get balance from that specific group
+  const groupBalance = groupId ? groupBalances[groupId]?.withFriends[userId] : null;
+  
+  // Use group-specific balance if available, otherwise use cross-group friend balance
+  const balance = groupBalance || friendBalance;
   const amountOwed = balance?.balance || 0;
+  const personName = balance?.name || 'Unknown';
+  const personColorIndex = balance?.colorIndex || 0;
   
   const [amount, setAmount] = useState(Math.abs(amountOwed).toFixed(2));
   const [settled, setSettled] = useState(false);
@@ -76,7 +81,7 @@ export function SettleContent({
             Settled!
           </Text>
           <Text fontSize={16} color={themeColors.textSecondary} textAlign="center">
-            You recorded a payment of ${parseFloat(amount).toFixed(2)} to {person.full_name}
+            You recorded a payment of ${parseFloat(amount).toFixed(2)} to {personName}
           </Text>
         </YStack>
       </YStack>
@@ -106,13 +111,13 @@ export function SettleContent({
       <Card variant="elevated" marginBottom="$6">
         <YStack alignItems="center" gap="$3">
           <Avatar 
-            name={person.full_name} 
-            colorIndex={balance?.color_index || 1} 
+            name={personName} 
+            colorIndex={personColorIndex} 
             size="xl" 
           />
           <YStack alignItems="center">
             <Text fontSize={20} fontWeight="600" color={themeColors.textPrimary}>
-              {person.full_name}
+              {personName}
             </Text>
             <Text fontSize={14} color={themeColors.textSecondary}>
               Paying for shared expenses

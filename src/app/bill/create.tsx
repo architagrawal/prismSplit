@@ -4,10 +4,10 @@
  * Uses billsStore for draft management.
  */
 
-import { useState, useRef, useEffect, memo } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { TextInput, Pressable, KeyboardAvoidingView, Platform, LayoutAnimation, Modal, Alert } from 'react-native';
+import { TextInput as RNTextInput, type TextInputProps, Pressable, KeyboardAvoidingView, Platform, LayoutAnimation, Modal as RNModal, type ModalProps, Alert } from 'react-native';
 import { 
   X, 
   Plus, 
@@ -27,6 +27,10 @@ import { useBillsStore, useGroupsStore, useUIStore } from '@/lib/store';
 import { SplitModeSelector } from '@/components/bill/SplitModeSelector';
 import { categoryIcons, type Category, type User as UserModel, type GroupMember } from '@/types/models';
 import { SimpleSplitModal, type SimpleSplitType, type SimpleSplitParticipant } from '@/components/bill/SimpleSplitModal';
+
+// Fix for JSX element class does not support attributes error
+const TextInput = RNTextInput as unknown as React.ComponentClass<TextInputProps>;
+const Modal = RNModal as unknown as React.ComponentClass<ModalProps>;
 
 const categories: { key: Category; icon: string; label: string }[] = [
   { key: 'dining', icon: '🍔', label: 'Dining' },
@@ -102,10 +106,10 @@ export default function CreateBillScreen() {
   const [taxSplitMode, setTaxSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
   const [tipSplitMode, setTipSplitMode] = useState<'equal' | 'proportional' | 'custom'>('proportional');
 
-  const nameRefs = useRef<(TextInput | null)[]>([]);
-  const priceRefs = useRef<(TextInput | null)[]>([]);
-  const quantityRefs = useRef<(TextInput | null)[]>([]);
-  const discountRefs = useRef<(TextInput | null)[]>([]);
+  const nameRefs = useRef<(RNTextInput | null)[]>([]);
+  const priceRefs = useRef<(RNTextInput | null)[]>([]);
+  const quantityRefs = useRef<(RNTextInput | null)[]>([]);
+  const discountRefs = useRef<(RNTextInput | null)[]>([]);
 
   useEffect(() => {
     fetchGroups();
@@ -845,7 +849,7 @@ export default function CreateBillScreen() {
                     {/* Add Item Row */}
                     <Pressable 
                         onPress={addNewRow}
-                        style={({ pressed }) => ({
+                        style={({ pressed }: { pressed: boolean }) => ({
                             backgroundColor: pressed ? themeColors.surfaceElevated : 'transparent',
                         })}
                     >

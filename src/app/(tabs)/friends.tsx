@@ -16,32 +16,31 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Screen, Avatar, BalanceBadge } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useGroupsStore } from '@/lib/store';
-import { demoBalances } from '@/lib/api/demo';
-import type { MemberBalance } from '@/types/models';
+import { useGroupsStore, useBalancesStore } from '@/lib/store';
 
 export default function FriendsScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { groups, fetchGroups } = useGroupsStore();
+  const { 
+    friendBalances, 
+    groupBalances, 
+    fetchAllBalances, 
+    isLoading 
+  } = useBalancesStore();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [balances, setBalances] = useState<ExtendedMemberBalance[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    await fetchGroups();
-    // In a real app, we'd fetch friend balances from API
-    // Extending demo data with mock group breakdowns for UI demonstration
-    const extendedBalances: ExtendedMemberBalance[] = demoBalances.map(b => ({
-      ...b,
-      groups: generateMockGroupBreakdown(b)
-    }));
-    setBalances(extendedBalances);
+    await Promise.all([
+      fetchGroups(),
+      fetchAllBalances()
+    ]);
   };
 
   const onRefresh = useCallback(async () => {
@@ -50,47 +49,32 @@ export default function FriendsScreen() {
     setRefreshing(false);
   }, []);
 
-  // Helper to generate mock breakdown based on total balance
-  const generateMockGroupBreakdown = (member: MemberBalance): GroupBreakdown[] => {
-    // This is purely for UI demo since backend doesn't support this yet
-    const numGroups = Math.floor(Math.random() * 2) + 1; // 1 or 2 groups
-    const breakdown: GroupBreakdown[] = [];
-    
-    // Just split the total balance into parts for the demo
-    if (member.balance !== 0) {
-      if (numGroups === 1) {
-         breakdown.push({
-           groupId: 'g1',
-           groupName: groups[0]?.name || 'Roommates',
-           amount: member.balance
-         });
-      } else {
-        const amount1 = parseFloat((member.balance * 0.6).toFixed(2));
-        const amount2 = parseFloat((member.balance - amount1).toFixed(2));
-        breakdown.push({
-          groupId: 'g1',
-          groupName: groups[0]?.name || 'Roommates',
-          amount: amount1
-        });
-        breakdown.push({
-          groupId: 'g2',
-          groupName: groups[1]?.name || 'Trip Squad',
-          amount: amount2
-        });
-      }
-    }
-    return breakdown;
-  };
+  // Build extended balances with group breakdowns from real data
+  const extendedBalances = useMemo(() => {
+    return Object.values(friendBalances).map(friend => {
+      // Find which groups this friend appears in
+      const groupBreakdowns: GroupBreakdown[] = [];
+      
+      Object.values(groupBalances).forEach(group => {
+        const friendInGroup = group.withFriends[friend.userId];
+        if (friendInGroup && Math.abs(friendInGroup.balance) >= 0.01) {
+          groupBreakdowns.push({
+            groupId: group.groupId,
+            groupName: group.groupName,
+            amount: friendInGroup.balance
+          });
+        }
+      });
 
-  // Filter and group data
-  // Filter and group data - Flattened for the new design (no sections, just list)
-  const filteredBalances = useMemo(() => {
-      // Sort: positive balances (owed to you) first desc, then negative (you owe) asc
-      return balances.sort((a, b) => b.balance - a.balance);
-  }, [balances]);
-
-  // Summary calculations
-
+      return {
+        userId: friend.userId,
+        name: friend.name,
+        colorIndex: friend.colorIndex,
+        balance: friend.balance,
+        groups: groupBreakdowns
+      };
+    }).sort((a, b) => b.balance - a.balance); // Sort: owed to you first
+  }, [friendBalances, groupBalances]);
 
   const handleFriendPress = (userId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -99,7 +83,6 @@ export default function FriendsScreen() {
 
   const handleRemindPress = (userId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
   };
 
   return (
@@ -111,11 +94,19 @@ export default function FriendsScreen() {
               Friends
             </Text>
             <Text fontSize={15} color={themeColors.textSecondary} marginTop="$1">
-              {balances.length} people across {groups.length} groups
+              {extendedBalances.length} people across {groups.length} groups
             </Text>
           </YStack>
           <Pressable 
-            onPress={() => router.push('/group/invite' as any)}
+            onPress={() => {
+              if (groups.length > 0) {
+                // Navigate to first group's invite screen
+                router.push(`/group/invite?id=${groups[0].id}` as any);
+              } else {
+                // No groups - suggest creating one first
+                router.push('/group/create' as any);
+              }
+            }}
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <LinearGradient
@@ -137,14 +128,17 @@ export default function FriendsScreen() {
       </YStack>
 
       <SectionList
-        sections={[{ data: filteredBalances }]}
-        keyExtractor={(item) => item.user_id}
+        sections={[{ data: extendedBalances }]}
+        keyExtractor={(item) => item.userId}
+        refreshControl={
+          <RefreshControl refreshing={refreshing || isLoading} onRefresh={onRefresh} />
+        }
         renderItem={({ item, index }) => (
           <FriendRow
             friend={item}
-            onPress={() => handleFriendPress(item.user_id)}
-            onRemind={() => handleRemindPress(item.user_id)}
-            isLast={index === filteredBalances.length - 1}
+            onPress={() => handleFriendPress(item.userId)}
+            onRemind={() => handleRemindPress(item.userId)}
+            isLast={index === extendedBalances.length - 1}
           />
         )}
         ListFooterComponent={<Stack height={100} />}
@@ -152,7 +146,7 @@ export default function FriendsScreen() {
           <YStack alignItems="center" paddingVertical="$10" gap="$4">
             <Text fontSize={48}>👥</Text>
             <Text fontSize={16} color={themeColors.textSecondary} textAlign="center">
-              Add friends to start splitting bills!
+              {isLoading ? 'Loading friends...' : 'Add friends to start splitting bills!'}
             </Text>
           </YStack>
         }
@@ -162,18 +156,23 @@ export default function FriendsScreen() {
     </Screen>
   );
 }
+
 interface GroupBreakdown {
   groupId: string;
   groupName: string;
   amount: number; // Positive = they owe you, Negative = you owe them
 }
 
-interface ExtendedMemberBalance extends MemberBalance {
+interface ExtendedFriendBalance {
+  userId: string;
+  name: string;
+  colorIndex: number;
+  balance: number;
   groups: GroupBreakdown[];
 }
 
 interface FriendRowProps {
-  friend: ExtendedMemberBalance;
+  friend: ExtendedFriendBalance;
   onPress: () => void;
   onRemind?: () => void;
   isLast?: boolean;
@@ -197,15 +196,15 @@ function FriendRow({ friend, onPress, onRemind, isLast }: FriendRowProps) {
         borderBottomColor={themeColors.border}
       >
         <Avatar
-          name={friend.user.full_name}
-          colorIndex={friend.color_index}
+          name={friend.name}
+          colorIndex={friend.colorIndex}
           size="lg"
         />
         
         <YStack flex={1} gap="$1" justifyContent="center">
           <XStack justifyContent="space-between" alignItems="center">
             <Text fontSize={17} fontWeight="600" color={themeColors.textPrimary} numberOfLines={1}>
-              {friend.user.full_name}
+              {friend.name}
             </Text>
             
             <YStack alignItems="flex-end">
