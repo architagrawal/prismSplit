@@ -1,5 +1,0 @@
-{
-  "name": "prismsplit-frontend",
-  "private": true,
-  "workspaces": ["./src"]
-}
