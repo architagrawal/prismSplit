@@ -44,7 +44,6 @@ import {
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useBillsStore, useAuthStore, useActivityStore, useBalancesStore } from '@/lib/store';
-import { demoGroupMembers } from '@/lib/api/demo';
 import { categoryIcons } from '@/types/models';
 import type { Group, GroupMember, Bill } from '@/types/models';
 
@@ -211,7 +210,7 @@ export function GroupDetailContent({
 
 
   const group = currentGroup;
-  const groupMembers = members[groupId || ''] || demoGroupMembers[groupId || ''] || [];
+  const groupMembers = members[groupId || ''] || [];
 
   const onRefresh = () => {
     if (groupId) {

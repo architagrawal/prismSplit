@@ -13,14 +13,13 @@ import { Sparkles, Plus } from 'lucide-react-native';
 import { Screen, AvatarGroup, GroupImage, Button, AnimatedSearchBar } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGroupsStore, useUIStore } from '@/lib/store';
-import { demoGroupMembers } from '@/lib/api/demo';
 
 type FilterOption = 'all' | 'owe' | 'owed';
 
 export default function GroupsScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
-  const { groups, isLoading, fetchGroups } = useGroupsStore();
+  const { groups, members, isLoading, fetchGroups, fetchGroupMembers } = useGroupsStore();
   const { searchQuery, setSearchQuery, clearSearch } = useUIStore();
   
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
@@ -29,6 +28,15 @@ export default function GroupsScreen() {
     fetchGroups();
     return () => clearSearch();
   }, []);
+
+  // Fetch members for each group when groups change
+  useEffect(() => {
+    groups.forEach(group => {
+      if (!members[group.id]) {
+        fetchGroupMembers(group.id);
+      }
+    });
+  }, [groups]);
 
   // Filter and sort groups
   const processedGroups = useMemo(() => {
@@ -54,8 +62,8 @@ export default function GroupsScreen() {
   };
 
   const getMemberPreviews = (groupId: string) => {
-    const members = demoGroupMembers[groupId] || [];
-    return members.map(m => ({
+    const groupMembers = members[groupId] || [];
+    return groupMembers.map(m => ({
       name: m.user.full_name,
       imageUrl: m.user.avatar_url,
       colorIndex: m.color_index,

@@ -4,6 +4,7 @@
  * Final split overview in receipt-style format.
  */
 
+import { useEffect } from 'react';
 import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
@@ -11,21 +12,37 @@ import { ArrowLeft, Download, Share2 } from 'lucide-react-native';
 
 import { Screen, Card, Avatar, SplitBar } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { demoBills, demoBillItems, demoUsers } from '@/lib/api/demo';
+import { useBillsStore } from '@/lib/store';
 import { colors } from '@/theme/tokens';
+import type { BillItemWithSplits } from '@/types/models';
 
 export default function BillReceiptScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // Get bill data
-  const bill = demoBills.find(b => b.id === id) || demoBills[0];
+  const { 
+    currentBill, 
+    billItems, 
+    fetchBillById, 
+    fetchBillItems 
+  } = useBillsStore();
 
-  // Calculate shares per person
+  // Fetch bill data on mount
+  useEffect(() => {
+    if (id) {
+      fetchBillById(id);
+      fetchBillItems(id);
+    }
+  }, [id]);
+
+  const bill = currentBill;
+  const items = (billItems[id || ''] || []) as BillItemWithSplits[];
+
+  // Calculate shares per person from real bill items
   const shares: Record<string, { name: string; amount: number; colorIndex: number }> = {};
   
-  demoBillItems.forEach(item => {
+  items.forEach(item => {
     item.splits.forEach(split => {
       if (!shares[split.user_id]) {
         shares[split.user_id] = {
@@ -39,6 +56,17 @@ export default function BillReceiptScreen() {
   });
 
   const sortedShares = Object.entries(shares).sort((a, b) => b[1].amount - a[1].amount);
+
+  // Show loading state if bill not loaded yet
+  if (!bill) {
+    return (
+      <Screen padded={false}>
+        <Stack flex={1} justifyContent="center" alignItems="center">
+          <Text color={themeColors.textSecondary}>Loading...</Text>
+        </Stack>
+      </Screen>
+    );
+  }
 
   return (
     <Screen padded={false}>
@@ -109,7 +137,7 @@ export default function BillReceiptScreen() {
                 ITEMS
               </Text>
               
-              {demoBillItems.map((item) => (
+              {items.map((item) => (
                 <YStack key={item.id} marginBottom="$3">
                   <XStack justifyContent="space-between" alignItems="flex-start">
                     <YStack flex={1} marginRight="$2">
@@ -206,24 +234,30 @@ export default function BillReceiptScreen() {
                 SPLIT BREAKDOWN
               </Text>
               
-              {sortedShares.map(([userId, share]) => (
-                <XStack 
-                  key={userId} 
-                  justifyContent="space-between" 
-                  alignItems="center"
-                  marginBottom="$2"
-                >
-                  <XStack alignItems="center" gap="$2">
-                    <Avatar name={share.name} colorIndex={share.colorIndex} size="sm" />
-                    <Text fontSize={14} color={themeColors.textPrimary}>
-                      {share.name}
+              {sortedShares.length > 0 ? (
+                sortedShares.map(([userId, share]) => (
+                  <XStack 
+                    key={userId} 
+                    justifyContent="space-between" 
+                    alignItems="center"
+                    marginBottom="$2"
+                  >
+                    <XStack alignItems="center" gap="$2">
+                      <Avatar name={share.name} colorIndex={share.colorIndex} size="sm" />
+                      <Text fontSize={14} color={themeColors.textPrimary}>
+                        {share.name}
+                      </Text>
+                    </XStack>
+                    <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
+                      ${share.amount.toFixed(2)}
                     </Text>
                   </XStack>
-                  <Text fontSize={14} fontWeight="600" color={themeColors.textPrimary}>
-                    ${share.amount.toFixed(2)}
-                  </Text>
-                </XStack>
-              ))}
+                ))
+              ) : (
+                <Text fontSize={14} color={themeColors.textSecondary} textAlign="center">
+                  No splits assigned yet
+                </Text>
+              )}
             </Stack>
 
             {/* Footer */}

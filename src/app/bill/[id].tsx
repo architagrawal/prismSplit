@@ -24,8 +24,7 @@ import {
   ItemRow
 } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useBillsStore, useAuthStore, useUIStore } from '@/lib/store';
-import { demoBillItems, currentUser, demoGroupMembers, demoUsers } from '@/lib/api/demo';
+import { useBillsStore, useAuthStore, useUIStore, useGroupsStore } from '@/lib/store';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import type { BillItemWithSplits } from '@/types/models';
 
@@ -57,6 +56,7 @@ export default function BillDetailScreen() {
   } = useBillsStore();
   const { user } = useAuthStore();
   const { showToast } = useUIStore();
+  const { members, fetchGroupMembers } = useGroupsStore();
   
   const [refreshing, setRefreshing] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -268,6 +268,13 @@ export default function BillDetailScreen() {
     };
   }, [id]);
 
+  // Fetch group members when bill loads
+  useEffect(() => {
+    if (currentBill?.group_id) {
+      fetchGroupMembers(currentBill.group_id);
+    }
+  }, [currentBill?.group_id]);
+
   // Pre-populate selections from existing splits where current user participates
   useEffect(() => {
     if (!initialized && user && storeItems && storeItems.length > 0) {
@@ -294,7 +301,7 @@ export default function BillDetailScreen() {
   }, [user, initialized, storeItems]);
 
   const bill = currentBill;
-  const allMembers = bill ? (demoGroupMembers[bill.group_id] || []) : [];
+  const allMembers = bill ? (members[bill.group_id] || []) : [];
 
   // Calculate user's share based on current selections and custom splits
   const calculateYourShare = () => {
@@ -676,12 +683,13 @@ export default function BillDetailScreen() {
             </Text>
             <XStack alignItems="center" gap="$2" marginTop="$1">
                {(() => {
-                  const payerUser = demoUsers.find(u => u.id === bill.payer.id);
+                  // Use bill.payer data directly - colorIndex from group member if available
+                  const payerMember = allMembers.find(m => m.user_id === bill.payer.id);
                   return (
                     <Avatar 
                       name={bill.payer.full_name} 
-                      imageUrl={payerUser?.avatar_url}
-                      colorIndex={payerUser?.color_index ?? 0} 
+                      imageUrl={payerMember?.user.avatar_url}
+                      colorIndex={payerMember?.color_index ?? 0} 
                       size="xs" 
                     />
                   );
@@ -1103,7 +1111,7 @@ export default function BillDetailScreen() {
               locked: false,
             }));
           })()}
-          allMembers={demoGroupMembers[bill.group_id] || []}
+          allMembers={allMembers}
           currentUserId={user?.id || 'current-user'}
         />
       )}
