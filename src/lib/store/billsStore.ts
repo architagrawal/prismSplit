@@ -114,11 +114,11 @@ export const useBillsStore = create<BillsState>((set, get) => ({
         discount_amount: parseFloat(b.discount_amount) || 0,
         tax_split_mode: b.tax_split_mode || 'proportional',
         tip_split_mode: b.tip_split_mode || 'proportional',
-        your_share: 0, // Will be calculated from splits
+          your_share: yourShare, // Calculated from splits
         bill_date: b.bill_date,
         created_at: b.created_at,
         is_itemized: b.is_itemized,
-        item_count: 0, // Will be fetched with items
+          item_count: b.bill_items?.length || 0,
         payer: {
           id: b.payer?.id || b.paid_by,
           full_name: b.payer?.full_name || 'Unknown',
