@@ -2,11 +2,12 @@
  * PrismSplit UI Store
  * 
  * Manages UI state like theme, modals, and navigation.
+ * Uses MMKV for fast synchronous storage.
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { asyncStorage } from '@/lib/storage';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -101,7 +102,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'ui-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => asyncStorage),
       partialize: (state) => ({
         theme: state.theme,
       }),

@@ -2,12 +2,12 @@
  * PrismSplit Auth Store
  * 
  * Manages user authentication state using Supabase.
- * Uses AsyncStorage for state persistence (Zustand).
+ * Uses EncryptedStorage for secure state persistence (Zustand).
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { encryptedStorage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { loginInputSchema, signupInputSchema, validateInput } from '@/lib/validation';
 import type { User } from '@/types/models';
@@ -194,7 +194,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => encryptedStorage),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
