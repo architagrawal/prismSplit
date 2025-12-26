@@ -326,53 +326,45 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const searchCode = code.toUpperCase().trim();
+      console.log('🔍 Joining group with code:', searchCode);
 
-      // Find group by invite code
-      const { data: groupData, error: findError } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('invite_code', code.toUpperCase())
-        .single();
+      // Use RPC function to join group (bypasses RLS)
+      const { data, error: rpcError } = await supabase.rpc(
+        'join_group_by_code',
+        { p_invite_code: searchCode }
+      );
 
-      if (findError || !groupData) {
-        throw new Error('Invalid invite code');
+      console.log('📦 RPC result:', { data, rpcError });
+
+      if (rpcError) {
+        console.error('❌ Failed to join:', rpcError);
+        // Parse error message from RPC
+        const errorMessage = rpcError.message || 'Failed to join group';
+        throw new Error(
+          errorMessage.includes('Invalid invite code') ? 'Invalid invite code' :
+          errorMessage.includes('Already a member') ? 'Already a member of this group' :
+          errorMessage
+        );
       }
 
-      // Check if already a member
-      const { data: existingMember } = await supabase
-        .from('group_members')
-        .select('id')
-        .eq('group_id', groupData.id)
-        .eq('user_id', user.id)
-        .single();
-
-      if (existingMember) {
-        throw new Error('Already a member of this group');
+      // RPC returns an array with one row
+      const groupInfo = Array.isArray(data) && data.length > 0 ? data[0] : data;
+      
+      if (!groupInfo || !groupInfo.group_id) {
+        throw new Error('Failed to join group');
       }
-
-      // Add user as member
-      const { error: joinError } = await supabase
-        .from('group_members')
-        .insert({
-          group_id: groupData.id,
-          user_id: user.id,
-          role: 'member',
-        });
-
-      if (joinError) throw joinError;
 
       const group: Group = {
-        id: groupData.id,
-        name: groupData.name,
-        emoji: groupData.emoji,
-        currency: groupData.currency,
-        invite_code: groupData.invite_code,
-        member_count: 0,
+        id: groupInfo.group_id,
+        name: groupInfo.group_name,
+        emoji: groupInfo.group_emoji,
+        currency: groupInfo.group_currency as Currency,
+        invite_code: searchCode,
+        member_count: 1,
         your_balance: 0,
-        created_at: groupData.created_at,
-        updated_at: groupData.updated_at,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       set(state => ({
@@ -382,6 +374,7 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
         isLoading: false,
       }));
 
+      console.log('✅ Successfully joined group:', group.name);
       return group;
     } catch (error: any) {
       console.error('Failed to join group:', error);
