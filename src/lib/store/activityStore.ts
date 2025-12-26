@@ -27,11 +27,13 @@ interface ActivityState {
 // Map database row to Activity type
 const mapActivity = (row: any): Activity => ({
   id: row.id,
+  group_id: row.group_id,
   group: {
     id: row.group_id,
     name: row.groups?.name || '',
     emoji: row.groups?.emoji || '💸',
   },
+  user_id: row.user_id,
   user: {
     id: row.user_id,
     full_name: row.profiles?.full_name || 'Unknown',

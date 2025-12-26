@@ -154,12 +154,20 @@ export type ActivityType =
   | 'payment'
   | 'member_joined';
 
+// Partial user for activity display (doesn't need email/created_at)
+export interface ActivityUser {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  color_index: number;
+}
+
 export interface Activity {
   id: string;
   group_id: string;
   group: { id: string; name: string; emoji: string };
   user_id: string;
-  user: User;
+  user: ActivityUser;
   type: ActivityType;
   entity_type: 'bill' | 'settlement' | 'group';
   entity_id: string;
