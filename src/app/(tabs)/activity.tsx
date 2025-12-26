@@ -26,6 +26,11 @@ const getActivityDescription = (activity: Activity) => {
   switch (activity.type) {
     case 'bill_created':
       return meta.title ? `Created a bill "${meta.title}"` : 'Created a bill';
+    case 'bill_updated':
+      return meta.title ? `Updated bill "${meta.title}"` : 'Updated a bill';
+    case 'bill_deleted':
+      const deleted = meta.deleted_bill as { title?: string } | undefined;
+      return deleted?.title ? `Deleted bill "${deleted.title}"` : 'Deleted a bill';
     case 'bill_shared':
       return meta.title ? `Shared a bill "${meta.title}"` : 'Shared a bill';
     case 'bill_finalized':
@@ -33,10 +38,16 @@ const getActivityDescription = (activity: Activity) => {
     case 'item_selected':
       const billTitle = meta.bill_title ? ` in "${meta.bill_title}"` : '';
       return meta.item_name ? `Selected "${meta.item_name}"${billTitle}` : 'Selected items';
+    case 'split_joined':
+      return meta.item_name ? `Joined split for "${meta.item_name}"` : 'Joined a split';
+    case 'split_left':
+      return meta.item_name ? `Left split for "${meta.item_name}"` : 'Left a split';
+    case 'split_changed':
+      return meta.item_name ? `Changed split for "${meta.item_name}"` : 'Changed a split';
     case 'settlement_created':
       return meta.to_user ? `Settled up with ${meta.to_user}` : 'Settled up';
     case 'member_joined':
-      return 'Joined the group';
+      return meta.user_name ? `${meta.user_name} joined` : 'Joined the group';
     default:
       return 'New activity';
   }
@@ -54,19 +65,26 @@ export default function ActivityScreen() {
   const getActivityIcon = (type: ActivityType) => {
     switch (type) {
       case 'bill_created':
+      case 'bill_updated':
       case 'bill_shared':
       case 'bill_finalized':
         return <Receipt size={18} color={themeColors.primary} />;
+      case 'bill_deleted':
+        return <Receipt size={18} color={themeColors.error} />;
       case 'settlement_created':
         return <CheckCircle size={18} color={themeColors.success} />;
       case 'member_joined':
         return <UserPlus size={18} color={themeColors.info} />;
       case 'item_selected':
+      case 'split_joined':
+      case 'split_left':
+      case 'split_changed':
         return <MousePointer size={18} color={themeColors.warning} />;
       default:
         return null;
     }
   };
+
 
   useEffect(() => {
     fetchActivities();

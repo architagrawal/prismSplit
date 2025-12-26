@@ -142,9 +142,14 @@ export interface Settlement {
 
 export type ActivityType =
   | 'bill_created'
+  | 'bill_updated'
+  | 'bill_deleted'
   | 'bill_shared'
   | 'bill_finalized'
   | 'item_selected'
+  | 'split_joined'
+  | 'split_left'
+  | 'split_changed'
   | 'settlement_created'
   | 'payment'
   | 'member_joined';

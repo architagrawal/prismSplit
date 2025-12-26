@@ -1,63 +1,93 @@
 /**
  * Settle Selection Screen
  * 
- * Lists people the user owes money to.
+ * Lists people the user owes money to, using balancesStore.
  */
 
-import { useRef } from 'react';
+import { useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Stack, Text, YStack, XStack, ScrollView } from 'tamagui';
-import { ArrowLeft, User, Search, Bell, Scale, SendHorizontal } from 'lucide-react-native';
+import { Stack, Text, YStack, XStack } from 'tamagui';
+import { ArrowLeft, Bell, Scale, SendHorizontal } from 'lucide-react-native';
 import { Pressable, Alert, SectionList } from 'react-native';
 
-import { Screen, Card, Avatar, AnimatedSearchBar } from '@/components/ui';
+import { Screen, Card, Avatar } from '@/components/ui';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { demoBalances, demoUsers, demoGroups } from '@/lib/api/demo';
+import { useBalancesStore, useGroupsStore } from '@/lib/store';
+
+interface BalanceItem {
+  userId: string;
+  name: string;
+  colorIndex: number;
+  balance: number;
+  type: 'pay' | 'remind';
+}
 
 export default function SettleSelectScreen() {
-  const { groupId, type } = useLocalSearchParams<{ groupId: string, type?: string }>();
+  const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const router = useRouter();
   const themeColors = useThemeColors();
+  
+  const { groupBalances, fetchBalancesForGroup, isLoading } = useBalancesStore();
+  const { currentGroup, fetchGroupById } = useGroupsStore();
 
-  // Find Group Name
-  const group = demoGroups.find(g => g.id === groupId);
-  const groupName = group?.name || 'Group';
+  // Fetch data on mount
+  useEffect(() => {
+    if (groupId) {
+      fetchBalancesForGroup(groupId);
+      fetchGroupById(groupId);
+    }
+  }, [groupId]);
 
-  // 1. People I owe (Pay)
-  const payItems = demoBalances
-    .filter(b => b.balance < 0)
-    .map(b => {
-       const user = demoUsers.find(u => u.id === b.user_id);
-       return { ...b, user: user || demoUsers[0], type: 'pay' as const };
+  const groupBalance = groupId ? groupBalances[groupId] : null;
+  const groupName = groupBalance?.groupName || currentGroup?.name || 'Group';
+
+  // Build pay/remind lists from balance data
+  const payItems: BalanceItem[] = [];
+  const remindItems: BalanceItem[] = [];
+
+  if (groupBalance?.withFriends) {
+    Object.entries(groupBalance.withFriends).forEach(([userId, friend]) => {
+      if (friend.balance < 0) {
+        // Negative balance = I owe them
+        payItems.push({
+          userId,
+          name: friend.name,
+          colorIndex: friend.colorIndex,
+          balance: friend.balance,
+          type: 'pay',
+        });
+      } else if (friend.balance > 0) {
+        // Positive balance = they owe me
+        remindItems.push({
+          userId,
+          name: friend.name,
+          colorIndex: friend.colorIndex,
+          balance: friend.balance,
+          type: 'remind',
+        });
+      }
     });
-
-  // 2. People who owe me (Remind)
-  const remindItems = demoBalances
-    .filter(b => b.balance > 0)
-    .map(b => {
-       const user = demoUsers.find(u => u.id === b.user_id);
-       return { ...b, user: user || demoUsers[0], type: 'remind' as const };
-    });
+  }
 
   const sections = [
     { title: 'You owe', data: payItems },
     { title: 'Owes you', data: remindItems }
   ].filter(s => s.data.length > 0);
 
-  const handleAction = (item: typeof payItems[0] | typeof remindItems[0]) => {
+  const handleAction = (item: BalanceItem) => {
     if (item.type === 'pay') {
-      router.push(`/settle/${item.user_id}?groupId=${groupId}` as any);
+      router.push(`/settle/${item.userId}?groupId=${groupId}` as any);
     } else {
       // Send Reminder
       Alert.alert(
         "Reminder Sent",
-        `A gentle reminder has been sent to ${item.user.full_name}.`,
+        `A gentle reminder has been sent to ${item.name}.`,
         [{ text: "OK" }]
       );
     }
   };
 
-  const renderItem = ({ item }: { item: typeof payItems[0] | typeof remindItems[0] }) => (
+  const renderItem = ({ item }: { item: BalanceItem }) => (
     <Pressable onPress={() => handleAction(item)}>
       <XStack 
         paddingVertical="$3" 
@@ -70,13 +100,13 @@ export default function SettleSelectScreen() {
       >
         <XStack alignItems="center" gap="$3">
           <Avatar 
-            name={item.user.full_name} 
-            colorIndex={item.color_index}
+            name={item.name} 
+            colorIndex={item.colorIndex}
             size="md"
           />
           <YStack>
             <Text fontSize={16} fontWeight="600" color={themeColors.textPrimary}>
-              {item.user.full_name}
+              {item.name}
             </Text>
             <Text fontSize={13} color={item.type === 'pay' ? themeColors.error : themeColors.success}>
               {item.type === 'pay' ? 'You owe' : 'Owes you'} ${Math.abs(item.balance).toFixed(2)}
@@ -91,7 +121,7 @@ export default function SettleSelectScreen() {
              backgroundColor={themeColors.surfaceElevated}
              borderColor={themeColors.border}
              borderWidth={1}
-             width={100} // Fixed width for alignment
+             width={100}
              alignItems="center"
         >
              {item.type === 'pay' ? (
@@ -159,12 +189,15 @@ export default function SettleSelectScreen() {
         sections={sections}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
-        keyExtractor={(item) => item.user_id + item.type}
+        keyExtractor={(item) => item.userId + item.type}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
         stickySectionHeadersEnabled={false}
+        refreshing={isLoading}
         ListEmptyComponent={
              <YStack padding="$8" alignItems="center">
-                 <Text color={themeColors.textSecondary}>You are all settled up in this group!</Text>
+                 <Text color={themeColors.textSecondary}>
+                   {isLoading ? 'Loading...' : 'You are all settled up in this group!'}
+                 </Text>
              </YStack>
         }
       />
